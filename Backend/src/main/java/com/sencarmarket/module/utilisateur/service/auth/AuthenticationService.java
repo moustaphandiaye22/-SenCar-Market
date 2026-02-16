@@ -1,9 +1,12 @@
 package com.sencarmarket.module.utilisateur.service.auth;
 
 import com.sencarmarket.module.utilisateur.dto.*;
+import com.sencarmarket.module.utilisateur.entity.OtpCode;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
+import com.sencarmarket.module.utilisateur.service.OtpService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,13 +20,15 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService {
+@Slf4j
+public class AuthenticationService implements IAuthenticationService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
+    private final OtpService otpService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -178,6 +183,36 @@ public class AuthenticationService {
 
     @Transactional
     public void resetPassword(Utilisateur utilisateur, String nouveauMotDePasse) {
+        utilisateur.setMotDePasseHash(passwordEncoder.encode(nouveauMotDePasse));
+        utilisateurRepository.save(utilisateur);
+    }
+
+    @Transactional
+    public void verifyEmail(String email) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+        utilisateur.setEmailVerifie(true);
+        utilisateurRepository.save(utilisateur);
+    }
+
+    @Transactional
+    public void resendOtp(String email) {
+        // Cette méthode est un hook - l'OTP est généré par OtpService
+        // Pas d'action nécessaire ici car l'OTP est géré par OtpService
+    }
+
+    public void sendPasswordResetOtp(String email) {
+        // Cette méthode est un hook - l'OTP est généré par OtpService
+        // Pas d'action nécessaire ici car l'OTP est géré par OtpService
+    }
+
+    @Transactional
+    public void resetPasswordByEmail(String email, String codeOtp, String nouveauMotDePasse) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+
+        otpService.verifyOtp(utilisateur, OtpCode.OtpType.MOT_DE_PASSE_OUBLIE, codeOtp);
+
         utilisateur.setMotDePasseHash(passwordEncoder.encode(nouveauMotDePasse));
         utilisateurRepository.save(utilisateur);
     }

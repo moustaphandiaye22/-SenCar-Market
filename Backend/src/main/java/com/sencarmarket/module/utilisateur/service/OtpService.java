@@ -13,7 +13,7 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-public class OtpService {
+public class OtpService implements IOtpService {
 
     private final OtpCodeRepository otpCodeRepository;
 
@@ -26,6 +26,7 @@ public class OtpService {
     private static final String OTP_CHARS = "0123456789";
     private static final int OTP_LENGTH = 6;
 
+    @Override
     @Transactional
     public OtpCode generateOtp(Utilisateur utilisateur, OtpCode.OtpType type) {
         // Supprimer les anciens OTP non utilisés de ce type
@@ -53,8 +54,9 @@ public class OtpService {
         return otpCode;
     }
 
+    @Override
     @Transactional
-    public boolean verifyOtp(Utilisateur utilisateur, OtpCode.OtpType type, String code) {
+    public void verifyOtp(Utilisateur utilisateur, OtpCode.OtpType type, String code) {
         var otpOpt = otpCodeRepository.findValidOtp(utilisateur, type, LocalDateTime.now());
 
         if (otpOpt.isEmpty()) {
@@ -80,8 +82,16 @@ public class OtpService {
         // Marquer comme utilisé
         otpCode.setUtilise(true);
         otpCodeRepository.save(otpCode);
+    }
 
-        return true;
+    @Override
+    public void deleteOtp(OtpCode otpCode) {
+        otpCodeRepository.delete(otpCode);
+    }
+
+    @Override
+    public void deleteExpiredOtps() {
+        otpCodeRepository.deleteByExpirationBefore(LocalDateTime.now());
     }
 
     public boolean hasExceededMaxAttempts(Utilisateur utilisateur, OtpCode.OtpType type) {

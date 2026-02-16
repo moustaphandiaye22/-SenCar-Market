@@ -19,8 +19,6 @@ public interface VehiculeRepository extends JpaRepository<Vehicule, UUID> {
 
     List<Vehicule> findByModeleId(UUID modeleId);
 
-    List<Vehicule> findByStatutAnnonceId(UUID statutAnnonceId);
-
     @Query("SELECT v FROM Vehicule v WHERE v.prixVente BETWEEN :minPrice AND :maxPrice")
     List<Vehicule> findByPrixBetween(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
 

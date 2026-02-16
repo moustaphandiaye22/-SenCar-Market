@@ -42,7 +42,6 @@ com/sencarmarket/module/vehicule/repository/ModeleRepository.class
 com/sencarmarket/module/garage/entity/ServiceGarage$ServiceGarageBuilder.class
 com/sencarmarket/module/vehicule/entity/Vehicule$VehiculeBuilder.class
 com/sencarmarket/module/utilisateur/entity/LocalisationUtilisateur$LocalisationUtilisateurBuilder.class
-com/sencarmarket/module/vehicule/repository/etatVehiculeRepository.class
 com/sencarmarket/module/avis/entity/Avis.class
 com/sencarmarket/module/utilisateur/entity/PreferenceUtilisateur$PreferenceUtilisateurBuilder.class
 com/sencarmarket/module/notification/entity/Notification.class
@@ -50,6 +49,7 @@ com/sencarmarket/module/utilisateur/entity/OtpCode$OtpType.class
 com/sencarmarket/module/utilisateur/dto/RegisterRequest$RegisterRequestBuilder.class
 com/sencarmarket/module/assurance/repository/ProduitAssuranceRepository.class
 com/sencarmarket/module/vehicule/repository/BoiteVitesseRepository.class
+com/sencarmarket/module/commun/dto/ApiResponse$ApiResponseBuilder.class
 com/sencarmarket/module/vehicule/entity/StatVehicule$StatVehiculeBuilder.class
 com/sencarmarket/module/abonnement/entity/UtilisateurAbonnement$UtilisateurAbonnementBuilder.class
 com/sencarmarket/module/certification/entity/RapportInspection.class
@@ -57,7 +57,6 @@ com/sencarmarket/module/utilisateur/dto/AuthResponse.class
 com/sencarmarket/module/utilisateur/dto/OtpVerifyRequest$OtpVerifyRequestBuilder.class
 com/sencarmarket/module/vehicule/entity/VehiculeEquipement.class
 com/sencarmarket/module/utilisateur/controller/UtilisateurController.class
-com/sencarmarket/module/vehicule/entity/EtatVehicule.class
 com/sencarmarket/module/annonce/entity/ReservationLocation.class
 com/sencarmarket/module/vehicule/entity/StatutAnnonce.class
 com/sencarmarket/module/abonnement/entity/Abonnement.class
@@ -68,16 +67,19 @@ com/sencarmarket/module/utilisateur/dto/LoginRequest$LoginRequestBuilder.class
 com/sencarmarket/module/vehicule/service/VehiculeService.class
 com/sencarmarket/module/utilisateur/entity/TypeUtilisateur$TypeUtilisateurBuilder.class
 com/sencarmarket/module/messagerie/entity/Conversation.class
+com/sencarmarket/module/commun/exception/GlobalExceptionHandler.class
 com/sencarmarket/module/utilisateur/entity/PreferenceUtilisateur.class
 com/sencarmarket/module/utilisateur/controller/AuthController.class
 com/sencarmarket/module/vehicule/repository/VehiculeRepository.class
 com/sencarmarket/module/garage/entity/Garage$GarageBuilder.class
 com/sencarmarket/module/vehicule/dto/VehiculeFilter.class
+com/sencarmarket/module/vehicule/mapper/VehiculeMapper.class
 com/sencarmarket/module/utilisateur/service/UtilisateurService.class
 com/sencarmarket/module/vehicule/entity/BoiteVitesse$BoiteVitesseBuilder.class
 com/sencarmarket/module/vehicule/dto/VehiculeFilter$VehiculeFilterBuilder.class
 com/sencarmarket/module/utilisateur/entity/UtilisateurBadge$UtilisateurBadgeBuilder.class
 com/sencarmarket/module/annonce/repository/AnnonceLocationRepository.class
+com/sencarmarket/module/vehicule/mapper/IVehiculeMapper.class
 com/sencarmarket/module/vehicule/entity/VehiculeFavori$VehiculeFavoriBuilder.class
 com/sencarmarket/module/vehicule/entity/HistoriquePrix$HistoriquePrixBuilder.class
 com/sencarmarket/module/annonce/entity/AnnonceLocation$AnnonceLocationBuilder.class
@@ -88,10 +90,13 @@ com/sencarmarket/module/utilisateur/dto/UtilisateurResponse.class
 com/sencarmarket/module/utilisateur/entity/TypeUtilisateur.class
 com/sencarmarket/module/vehicule/entity/Carburant.class
 com/sencarmarket/module/tradein/entity/DemandeTradeIn$DemandeTradeInBuilder.class
+com/sencarmarket/module/commun/exception/ResourceNotFoundException.class
+com/sencarmarket/module/commun/exception/OperationNotAllowedException.class
 com/sencarmarket/module/vehicule/dto/VehiculeResponse$VehiculeResponseBuilder.class
 com/sencarmarket/config/JwtAuthenticationFilter.class
 com/sencarmarket/module/abonnement/entity/BoostAnnonce.class
 com/sencarmarket/module/garage/entity/GarageService.class
+com/sencarmarket/module/commun/exception/AuthenticationException.class
 com/sencarmarket/module/vehicule/entity/Vehicule.class
 com/sencarmarket/module/utilisateur/repository/TypeUtilisateurRepository.class
 com/sencarmarket/module/utilisateur/entity/Utilisateur.class
@@ -111,7 +116,6 @@ com/sencarmarket/module/assurance/entity/OptionAssurance.class
 com/sencarmarket/module/certification/entity/DemandeCertification.class
 com/sencarmarket/module/utilisateur/repository/BadgeRepository.class
 com/sencarmarket/module/avis/entity/Avis$AvisBuilder.class
-com/sencarmarket/module/vehicule/entity/EtatVehicule$EtatVehiculeBuilder.class
 com/sencarmarket/module/commun/dto/PaginatedResponse.class
 com/sencarmarket/module/vehicule/repository/CarburantRepository.class
 com/sencarmarket/module/annonce/entity/ReservationLocation$ReservationLocationBuilder.class
@@ -120,8 +124,10 @@ com/sencarmarket/module/vehicule/entity/StatVehicule.class
 com/sencarmarket/module/annonce/entity/DisponibiliteLocation.class
 com/sencarmarket/module/utilisateur/service/auth/AuthenticationService.class
 com/sencarmarket/module/vehicule/entity/Equipement.class
+com/sencarmarket/module/commun/dto/ApiResponse.class
 com/sencarmarket/module/paiement/repository/PaiementRepository.class
 com/sencarmarket/module/certification/entity/Inspection$InspectionBuilder.class
+com/sencarmarket/module/commun/exception/ApiError.class
 com/sencarmarket/module/utilisateur/dto/ChangePasswordRequest.class
 com/sencarmarket/module/vehicule/controller/VehiculeController.class
 com/sencarmarket/config/SecurityConfig.class
@@ -149,6 +155,7 @@ com/sencarmarket/module/vehicule/entity/VehiculeFavori.class
 com/sencarmarket/module/utilisateur/dto/LoginRequest.class
 com/sencarmarket/module/utilisateur/entity/OtpCode$OtpCodeBuilder.class
 com/sencarmarket/controller/HelloController.class
+com/sencarmarket/module/commun/exception/ApiError$ApiErrorBuilder.class
 com/sencarmarket/module/utilisateur/service/auth/JwtService.class
 com/sencarmarket/module/utilisateur/repository/UtilisateurBadgeRepository.class
 com/sencarmarket/module/certification/entity/DemandeCertification$DemandeCertificationBuilder.class

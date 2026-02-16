@@ -3,6 +3,7 @@ package com.sencarmarket.module.utilisateur.service.auth;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtService {
+@Slf4j
+public class JwtService implements IJwtService {
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -61,7 +63,8 @@ public class JwtService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    @Override
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

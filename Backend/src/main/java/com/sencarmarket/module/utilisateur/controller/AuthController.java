@@ -1,10 +1,6 @@
 package com.sencarmarket.module.utilisateur.controller;
 
 import com.sencarmarket.module.utilisateur.dto.*;
-import com.sencarmarket.module.utilisateur.entity.OtpCode;
-import com.sencarmarket.module.utilisateur.entity.Utilisateur;
-import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
-import com.sencarmarket.module.utilisateur.service.OtpService;
 import com.sencarmarket.module.utilisateur.service.auth.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +16,6 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
-    private final OtpService otpService;
-    private final UtilisateurRepository utilisateurRepository;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -30,27 +24,14 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<Map<String, String>> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-        otpService.verifyOtp(utilisateur, OtpCode.OtpType.INSCRIPTION, request.getCodeOtp());
-
-        // Mettre à jour le statut de vérification
-        utilisateur.setEmailVerifie(true);
-        utilisateurRepository.save(utilisateur);
-
+        authenticationService.verifyEmail(request.getEmail());
         return ResponseEntity.ok(Map.of("message", "Email vérifié avec succès"));
     }
 
     @PostMapping("/resend-otp")
     public ResponseEntity<Map<String, String>> resendOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
-
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-        otpService.generateOtp(utilisateur, OtpCode.OtpType.INSCRIPTION);
-
+        authenticationService.resendOtp(email);
         return ResponseEntity.ok(Map.of("message", "Code OTP renvoyé avec succès"));
     }
 
@@ -87,24 +68,13 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
-
-        utilisateurRepository.findByEmail(email).ifPresent(utilisateur -> {
-            otpService.generateOtp(utilisateur, OtpCode.OtpType.MOT_DE_PASSE_OUBLIE);
-        });
-
-        // Toujours retourner un succès pour des raisons de sécurité
+        authenticationService.sendPasswordResetOtp(email);
         return ResponseEntity.ok(Map.of("message", "Si l'email existe, un code OTP sera envoyé"));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-        otpService.verifyOtp(utilisateur, OtpCode.OtpType.MOT_DE_PASSE_OUBLIE, request.getCodeOtp());
-
-        authenticationService.resetPassword(utilisateur, request.getNouveauMotDePasse());
-
+        authenticationService.resetPasswordByEmail(request.getEmail(), request.getCodeOtp(), request.getNouveauMotDePasse());
         return ResponseEntity.ok(Map.of("message", "Mot de passe réinitialisé avec succès"));
     }
 }

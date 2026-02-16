@@ -1,0 +1,18 @@
+package com.sencarmarket.module.commun.exception;
+
+import lombok.Getter;
+
+/**
+ * Exception levée lorsqu'une ressource n'est pas trouvée
+ */
+@Getter
+public class ResourceNotFoundException extends RuntimeException {
+    
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+    
+    public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
+        super(String.format("%s non trouvé(e) avec %s : '%s'", resourceName, fieldName, fieldValue));
+    }
+}

@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UtilisateurService {
+public class UtilisateurService implements IUtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
 

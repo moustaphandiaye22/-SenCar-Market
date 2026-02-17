@@ -1,6 +1,7 @@
 package com.sencarmarket.module.annonce.repository;
 
 import com.sencarmarket.module.annonce.entity.AnnonceLocation;
+import com.sencarmarket.module.vehicule.entity.StatutAnnonce;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +14,10 @@ public interface AnnonceLocationRepository extends JpaRepository<AnnonceLocation
     List<AnnonceLocation> findByVehiculeId(UUID vehiculeId);
 
     List<AnnonceLocation> findByStatutReservationId(UUID statutReservationId);
+
+    List<AnnonceLocation> findByProprietaireId(UUID proprietaireId);
+
+    List<AnnonceLocation> findByActifTrue();
+
+    List<AnnonceLocation> findByStatut(StatutAnnonce statut);
 }

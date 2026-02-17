@@ -102,6 +102,51 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestion des exceptions de réservation
+     */
+    @ExceptionHandler(ReservationException.class)
+    public ResponseEntity<ApiError> handleReservationException(ReservationException ex) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Erreur de réservation")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(apiError);
+    }
+
+    /**
+     * Gestion des exceptions de statut invalide
+     */
+    @ExceptionHandler(InvalidStatusException.class)
+    public ResponseEntity<ApiError> handleInvalidStatusException(InvalidStatusException ex) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Statut invalide")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(apiError);
+    }
+
+    /**
+     * Gestion des exceptions d'accès non autorisé
+     */
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<ApiError> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Accès refusé")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
+    }
+
+    /**
      * Gestion de toutes les autres exceptions
      */
     @ExceptionHandler(Exception.class)

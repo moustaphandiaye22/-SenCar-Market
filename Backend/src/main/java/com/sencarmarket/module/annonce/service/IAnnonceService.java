@@ -1,7 +1,11 @@
 package com.sencarmarket.module.annonce.service;
 
+import com.sencarmarket.module.annonce.dto.*;
 import com.sencarmarket.module.annonce.entity.AnnonceLocation;
+import com.sencarmarket.module.annonce.entity.DisponibiliteLocation;
+import com.sencarmarket.module.annonce.entity.HistoriqueStatutReservation;
 import com.sencarmarket.module.annonce.entity.ReservationLocation;
+import com.sencarmarket.module.commun.enums.StatutReservation;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,28 +17,53 @@ import java.util.UUID;
 public interface IAnnonceService {
 
     // Annonce Location
-    AnnonceLocation createAnnonceLocation(AnnonceLocation annonce);
+    AnnonceLocationResponse createAnnonceLocation(CreateAnnonceLocationRequest request, String userEmail);
 
-    AnnonceLocation updateAnnonceLocation(UUID id, AnnonceLocation annonce);
+    AnnonceLocationResponse updateAnnonceLocation(UUID id, CreateAnnonceLocationRequest request);
 
     void deleteAnnonceLocation(UUID id);
 
-    AnnonceLocation getAnnonceLocationById(UUID id);
+    AnnonceLocationResponse getAnnonceLocationById(UUID id);
 
-    List<AnnonceLocation> getAllAnnoncesLocation();
+    List<AnnonceLocationResponse> getAllAnnoncesLocation();
 
-    List<AnnonceLocation> getAnnoncesLocationByVendeur(UUID vendeurId);
+    List<AnnonceLocationResponse> getAnnoncesLocationByVendeur(UUID proprietaireId);
+    
+    List<AnnonceLocationResponse> getMesAnnoncesLocation(String userEmail);
+
+    AnnonceLocationResponse activerDesactiverAnnonce(UUID id, boolean actif);
 
     // Reservation
-    ReservationLocation createReservation(ReservationLocation reservation);
+    ReservationLocationResponse createReservation(CreateReservationRequest request, String userEmail);
 
-    ReservationLocation updateStatutReservation(UUID id, String nouveauStatut);
+    ReservationLocationResponse updateStatutReservation(UUID id, String nouveauStatut);
 
-    void cancelReservation(UUID id);
+    void cancelReservation(UUID id, String motifAnnulation);
 
-    ReservationLocation getReservationById(UUID id);
+    ReservationLocationResponse getReservationById(UUID id);
 
-    List<ReservationLocation> getReservationsByLocataire(UUID locataireId);
+    List<ReservationLocationResponse> getReservationsByLocataire(UUID locataireId);
+    
+    List<ReservationLocationResponse> getMesReservations(String userEmail);
 
-    List<ReservationLocation> getReservationsByAnnonce(UUID annonceId);
+    List<ReservationLocationResponse> getReservationsByAnnonce(UUID annonceId);
+
+    // Helper methods
+    boolean checkDisponibilite(UUID annonceId, java.time.LocalDateTime dateDebut, java.time.LocalDateTime dateFin);
+
+    java.math.BigDecimal calculateCoutTotal(AnnonceLocation annonce, java.time.LocalDateTime dateDebut, java.time.LocalDateTime dateFin);
+    
+    // Disponibilités
+    List<DisponibiliteLocation> ajouterDisponibilites(UUID annonceId, List<DisponibiliteRequest> disponibilites);
+    
+    List<DisponibiliteLocation> getDisponibilites(UUID annonceId);
+    
+    void supprimerDisponibilites(UUID annonceId);
+    
+    // Historique des statuts
+    HistoriqueStatutReservation enregistrerChangementStatut(UUID reservationId, StatutReservation ancienStatut, StatutReservation nouveauStatut);
+    
+    List<HistoriqueStatutReservation> getHistoriqueStatuts(UUID reservationId);
+    
+    ReservationLocationResponse updateStatutReservationAvecHistorique(UUID id, String nouveauStatut);
 }

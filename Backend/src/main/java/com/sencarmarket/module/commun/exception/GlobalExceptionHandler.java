@@ -1,5 +1,7 @@
 package com.sencarmarket.module.commun.exception;
 
+import com.sencarmarket.module.commun.dto.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -12,152 +14,92 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Gestionnaire global des exceptions pour l'API REST
+ * Gestionnaire global des exceptions
+ * Pattern: Exception Handler
+ * Retourne des réponses API cohérentes
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
-     * Gestion des exceptions de validation
+     * Gestion des erreurs de validation
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
         
+        Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
 
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Erreur de validation")
-                .message("Les données envoyées sont invalides")
-                .timestamp(LocalDateTime.now())
-                .validationErrors(errors)
-                .build();
-
-        return ResponseEntity.badRequest().body(apiError);
+        ApiResponse<Object> response = ApiResponse.error(
+                "VALIDATION_ERROR",
+                "Erreur de validation des données",
+                errors
+        );
+        
+        log.warn("Validation error: {}", errors);
+        return ResponseEntity.badRequest().body(response);
     }
 
     /**
-     * Gestion des exceptions RuntimeException
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiError> handleRuntimeException(RuntimeException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Erreur")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.badRequest().body(apiError);
-    }
-
-    /**
-     * Gestion des exceptions pour ressource non trouvée
+     * Gestion des exceptions ResourceNotFound
      */
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiError> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .error("Ressource non trouvée")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(
+            ResourceNotFoundException ex) {
+        
+        ApiResponse<Object> response = ApiResponse.error(
+                "RESOURCE_NOT_FOUND",
+                ex.getMessage(),
+                null
+        );
+        
+        log.warn("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     /**
-     * Gestion des exceptions pour les opérations interdites
+     * Gestion des exceptions de paiement
      */
-    @ExceptionHandler(OperationNotAllowedException.class)
-    public ResponseEntity<ApiError> handleOperationNotAllowedException(OperationNotAllowedException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.FORBIDDEN.value())
-                .error("Opération interdite")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
+    @ExceptionHandler(PaiementException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePaiementException(
+            PaiementException ex) {
+        
+        Map<String, Object> details = new HashMap<>();
+        details.put("code", ex.getCode());
+        details.put("timestamp", LocalDateTime.now().toString());
+        if (ex.getDetails() != null) {
+            details.put("details", ex.getDetails());
+        }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getCode(),
+                ex.getMessage(),
+                details
+        );
+        
+        log.error("Paiement error [{}]: {}", ex.getCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     /**
-     * Gestion des exceptions d'authentification
-     */
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error("Erreur d'authentification")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiError);
-    }
-
-    /**
-     * Gestion des exceptions de réservation
-     */
-    @ExceptionHandler(ReservationException.class)
-    public ResponseEntity<ApiError> handleReservationException(ReservationException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Erreur de réservation")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.badRequest().body(apiError);
-    }
-
-    /**
-     * Gestion des exceptions de statut invalide
-     */
-    @ExceptionHandler(InvalidStatusException.class)
-    public ResponseEntity<ApiError> handleInvalidStatusException(InvalidStatusException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Statut invalide")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.badRequest().body(apiError);
-    }
-
-    /**
-     * Gestion des exceptions d'accès non autorisé
-     */
-    @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<ApiError> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.FORBIDDEN.value())
-                .error("Accès refusé")
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
-    }
-
-    /**
-     * Gestion de toutes les autres exceptions
+     * Gestion des erreurs générales
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGenericException(Exception ex) {
-        ApiError apiError = ApiError.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Erreur interne")
-                .message("Une erreur inattendue s'est produite. Veuillez réessayer plus tard.")
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiError);
+    public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
+        
+        ApiResponse<Object> response = ApiResponse.error(
+                "INTERNAL_ERROR",
+                "Une erreur interne s'est produite",
+                null
+        );
+        
+        log.error("Unexpected error: ", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

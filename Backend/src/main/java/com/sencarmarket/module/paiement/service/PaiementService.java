@@ -1,5 +1,6 @@
 package com.sencarmarket.module.paiement.service;
 
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
 import com.sencarmarket.module.paiement.dto.*;
 import com.sencarmarket.module.paiement.entity.Paiement;
@@ -363,7 +364,7 @@ public class PaiementService implements IPaiementService {
         
         BigDecimal soldeDisponible = portefeuille.getSoldeDisponible();
         if (soldeDisponible.compareTo(request.getMontant()) < 0) {
-            throw new RuntimeException("Solde insuffisant");
+            throw new InvalidOperationException("Solde insuffisant pour effectuer cette opération");
         }
         
         // Créer la transaction avec helper method
@@ -398,7 +399,7 @@ public class PaiementService implements IPaiementService {
         
         BigDecimal soldeDisponible = portefeuille.getSoldeDisponible();
         if (soldeDisponible.compareTo(request.getMontant()) < 0) {
-            throw new RuntimeException("Solde insuffisant pour le retrait");
+            throw new InvalidOperationException("Solde insuffisant pour effectuer ce retrait");
         }
         
         // Créer la transaction avec helper method
@@ -430,7 +431,7 @@ public class PaiementService implements IPaiementService {
         
         BigDecimal soldeDisponible = portefeuille.getSoldeDisponible();
         if (soldeDisponible.compareTo(montant) < 0) {
-            throw new RuntimeException("Solde disponible insuffisant pour bloquer");
+            throw new InvalidOperationException("Solde insuffisant pour bloquer les fonds escrow");
         }
         
         // Créer la transaction avec helper method

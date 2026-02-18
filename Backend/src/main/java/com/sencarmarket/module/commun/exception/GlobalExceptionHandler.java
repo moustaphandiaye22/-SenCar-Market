@@ -88,6 +88,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestion des exceptions d'opération invalide
+     */
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidOperation(
+            InvalidOperationException ex) {
+        
+        ApiResponse<Object> response = ApiResponse.error(
+                "INVALID_OPERATION",
+                ex.getMessage(),
+                null
+        );
+        
+        log.warn("Invalid operation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
      * Gestion des erreurs générales
      */
     @ExceptionHandler(Exception.class)

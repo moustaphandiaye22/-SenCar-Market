@@ -1,5 +1,7 @@
 package com.sencarmarket.module.utilisateur.service.auth;
 
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
+import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
 import com.sencarmarket.module.utilisateur.dto.*;
 import com.sencarmarket.module.utilisateur.entity.OtpCode;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
@@ -34,12 +36,12 @@ public class AuthenticationService implements IAuthenticationService {
     public AuthResponse register(RegisterRequest request) {
         // Vérifier si l'email existe déjà
         if (utilisateurRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("L'email existe déjà");
+            throw new InvalidOperationException("L'email existe déjà. Veuillez utiliser un autre email.");
         }
 
         // Vérifier si le téléphone existe déjà
         if (utilisateurRepository.existsByTelephone(request.getTelephone())) {
-            throw new RuntimeException("Le téléphone existe déjà");
+            throw new InvalidOperationException("Le numéro de téléphone existe déjà. Veuillez utiliser un autre numéro.");
         }
 
         // Créer l'utilisateur
@@ -115,7 +117,7 @@ public class AuthenticationService implements IAuthenticationService {
 
         // Vérifier si le token est valide
         if (!jwtService.isTokenValid(refreshToken, userDetails)) {
-            throw new RuntimeException("Refresh token invalide");
+            throw new InvalidOperationException("Le refresh token est invalide ou a expiré");
         }
 
         // Générer nouveaux tokens
@@ -153,7 +155,7 @@ public class AuthenticationService implements IAuthenticationService {
             utilisateurRepository.findByTelephone(request.getTelephone())
                     .ifPresent(u -> {
                         if (!u.getId().equals(utilisateur.getId())) {
-                            throw new RuntimeException("Ce téléphone est déjà utilisé");
+                            throw new InvalidOperationException("Ce numéro de téléphone est déjà utilisé par un autre utilisateur");
                         }
                     });
             utilisateur.setTelephone(request.getTelephone());
@@ -173,7 +175,7 @@ public class AuthenticationService implements IAuthenticationService {
 
         // Vérifier l'ancien mot de passe
         if (!passwordEncoder.matches(request.getMotDePasseActuel(), utilisateur.getMotDePasseHash())) {
-            throw new RuntimeException("Le mot de passe actuel est incorrect");
+            throw new InvalidOperationException("Le mot de passe actuel est incorrect");
         }
 
         // Mettre à jour le mot de passe

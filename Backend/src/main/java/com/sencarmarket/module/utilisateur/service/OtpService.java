@@ -1,5 +1,6 @@
 package com.sencarmarket.module.utilisateur.service;
 
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.utilisateur.entity.OtpCode;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.OtpCodeRepository;
@@ -60,7 +61,7 @@ public class OtpService implements IOtpService {
         var otpOpt = otpCodeRepository.findValidOtp(utilisateur, type, LocalDateTime.now());
 
         if (otpOpt.isEmpty()) {
-            throw new RuntimeException("Code OTP invalide ou expiré");
+            throw new InvalidOperationException("Code OTP invalide ou expiré");
         }
 
         OtpCode otpCode = otpOpt.get();
@@ -69,14 +70,14 @@ public class OtpService implements IOtpService {
         if (otpCode.getTentatives() >= maxTentatives) {
             otpCode.setUtilise(true);
             otpCodeRepository.save(otpCode);
-            throw new RuntimeException("Nombre de tentatives maximum atteint. Veuillez demander un nouveau code.");
+            throw new InvalidOperationException("Nombre de tentatives maximum atteint. Veuillez demander un nouveau code.");
         }
 
         // Vérifier le code
         if (!otpCode.getCode().equals(code)) {
             otpCode.setTentatives(otpCode.getTentatives() + 1);
             otpCodeRepository.save(otpCode);
-            throw new RuntimeException("Code OTP incorrect");
+            throw new InvalidOperationException("Code OTP incorrect");
         }
 
         // Marquer comme utilisé

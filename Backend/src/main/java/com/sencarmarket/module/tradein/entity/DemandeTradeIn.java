@@ -1,7 +1,11 @@
 package com.sencarmarket.module.tradein.entity;
 
+import com.sencarmarket.module.utilisateur.entity.Utilisateur;
+import com.sencarmarket.module.vehicule.entity.Vehicule;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,24 +19,88 @@ import java.util.UUID;
 public class DemandeTradeIn {
 
     @Id
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private UUID id;
 
-    @Column(name = "utilisateur_id")
-    private UUID utilisateurId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    private Utilisateur utilisateur;
 
-    @Column(name = "vehicule_actuel_id")
-    private UUID vehiculeActuelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicule_actuel_id", nullable = false)
+    private Vehicule vehiculeActuel;
 
-    @Column(name = "vehicule_souhaite_id")
-    private UUID vehiculeSouhaiteId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicule_souhaite_id")
+    private Vehicule vehiculeSouhaite;
 
-    @Column(name = "statut")
-    private String statut;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut", nullable = false)
+    private StatutTradeIn statut;
+
+    @Column(name = "prix_estime", precision = 12, scale = 2)
+    private BigDecimal prixEstime;
+
+    @Column(name = "prix_propose", precision = 12, scale = 2)
+    private BigDecimal prixPropose;
+
+    @Column(name = "kilometrage_actuel")
+    private Integer kilometrageActuel;
+
+    @Column(name = "etat_vehicule")
+    private String etatVehicule;
 
     @Column(name = "date_soumission")
     private LocalDateTime dateSoumission;
 
-    @Column(name = "prix_offert", precision = 12, scale = 2)
-    private java.math.BigDecimal prixOffert;
+    @Column(name = "date_traitement")
+    private LocalDateTime dateTraitement;
+
+    @Column(name = "date_evaluation")
+    private LocalDateTime dateEvaluation;
+
+    @Column(name = "motif_rejet")
+    private String motifRejet;
+
+    @Column(name = "commentaire_admin")
+    private String commentaireAdmin;
+
+    @Column(name = "est_notifie")
+    private Boolean estNotifie;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (statut == null) {
+            statut = StatutTradeIn.EN_ATTENTE;
+        }
+        if (dateSoumission == null) {
+            dateSoumission = LocalDateTime.now();
+        }
+        if (estNotifie == null) {
+            estNotifie = false;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    public enum StatutTradeIn {
+        EN_ATTENTE,
+        EN_COURS_EVALUATION,
+        EVALUATION_TERMINEE,
+        ACCEPTE,
+        REJETEE,
+        ANNULEE
+    }
 }

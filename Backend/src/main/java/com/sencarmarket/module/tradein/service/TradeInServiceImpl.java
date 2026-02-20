@@ -13,7 +13,7 @@ import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.vehicule.entity.Vehicule;
 import com.sencarmarket.module.vehicule.repository.VehiculeRepository;
-import com.sencarmarket.module.notification.service.NotificationService;
+import com.sencarmarket.module.notification.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,7 +37,7 @@ public class TradeInServiceImpl implements TradeInService {
     private final HistoriqueEstimationRepository historiqueEstimationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
-    private final NotificationService notificationService;
+    private final INotificationService notificationService;
 
     // Coefficients pour l'algorithme d'estimation
     private static final double COEFF_ETAT_EXCELLENT = 1.0;

@@ -1,8 +1,13 @@
 package com.sencarmarket.module.abonnement.service;
 
+import com.sencarmarket.module.abonnement.dto.AbonnementResponse;
+import com.sencarmarket.module.abonnement.dto.CreateAbonnementRequest;
+import com.sencarmarket.module.abonnement.dto.SouscriptionRequest;
+import com.sencarmarket.module.abonnement.dto.UtilisateurAbonnementResponse;
 import com.sencarmarket.module.abonnement.entity.Abonnement;
 import com.sencarmarket.module.abonnement.entity.BoostAnnonce;
 import com.sencarmarket.module.abonnement.entity.UtilisateurAbonnement;
+import com.sencarmarket.module.commun.dto.PaginatedResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,29 +18,32 @@ import java.util.UUID;
  */
 public interface IAbonnementService {
 
-    // Abonnement
-    Abonnement createAbonnement(Abonnement abonnement);
+    // ==================== PLANS D'ABONNEMENT ====================
+    
+    AbonnementResponse createAbonnement(CreateAbonnementRequest request);
 
-    Abonnement updateAbonnement(UUID id, Abonnement abonnement);
+    AbonnementResponse updateAbonnement(UUID id, CreateAbonnementRequest request);
 
     void deleteAbonnement(UUID id);
 
-    Abonnement getAbonnementById(UUID id);
+    AbonnementResponse getAbonnementById(UUID id);
 
-    List<Abonnement> getAllAbonnements();
+    List<AbonnementResponse> getAllAbonnements();
 
-    // Utilisateur Abonnement
-    UtilisateurAbonnement subscribe(UUID utilisateurId, UUID abonnementId);
+    // ==================== SOUSCRIPTION ====================
 
-    UtilisateurAbonnement renewSubscription(UUID utilisateurId);
+    UtilisateurAbonnementResponse subscribe(SouscriptionRequest request);
+
+    UtilisateurAbonnementResponse renewSubscription(UUID utilisateurId);
 
     void cancelSubscription(UUID utilisateurId);
 
-    UtilisateurAbonnement getActiveSubscription(UUID utilisateurId);
+    UtilisateurAbonnementResponse getActiveSubscription(UUID utilisateurId);
 
-    List<UtilisateurAbonnement> getSubscriptionsByUtilisateur(UUID utilisateurId);
+    PaginatedResponse<UtilisateurAbonnementResponse> getSubscriptionsByUtilisateur(UUID utilisateurId, int page, int size);
 
-    // Boost
+    // ==================== BOOST ====================
+
     BoostAnnonce createBoost(BoostAnnonce boost);
 
     BoostAnnonce updateBoost(UUID id, BoostAnnonce boost);
@@ -45,4 +53,12 @@ public interface IAbonnementService {
     BoostAnnonce getBoostById(UUID id);
 
     List<BoostAnnonce> getBoostsByVehicule(UUID vehiculeId);
+
+    // ==================== TÂCHE PLANIFIÉE ====================
+
+    int notifierExpirationsProches();
+
+    // ==================== PAIEMENT ====================
+
+    UtilisateurAbonnementResponse confirmerPaiement(UUID utilisateurId, UUID paiementId);
 }

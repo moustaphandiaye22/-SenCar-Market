@@ -8,9 +8,11 @@ com/sencarmarket/module/utilisateur/service/auth/CustomUserDetailsService.class
 com/sencarmarket/module/tradein/controller/TradeInController.class
 com/sencarmarket/module/certification/entity/RapportInspection$RapportInspectionBuilder.class
 com/sencarmarket/module/annonce/entity/HistoriqueStatutReservation$HistoriqueStatutReservationBuilder.class
+com/sencarmarket/module/abonnement/dto/SouscriptionRequest.class
 com/sencarmarket/module/utilisateur/service/OtpService.class
 com/sencarmarket/module/vehicule/entity/Modele.class
 com/sencarmarket/module/utilisateur/dto/ResetPasswordRequest.class
+com/sencarmarket/module/abonnement/dto/AbonnementResponse.class
 com/sencarmarket/module/tradein/entity/DemandeTradeIn$StatutTradeIn.class
 com/sencarmarket/module/certification/service/CertificationServiceImpl$1.class
 com/sencarmarket/module/paiement/enums/StatutTransaction.class
@@ -57,6 +59,7 @@ com/sencarmarket/module/notification/enums/TypeNotification.class
 com/sencarmarket/module/garage/dto/ServiceGarageResponse$ServiceGarageResponseBuilder.class
 com/sencarmarket/module/vehicule/entity/VehiculeEquipement.class
 com/sencarmarket/module/assurance/dto/CreateOptionAssuranceRequest.class
+com/sencarmarket/module/abonnement/enums/TypeAbonnement.class
 com/sencarmarket/module/assurance/dto/CreateProduitAssuranceRequest.class
 com/sencarmarket/module/assurance/enums/TypeAssurance.class
 com/sencarmarket/module/annonce/entity/ReservationLocation.class
@@ -107,6 +110,7 @@ com/sencarmarket/module/certification/service/ICertificationService.class
 com/sencarmarket/module/commun/exception/AuthenticationException.class
 com/sencarmarket/module/paiement/mapper/IPaiementMapper.class
 com/sencarmarket/module/garage/entity/GarageServiceAssociation$GarageServiceAssociationBuilder.class
+com/sencarmarket/module/abonnement/controller/AbonnementController.class
 com/sencarmarket/module/tradein/dto/EstimationResponse$EstimationResponseBuilder.class
 com/sencarmarket/module/notification/enums/MotifSignalement.class
 com/sencarmarket/module/messagerie/dto/SendMessageRequest.class
@@ -122,7 +126,10 @@ com/sencarmarket/module/utilisateur/dto/RefreshTokenRequest$RefreshTokenRequestB
 com/sencarmarket/module/notification/controller/SignalementController.class
 com/sencarmarket/module/assurance/dto/CreateProduitAssuranceRequest$CreateProduitAssuranceRequestBuilder.class
 com/sencarmarket/module/assurance/dto/CreateSouscriptionAssuranceRequest$CreateSouscriptionAssuranceRequestBuilder.class
+com/sencarmarket/module/abonnement/scheduler/AbonnementScheduler.class
 com/sencarmarket/module/assurance/entity/OptionAssurance.class
+com/sencarmarket/module/abonnement/dto/CreateAbonnementRequest$CreateAbonnementRequestBuilder.class
+com/sencarmarket/module/abonnement/enums/StatutAbonnement.class
 com/sencarmarket/module/certification/entity/DemandeCertification.class
 com/sencarmarket/module/notification/repository/SignalementRepository.class
 com/sencarmarket/module/avis/entity/Avis$AvisBuilder.class
@@ -149,6 +156,7 @@ com/sencarmarket/module/utilisateur/entity/LocalisationUtilisateur.class
 com/sencarmarket/module/notification/controller/NotificationController.class
 com/sencarmarket/module/certification/service/CertificationService.class
 com/sencarmarket/module/avis/dto/CreateAvisRequest$CreateAvisRequestBuilder.class
+com/sencarmarket/module/abonnement/repository/UtilisateurAbonnementRepository.class
 com/sencarmarket/module/paiement/entity/TransactionPortefeuille$TransactionPortefeuilleBuilder.class
 com/sencarmarket/module/messagerie/dto/ParticipantResponse.class
 com/sencarmarket/module/assurance/entity/ProduitAssurance$ProduitAssuranceBuilder.class
@@ -165,6 +173,7 @@ com/sencarmarket/module/garage/dto/ValidationGarageRequest$ValidationGarageReque
 com/sencarmarket/module/utilisateur/repository/OtpCodeRepository.class
 com/sencarmarket/module/assurance/service/AssuranceService.class
 com/sencarmarket/module/messagerie/service/MessagerieService.class
+com/sencarmarket/module/abonnement/repository/AbonnementRepository.class
 com/sencarmarket/module/utilisateur/dto/RefreshTokenRequest.class
 com/sencarmarket/module/certification/entity/Inspection.class
 com/sencarmarket/module/paiement/entity/Paiement$PaiementBuilder.class
@@ -182,6 +191,7 @@ com/sencarmarket/module/utilisateur/entity/UtilisateurBadge.class
 com/sencarmarket/module/vehicule/entity/StatutAnnonce$StatutAnnonceBuilder.class
 com/sencarmarket/module/abonnement/entity/UtilisateurAbonnement.class
 com/sencarmarket/module/certification/entity/DemandeCertification$StatutDemande.class
+com/sencarmarket/module/abonnement/dto/UtilisateurAbonnementResponse$UtilisateurAbonnementResponseBuilder.class
 com/sencarmarket/module/utilisateur/repository/UtilisateurRepository.class
 com/sencarmarket/module/utilisateur/dto/OtpVerifyRequest.class
 com/sencarmarket/module/garage/repository/GarageRepository.class
@@ -200,6 +210,7 @@ com/sencarmarket/module/notification/dto/NotificationResponse$NotificationRespon
 com/sencarmarket/module/paiement/entity/Portefeuille.class
 com/sencarmarket/module/commun/dto/PaginatedResponse$PaginatedResponseBuilder.class
 com/sencarmarket/module/utilisateur/entity/Utilisateur$UtilisateurBuilder.class
+com/sencarmarket/module/abonnement/repository/HistoriqueAbonnementRepository.class
 com/sencarmarket/module/vehicule/entity/PhotoVehicule.class
 com/sencarmarket/module/notification/dto/ActionAdminRequest$ActionAdminRequestBuilder.class
 com/sencarmarket/module/avis/dto/AvisResponse.class
@@ -216,6 +227,7 @@ com/sencarmarket/module/utilisateur/dto/AuthResponse$AuthResponseBuilder.class
 com/sencarmarket/module/certification/service/CertificationServiceImpl.class
 com/sencarmarket/module/garage/dto/GarageResponse$GarageResponseBuilder.class
 com/sencarmarket/module/vehicule/repository/VehiculeFavoriRepository.class
+com/sencarmarket/module/abonnement/entity/HistoriqueAbonnement$HistoriqueAbonnementBuilder.class
 com/sencarmarket/module/utilisateur/dto/ChangePasswordRequest$ChangePasswordRequestBuilder.class
 com/sencarmarket/module/garage/entity/ServiceGarage$ServiceGarageBuilder.class
 com/sencarmarket/module/tradein/dto/CreateDemandeTradeInRequest.class
@@ -228,6 +240,7 @@ com/sencarmarket/module/annonce/dto/DisponibiliteRequest$DisponibiliteRequestBui
 com/sencarmarket/module/messagerie/repository/ConversationParticipantRepository.class
 com/sencarmarket/module/paiement/dto/TransactionPortefeuilleRequest.class
 com/sencarmarket/module/annonce/service/AnnonceService.class
+com/sencarmarket/module/abonnement/entity/HistoriqueAbonnement.class
 com/sencarmarket/module/garage/controller/GarageController.class
 com/sencarmarket/module/avis/service/AvisServiceImpl.class
 com/sencarmarket/module/messagerie/dto/CreateConversationRequest$CreateConversationRequestBuilder.class
@@ -238,6 +251,7 @@ com/sencarmarket/module/utilisateur/controller/UtilisateurController.class
 com/sencarmarket/module/certification/dto/CreateDemandeCertificationRequest.class
 com/sencarmarket/module/tradein/entity/HistoriqueEstimation.class
 com/sencarmarket/module/paiement/dto/CreatePaiementRequest$CreatePaiementRequestBuilder.class
+com/sencarmarket/module/abonnement/dto/AbonnementResponse$AbonnementResponseBuilder.class
 com/sencarmarket/module/annonce/dto/ReservationLocationResponse.class
 com/sencarmarket/module/assurance/entity/SouscriptionAssurance.class
 com/sencarmarket/module/vehicule/entity/PhotoVehicule$PhotoVehiculeBuilder.class
@@ -252,6 +266,7 @@ com/sencarmarket/module/utilisateur/entity/PreferenceUtilisateur.class
 com/sencarmarket/module/utilisateur/controller/AuthController.class
 com/sencarmarket/module/garage/entity/Garage$GarageBuilder.class
 com/sencarmarket/module/vehicule/dto/VehiculeFilter.class
+com/sencarmarket/module/abonnement/repository/BoostAnnonceRepository.class
 com/sencarmarket/module/vehicule/entity/BoiteVitesse$BoiteVitesseBuilder.class
 com/sencarmarket/module/tradein/dto/DemandeTradeInResponse$DemandeTradeInResponseBuilder.class
 com/sencarmarket/module/tradein/dto/DemandeTradeInResponse.class
@@ -264,6 +279,7 @@ com/sencarmarket/module/vehicule/entity/VehiculeFavori$VehiculeFavoriBuilder.cla
 com/sencarmarket/module/garage/repository/GarageServiceRepository.class
 com/sencarmarket/module/vehicule/entity/HistoriquePrix$HistoriquePrixBuilder.class
 com/sencarmarket/module/garage/repository/ServiceGarageRepository.class
+com/sencarmarket/module/abonnement/service/AbonnementServiceImpl.class
 com/sencarmarket/module/utilisateur/dto/UtilisateurResponse.class
 com/sencarmarket/module/tradein/service/TradeInServiceImpl$1.class
 com/sencarmarket/module/messagerie/dto/CreateConversationRequest.class
@@ -302,6 +318,7 @@ com/sencarmarket/module/garage/dto/ServiceGarageResponse.class
 com/sencarmarket/module/vehicule/repository/CarburantRepository.class
 com/sencarmarket/module/assurance/entity/OptionAssurance$OptionAssuranceBuilder.class
 com/sencarmarket/module/vehicule/entity/StatVehicule.class
+com/sencarmarket/module/abonnement/entity/HistoriqueAbonnement$TypeEvenementAbonnement.class
 com/sencarmarket/module/commun/exception/InvalidStatusException.class
 com/sencarmarket/module/paiement/repository/PaiementRepository.class
 com/sencarmarket/module/notification/service/NotificationServiceImpl.class
@@ -318,9 +335,11 @@ com/sencarmarket/module/garage/dto/CreateGarageRequest$CreateGarageRequestBuilde
 com/sencarmarket/module/utilisateur/dto/RegisterRequest.class
 com/sencarmarket/module/vehicule/service/IVehiculeService.class
 com/sencarmarket/module/garage/entity/ServiceGarage$Categorie.class
+com/sencarmarket/module/abonnement/dto/UtilisateurAbonnementResponse.class
 com/sencarmarket/module/commun/exception/UnauthorizedAccessException.class
 com/sencarmarket/module/paiement/dto/TransactionResponse.class
 com/sencarmarket/module/vehicule/entity/Statut.class
+com/sencarmarket/module/abonnement/dto/CreateAbonnementRequest.class
 com/sencarmarket/module/certification/dto/CreateInspectionRequest.class
 com/sencarmarket/module/paiement/dto/TransactionPortefeuilleRequest$TransactionPortefeuilleRequestBuilder.class
 com/sencarmarket/module/tradein/dto/CreateDemandeTradeInRequest$CreateDemandeTradeInRequestBuilder.class
@@ -329,6 +348,7 @@ com/sencarmarket/module/vehicule/entity/Modele$ModeleBuilder.class
 com/sencarmarket/module/messagerie/repository/ConversationRepository.class
 com/sencarmarket/module/commun/exception/PaiementException.class
 com/sencarmarket/module/notification/entity/Notification$NotificationBuilder.class
+com/sencarmarket/module/abonnement/dto/SouscriptionRequest$SouscriptionRequestBuilder.class
 com/sencarmarket/module/annonce/repository/HistoriqueStatutReservationRepository.class
 com/sencarmarket/module/certification/dto/DemandeCertificationResponse.class
 com/sencarmarket/module/paiement/repository/PaiementLogRepository.class

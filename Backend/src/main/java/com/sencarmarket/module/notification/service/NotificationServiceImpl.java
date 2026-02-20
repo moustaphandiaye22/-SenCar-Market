@@ -422,4 +422,24 @@ public class NotificationServiceImpl implements INotificationService {
         
         createNotification(notification);
     }
+
+    /**
+     * Notifie pour une subscription
+     */
+    @Override
+    public UUID notifierSubscription(UUID utilisateurId, String type, String message) {
+        String titre = "Notification Abonnement";
+        
+        Notification notification = Notification.builder()
+                .utilisateurId(utilisateurId)
+                .titre(titre)
+                .message(message)
+                .type(TypeNotification.ABONNEMENT)
+                .referenceType(type)
+                .estLu(false)
+                .build();
+        
+        Notification saved = createNotification(notification);
+        return saved.getId();
+    }
 }

@@ -109,6 +109,7 @@ com/sencarmarket/module/messagerie/entity/Message.class
 com/sencarmarket/module/assurance/entity/SouscriptionAssurance$SouscriptionAssuranceBuilder.class
 com/sencarmarket/module/utilisateur/dto/UtilisateurResponse$UtilisateurResponseBuilder.class
 com/sencarmarket/module/paiement/mapper/PaiementMapper.class
+com/sencarmarket/module/avis/service/AvisService.class
 com/sencarmarket/module/messagerie/entity/ConversationParticipant$ConversationParticipantBuilder.class
 com/sencarmarket/module/utilisateur/dto/RefreshTokenRequest$RefreshTokenRequestBuilder.class
 com/sencarmarket/module/assurance/dto/CreateProduitAssuranceRequest$CreateProduitAssuranceRequestBuilder.class
@@ -116,10 +117,12 @@ com/sencarmarket/module/assurance/dto/CreateSouscriptionAssuranceRequest$CreateS
 com/sencarmarket/module/assurance/entity/OptionAssurance.class
 com/sencarmarket/module/certification/entity/DemandeCertification.class
 com/sencarmarket/module/avis/entity/Avis$AvisBuilder.class
+com/sencarmarket/module/avis/entity/Avis$TypeAvis.class
 com/sencarmarket/module/paiement/dto/PortefeuilleResponse.class
 com/sencarmarket/module/assurance/controller/AssuranceController.class
 com/sencarmarket/module/annonce/entity/ReservationLocation$ReservationLocationBuilder.class
 com/sencarmarket/module/garage/dto/GarageResponse.class
+com/sencarmarket/module/avis/dto/CreateAvisRequest.class
 com/sencarmarket/module/annonce/entity/DisponibiliteLocation.class
 com/sencarmarket/module/utilisateur/service/auth/AuthenticationService.class
 com/sencarmarket/module/vehicule/entity/Equipement.class
@@ -134,9 +137,11 @@ com/sencarmarket/module/assurance/dto/SouscriptionAssuranceResponse.class
 com/sencarmarket/module/utilisateur/entity/StatutVerification$StatutVerificationBuilder.class
 com/sencarmarket/module/utilisateur/entity/LocalisationUtilisateur.class
 com/sencarmarket/module/certification/service/CertificationService.class
+com/sencarmarket/module/avis/dto/CreateAvisRequest$CreateAvisRequestBuilder.class
 com/sencarmarket/module/paiement/entity/TransactionPortefeuille$TransactionPortefeuilleBuilder.class
 com/sencarmarket/module/messagerie/dto/ParticipantResponse.class
 com/sencarmarket/module/assurance/entity/ProduitAssurance$ProduitAssuranceBuilder.class
+com/sencarmarket/module/avis/dto/AvisResponse$AvisResponseBuilder.class
 com/sencarmarket/module/certification/entity/Inspection$ResultatInspection.class
 com/sencarmarket/module/abonnement/entity/BoostAnnonce$BoostAnnonceBuilder.class
 com/sencarmarket/module/messagerie/config/WebSocketAuthConfig.class
@@ -182,6 +187,7 @@ com/sencarmarket/module/paiement/entity/Portefeuille.class
 com/sencarmarket/module/commun/dto/PaginatedResponse$PaginatedResponseBuilder.class
 com/sencarmarket/module/utilisateur/entity/Utilisateur$UtilisateurBuilder.class
 com/sencarmarket/module/vehicule/entity/PhotoVehicule.class
+com/sencarmarket/module/avis/dto/AvisResponse.class
 com/sencarmarket/module/utilisateur/service/IUtilisateurService.class
 com/sencarmarket/module/certification/repository/DemandeCertificationRepository.class
 com/sencarmarket/module/annonce/controller/LocationController.class
@@ -208,6 +214,7 @@ com/sencarmarket/module/messagerie/repository/ConversationParticipantRepository.
 com/sencarmarket/module/paiement/dto/TransactionPortefeuilleRequest.class
 com/sencarmarket/module/annonce/service/AnnonceService.class
 com/sencarmarket/module/garage/controller/GarageController.class
+com/sencarmarket/module/avis/service/AvisServiceImpl.class
 com/sencarmarket/module/messagerie/dto/CreateConversationRequest$CreateConversationRequestBuilder.class
 com/sencarmarket/module/utilisateur/dto/AuthResponse.class
 com/sencarmarket/module/annonce/dto/DisponibiliteRequest.class
@@ -220,6 +227,7 @@ com/sencarmarket/module/annonce/dto/ReservationLocationResponse.class
 com/sencarmarket/module/assurance/entity/SouscriptionAssurance.class
 com/sencarmarket/module/vehicule/entity/PhotoVehicule$PhotoVehiculeBuilder.class
 com/sencarmarket/module/paiement/enums/TypeTransaction.class
+com/sencarmarket/module/avis/entity/Avis$StatutAvis.class
 com/sencarmarket/module/vehicule/service/VehiculeService.class
 com/sencarmarket/module/utilisateur/entity/TypeUtilisateur$TypeUtilisateurBuilder.class
 com/sencarmarket/module/messagerie/entity/Conversation.class
@@ -267,6 +275,7 @@ com/sencarmarket/module/garage/dto/CreateServiceGarageRequest$CreateServiceGarag
 com/sencarmarket/module/vehicule/repository/PhotoVehiculeRepository.class
 com/sencarmarket/module/vehicule/repository/MarqueRepository.class
 com/sencarmarket/module/paiement/entity/PaiementLog$PaiementLogBuilder.class
+com/sencarmarket/module/avis/repository/AvisRepository.class
 com/sencarmarket/module/messagerie/dto/ParticipantResponse$ParticipantResponseBuilder.class
 com/sencarmarket/module/tradein/dto/ValidationRequest$ValidationRequestBuilder.class
 com/sencarmarket/module/paiement/service/IPaiementService.class
@@ -285,6 +294,7 @@ com/sencarmarket/module/assurance/dto/SouscriptionAssuranceResponse$Souscription
 com/sencarmarket/module/tradein/dto/EstimationRequest$EstimationRequestBuilder.class
 com/sencarmarket/module/annonce/repository/ReservationLocationRepository.class
 com/sencarmarket/module/vehicule/entity/VehiculeEquipement$VehiculeEquipementBuilder.class
+com/sencarmarket/module/avis/controller/AvisController.class
 com/sencarmarket/module/certification/dto/CreateInspectionRequest$CreateInspectionRequestBuilder.class
 com/sencarmarket/module/assurance/entity/ProduitAssurance.class
 com/sencarmarket/module/garage/dto/CreateGarageRequest$CreateGarageRequestBuilder.class

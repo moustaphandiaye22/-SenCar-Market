@@ -104,15 +104,7 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .map(c -> getConversationResponse(c, utilisateurId))
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<ConversationResponse>builder()
-                .content(content)
-                .page(conversationPage.getNumber())
-                .size(conversationPage.getSize())
-                .totalElements(conversationPage.getTotalElements())
-                .totalPages(conversationPage.getTotalPages())
-                .last(conversationPage.isLast())
-                .first(conversationPage.isFirst())
-                .build();
+        return buildPaginatedResponse(conversationPage, content);
     }
 
     @Override
@@ -229,15 +221,7 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .map(MessageResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<MessageResponse>builder()
-                .content(content)
-                .page(messagePage.getNumber())
-                .size(messagePage.getSize())
-                .totalElements(messagePage.getTotalElements())
-                .totalPages(messagePage.getTotalPages())
-                .last(messagePage.isLast())
-                .first(messagePage.isFirst())
-                .build();
+        return buildPaginatedResponse(messagePage, content);
     }
 
     @Override
@@ -325,18 +309,25 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .map(MessageResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<MessageResponse>builder()
-                .content(content)
-                .page(messagePage.getNumber())
-                .size(messagePage.getSize())
-                .totalElements(messagePage.getTotalElements())
-                .totalPages(messagePage.getTotalPages())
-                .last(messagePage.isLast())
-                .first(messagePage.isFirst())
-                .build();
+        return buildPaginatedResponse(messagePage, content);
     }
 
     // ========== METHODES PRIVEES ==========
+
+    /**
+     * Méthode helper pour construire une réponse paginée
+     */
+    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
+        return PaginatedResponse.<T>builder()
+                .content(content)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .first(page.isFirst())
+                .build();
+    }
 
     private ConversationResponse getConversationResponse(Conversation conversation, UUID utilisateurId) {
         // Dernier message

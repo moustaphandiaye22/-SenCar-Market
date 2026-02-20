@@ -16,6 +16,7 @@ import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.vehicule.entity.Vehicule;
 import com.sencarmarket.module.vehicule.repository.VehiculeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AssuranceServiceImpl implements AssuranceService {
 
     private final ProduitAssuranceRepository produitAssuranceRepository;
@@ -71,15 +73,7 @@ public class AssuranceServiceImpl implements AssuranceService {
                 .map(this::mapToProduitResponse)
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<ProduitAssuranceResponse>builder()
-                .content(responses)
-                .page(page)
-                .size(size)
-                .totalElements(produitPage.getTotalElements())
-                .totalPages(produitPage.getTotalPages())
-                .last(produitPage.isLast())
-                .first(produitPage.isFirst())
-                .build();
+        return buildPaginatedResponse(produitPage, responses);
     }
 
     @Override
@@ -326,6 +320,21 @@ public class AssuranceServiceImpl implements AssuranceService {
         }
         
         return total;
+    }
+
+    /**
+     * Méthode helper pour construire une réponse paginée
+     */
+    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
+        return PaginatedResponse.<T>builder()
+                .content(content)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .first(page.isFirst())
+                .build();
     }
 
     private ProduitAssuranceResponse mapToProduitResponse(ProduitAssurance produit) {

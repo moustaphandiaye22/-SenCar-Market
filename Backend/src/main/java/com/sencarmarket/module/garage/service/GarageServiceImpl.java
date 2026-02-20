@@ -121,20 +121,8 @@ public class GarageServiceImpl implements GarageService {
     public PaginatedResponse<GarageResponse> getAllGarages(int page, int size) {
         log.debug("Fetching all garages - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository.findAll(PageRequest.of(page, size));
-
-        List<GarageResponse> content = garagePage.getContent().stream()
-                .map(GarageResponse::fromEntity)
-                .collect(Collectors.toList());
-
-        return PaginatedResponse.<GarageResponse>builder()
-                .content(content)
-                .page(garagePage.getNumber())
-                .size(garagePage.getSize())
-                .totalElements(garagePage.getTotalElements())
-                .totalPages(garagePage.getTotalPages())
-                .last(garagePage.isLast())
-                .first(garagePage.isFirst())
-                .build();
+        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+                .map(GarageResponse::fromEntity).collect(Collectors.toList()));
     }
 
     @Override
@@ -142,20 +130,8 @@ public class GarageServiceImpl implements GarageService {
         log.debug("Fetching active garages - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository
                 .findByStatutValidationEquals(Garage.StatutValidation.ACTIF, PageRequest.of(page, size));
-
-        List<GarageResponse> content = garagePage.getContent().stream()
-                .map(GarageResponse::fromEntity)
-                .collect(Collectors.toList());
-
-        return PaginatedResponse.<GarageResponse>builder()
-                .content(content)
-                .page(garagePage.getNumber())
-                .size(garagePage.getSize())
-                .totalElements(garagePage.getTotalElements())
-                .totalPages(garagePage.getTotalPages())
-                .last(garagePage.isLast())
-                .first(garagePage.isFirst())
-                .build();
+        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+                .map(GarageResponse::fromEntity).collect(Collectors.toList()));
     }
 
     @Override
@@ -163,19 +139,22 @@ public class GarageServiceImpl implements GarageService {
         log.debug("Fetching garages en attente - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository
                 .findByStatutValidation(Garage.StatutValidation.EN_ATTENTE, PageRequest.of(page, size));
+        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+                .map(GarageResponse::fromEntity).collect(Collectors.toList()));
+    }
 
-        List<GarageResponse> content = garagePage.getContent().stream()
-                .map(GarageResponse::fromEntity)
-                .collect(Collectors.toList());
-
-        return PaginatedResponse.<GarageResponse>builder()
+    /**
+     * Méthode helper pour construire une réponse paginée
+     */
+    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
+        return PaginatedResponse.<T>builder()
                 .content(content)
-                .page(garagePage.getNumber())
-                .size(garagePage.getSize())
-                .totalElements(garagePage.getTotalElements())
-                .totalPages(garagePage.getTotalPages())
-                .last(garagePage.isLast())
-                .first(garagePage.isFirst())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .first(page.isFirst())
                 .build();
     }
 

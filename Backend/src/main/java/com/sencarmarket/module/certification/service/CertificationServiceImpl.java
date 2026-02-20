@@ -392,14 +392,15 @@ public class CertificationServiceImpl implements CertificationService {
                 .map(this::mapToDemandeResponse)
                 .collect(Collectors.toList());
         
-        return new PaginatedResponse<>(
-                content,
-                demandePage.getNumber(),
-                demandePage.getSize(),
-                demandePage.getTotalElements(),
-                demandePage.getTotalPages(),
-                demandePage.isLast()
-        );
+        return PaginatedResponse.<DemandeCertificationResponse>builder()
+                .content(content)
+                .page(demandePage.getNumber())
+                .size(demandePage.getSize())
+                .totalElements(demandePage.getTotalElements())
+                .totalPages(demandePage.getTotalPages())
+                .last(demandePage.isLast())
+                .first(demandePage.isFirst())
+                .build();
     }
 
     @Override
@@ -420,14 +421,15 @@ public class CertificationServiceImpl implements CertificationService {
                 .map(this::mapToInspectionResponse)
                 .collect(Collectors.toList());
         
-        return new PaginatedResponse<>(
-                content,
-                inspectionPage.getNumber(),
-                inspectionPage.getSize(),
-                inspectionPage.getTotalElements(),
-                inspectionPage.getTotalPages(),
-                inspectionPage.isLast()
-        );
+        return PaginatedResponse.<InspectionResponse>builder()
+                .content(content)
+                .page(inspectionPage.getNumber())
+                .size(inspectionPage.getSize())
+                .totalElements(inspectionPage.getTotalElements())
+                .totalPages(inspectionPage.getTotalPages())
+                .last(inspectionPage.isLast())
+                .first(inspectionPage.isFirst())
+                .build();
     }
 
     @Override

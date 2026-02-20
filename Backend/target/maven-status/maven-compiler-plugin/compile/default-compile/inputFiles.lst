@@ -39,7 +39,13 @@
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/assurance/repository/SouscriptionAssuranceRepository.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/assurance/service/AssuranceService.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/assurance/service/AssuranceServiceImpl.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/controller/AvisController.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/dto/AvisResponse.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/dto/CreateAvisRequest.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/entity/Avis.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/repository/AvisRepository.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/service/AvisService.java
+/home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/service/AvisServiceImpl.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/avis/service/IAvisService.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/certification/controller/CertificationController.java
 /home/moustapha-ndiaye/Documents/Sen-Car-Market/Backend/src/main/java/com/sencarmarket/module/certification/dto/CreateDemandeCertificationRequest.java

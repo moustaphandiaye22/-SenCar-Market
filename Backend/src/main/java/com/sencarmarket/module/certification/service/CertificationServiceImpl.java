@@ -295,7 +295,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         } catch (IOException e) {
             log.error("Error uploading PDF rapport: {}", e.getMessage());
-            throw new RuntimeException("Erreur lors de l'upload du fichier: " + e.getMessage(), e);
+            throw new InvalidOperationException("Erreur lors de l'upload du fichier: " + e.getMessage());
         }
     }
 
@@ -392,15 +392,7 @@ public class CertificationServiceImpl implements CertificationService {
                 .map(this::mapToDemandeResponse)
                 .collect(Collectors.toList());
         
-        return PaginatedResponse.<DemandeCertificationResponse>builder()
-                .content(content)
-                .page(demandePage.getNumber())
-                .size(demandePage.getSize())
-                .totalElements(demandePage.getTotalElements())
-                .totalPages(demandePage.getTotalPages())
-                .last(demandePage.isLast())
-                .first(demandePage.isFirst())
-                .build();
+        return buildPaginatedResponse(demandePage, content);
     }
 
     @Override
@@ -421,15 +413,7 @@ public class CertificationServiceImpl implements CertificationService {
                 .map(this::mapToInspectionResponse)
                 .collect(Collectors.toList());
         
-        return PaginatedResponse.<InspectionResponse>builder()
-                .content(content)
-                .page(inspectionPage.getNumber())
-                .size(inspectionPage.getSize())
-                .totalElements(inspectionPage.getTotalElements())
-                .totalPages(inspectionPage.getTotalPages())
-                .last(inspectionPage.isLast())
-                .first(inspectionPage.isFirst())
-                .build();
+        return buildPaginatedResponse(inspectionPage, content);
     }
 
     @Override
@@ -440,7 +424,22 @@ public class CertificationServiceImpl implements CertificationService {
         return mapToInspectionResponse(inspection);
     }
 
-    // Méthodes utilitaires de mapping
+    // ========== METHODES PRIVEES ==========
+
+    /**
+     * Méthode helper pour construire une réponse paginée
+     */
+    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
+        return PaginatedResponse.<T>builder()
+                .content(content)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .first(page.isFirst())
+                .build();
+    }
     private DemandeCertificationResponse mapToDemandeResponse(DemandeCertification demande) {
         return DemandeCertificationResponse.builder()
                 .id(demande.getId())

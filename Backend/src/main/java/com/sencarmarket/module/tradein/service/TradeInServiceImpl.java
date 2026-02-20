@@ -105,15 +105,7 @@ public class TradeInServiceImpl implements TradeInService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
         
-        return PaginatedResponse.<DemandeTradeInResponse>builder()
-                .content(content)
-                .page(demandePage.getNumber())
-                .size(demandePage.getSize())
-                .totalElements(demandePage.getTotalElements())
-                .totalPages(demandePage.getTotalPages())
-                .last(demandePage.isLast())
-                .first(demandePage.isFirst())
-                .build();
+        return buildPaginatedResponse(demandePage, content);
     }
 
     @Override
@@ -451,5 +443,20 @@ public class TradeInServiceImpl implements TradeInService {
             case ANNULEE:
                 throw new InvalidOperationException("Impossible de modifier le statut d'une demande " + current);
         }
+    }
+
+    /**
+     * Méthode helper pour construire une réponse paginée
+     */
+    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
+        return PaginatedResponse.<T>builder()
+                .content(content)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .first(page.isFirst())
+                .build();
     }
 }

@@ -15,10 +15,11 @@ import java.util.UUID;
 public class BoostAnnonce {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "annonce_location_id")
+    @Column(name = "annonce_location_id", nullable = false)
     private UUID annonceLocationId;
 
     @Column(name = "date_debut")

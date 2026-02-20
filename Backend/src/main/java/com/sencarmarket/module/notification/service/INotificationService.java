@@ -125,4 +125,11 @@ public interface INotificationService {
      * Récupère les signalements d'un utilisateur
      */
     List<Notification> getSignalementsByUtilisateur(UUID utilisateurId);
+
+    // === Abonnements ===
+    
+    /**
+     * Notifie pour une subscription
+     */
+    UUID notifierSubscription(UUID utilisateurId, String type, String message);
 }

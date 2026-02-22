@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,24 +25,25 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Contrôleur pour la modération (Module 11 - Signalements)
- * Endpoints pour gérer les signalements et les actions admin
+ * Controleur pour la moderation (Module 11 - Signalements)
+ * Endpoints pour gerer les signalements et les actions admin
  */
 @RestController
 @RequestMapping("/api/signalements")
 @RequiredArgsConstructor
 @Slf4j
+@PreAuthorize("isAuthenticated()")
 public class SignalementController {
 
     private final ISignalementService signalementService;
 
     /**
-     * Créer un nouveau signalement
+     * Creer un nouveau signalement - Tous les utilisateurs authentifies
      */
     @PostMapping
     public ResponseEntity<SignalementResponse> createSignalement(
             @Valid @RequestBody CreateSignalementRequest request) {
-        log.info("Création d'un nouveau signalement - Type: {}", request.getTypeEntite());
+        log.info("Creation d'un nouveau signalement - Type: {}", request.getTypeEntite());
         
         Signalement signalement = signalementService.createSignalement(request);
         SignalementResponse response = toResponse(signalement);
@@ -50,11 +52,12 @@ public class SignalementController {
     }
 
     /**
-     * Récupérer un signalement par ID
+     * Recuperer un signalement par ID - Admin/Moderateur uniquement
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<SignalementResponse> getSignalement(@PathVariable UUID id) {
-        log.info("Récupération du signalement: {}", id);
+        log.info("Recuperation du signalement: {}", id);
         
         Signalement signalement = signalementService.getSignalementById(id);
         SignalementResponse response = toResponse(signalement);
@@ -63,16 +66,17 @@ public class SignalementController {
     }
 
     /**
-     * Récupérer tous les signalements (pagination)
+     * Recuperer tous les signalements - Admin/Moderateur uniquement
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<PaginatedResponse<SignalementResponse>> getAllSignalements(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dateSignalement") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         
-        log.info("Récupération de tous les signalements - Page: {}, Size: {}", page, size);
+        log.info("Recuperation de tous les signalements - Page: {}, Size: {}", page, size);
         
         Sort sort = sortDir.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending() 
@@ -85,14 +89,15 @@ public class SignalementController {
     }
 
     /**
-     * Récupérer les signalements en attente (priorité admin)
+     * Recuperer les signalements en attente - Admin/Moderateur uniquement
      */
     @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<PaginatedResponse<SignalementResponse>> getPendingSignalements(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        log.info("Récupération des signalements en attente");
+        log.info("Recuperation des signalements en attente");
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateSignalement").descending());
         PaginatedResponse<SignalementResponse> signalements = signalementService.getPendingSignalements(pageable);
@@ -101,15 +106,16 @@ public class SignalementController {
     }
 
     /**
-     * Filtrer les signalements par statut
+     * Filtrer les signalements par statut - Admin/Moderateur uniquement
      */
     @GetMapping("/statut/{statut}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<PaginatedResponse<SignalementResponse>> getSignalementsByStatut(
             @PathVariable StatutTraitementSignalement statut,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        log.info("Récupération des signalements par statut: {}", statut);
+        log.info("Recuperation des signalements par statut: {}", statut);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateSignalement").descending());
         PaginatedResponse<SignalementResponse> signalements = signalementService.getSignalementsByStatut(statut, pageable);
@@ -118,15 +124,16 @@ public class SignalementController {
     }
 
     /**
-     * Filtrer les signalements par type d'entité
+     * Filtrer les signalements par type d'entite - Admin/Moderateur uniquement
      */
     @GetMapping("/type/{typeEntite}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<PaginatedResponse<SignalementResponse>> getSignalementsByType(
             @PathVariable TypeEntiteSignalable typeEntite,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        log.info("Récupération des signalements par type: {}", typeEntite);
+        log.info("Recuperation des signalements par type: {}", typeEntite);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateSignalement").descending());
         PaginatedResponse<SignalementResponse> signalements = signalementService.getSignalementsByTypeEntite(typeEntite, pageable);
@@ -135,9 +142,10 @@ public class SignalementController {
     }
 
     /**
-     * Traiter un signalement (action admin)
+     * Traiter un signalement (action admin) - Admin/Moderateur uniquement
      */
     @PostMapping("/{id}/traiter")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<SignalementResponse> traiterSignalement(
             @PathVariable UUID id,
             @Valid @RequestBody ActionAdminRequest request) {
@@ -155,9 +163,10 @@ public class SignalementController {
     }
 
     /**
-     * Compter les signalements en attente
+     * Compter les signalements en attente - Admin/Moderateur uniquement
      */
     @GetMapping("/count/pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<Map<String, Long>> countPending() {
         long count = signalementService.countPendingSignalements();
         

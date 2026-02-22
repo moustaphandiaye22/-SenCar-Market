@@ -8,18 +8,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Contrôleur REST pour la gestion des garages
+ * Controleur REST pour la gestion des garages
  */
 @RestController
 @RequestMapping("/api/garages")
 @RequiredArgsConstructor
 @Slf4j
+@PreAuthorize("isAuthenticated()")
 public class GarageController {
 
     private final GarageService garageService;
@@ -27,10 +29,11 @@ public class GarageController {
     // ========== GARAGE ==========
 
     /**
-     * Créer un nouveau garage
+     * Creer un nouveau garage - Garage ou Admin uniquement
      * POST /api/garages
      */
     @PostMapping
+    @PreAuthorize("hasRole('GARAGE') or hasRole('ADMIN')")
     public ResponseEntity<GarageResponse> createGarage(
             @Valid @RequestBody CreateGarageRequest request,
             @RequestHeader("X-User-Id") UUID proprietaireId) {

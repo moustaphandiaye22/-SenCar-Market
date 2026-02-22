@@ -35,7 +35,9 @@ public class VehiculeResponse {
     private LocalDateTime boostDebut;
     private LocalDateTime boostFin;
     private Integer vues;
+    private Integer nombreFavoris;
     private Boolean estFavori;
-    private String vendeurNom;
+    private String proprietaireNom;
+    private UUID proprietaireId;  // Ajout pour verification de propriete
     private LocalDateTime createdAt;
 }

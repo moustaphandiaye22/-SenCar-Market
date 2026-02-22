@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/certifications")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class CertificationController {
 
     private final CertificationService certificationService;
@@ -24,7 +26,7 @@ public class CertificationController {
     // ==================== Demande Certification ====================
 
     /**
-     * Crée une nouvelle demande de certification
+     * Cree une nouvelle demande de certification - Tous les utilisateurs authentifies
      */
     @PostMapping("/demandes")
     public ResponseEntity<DemandeCertificationResponse> createDemandeCertification(

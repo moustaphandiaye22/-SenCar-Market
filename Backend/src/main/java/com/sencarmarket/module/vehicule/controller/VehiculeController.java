@@ -1,6 +1,7 @@
 package com.sencarmarket.module.vehicule.controller;
 
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.service.AuthorizationService;
 import com.sencarmarket.module.vehicule.dto.CreateVehiculeRequest;
 import com.sencarmarket.module.vehicule.dto.VehiculeFilter;
 import com.sencarmarket.module.vehicule.dto.VehiculeResponse;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,14 +21,18 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/vehicules")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class VehiculeController {
 
     private final VehiculeService vehiculeService;
+    private final AuthorizationService authorizationService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('VENDEUR', 'CONCESSIONNAIRE')")
     public ResponseEntity<VehiculeResponse> createVehicule(
             @Valid @RequestBody CreateVehiculeRequest request,
             Authentication authentication) {
+        authorizationService.checkCanCreateVehicule(authentication);
         return ResponseEntity.ok(vehiculeService.createVehicule(request, authentication.getName()));
     }
 
@@ -47,12 +53,23 @@ public class VehiculeController {
     }
 
     @PutMapping("/{id}/publish")
-    public ResponseEntity<VehiculeResponse> publishVehicule(@PathVariable UUID id) {
+    @PreAuthorize("hasAnyRole('VENDEUR', 'CONCESSIONNAIRE', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<VehiculeResponse> publishVehicule(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        // Verifier la propriete
+        VehiculeResponse vehicule = vehiculeService.getVehiculeById(id);
+        authorizationService.checkCanDeleteVehicule(authentication, vehicule.getProprietaireId());
         return ResponseEntity.ok(vehiculeService.publishVehicule(id));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteVehicule(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteVehicule(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        // Verifier la propriete ou admin
+        VehiculeResponse vehicule = vehiculeService.getVehiculeById(id);
+        authorizationService.checkCanDeleteVehicule(authentication, vehicule.getProprietaireId());
         vehiculeService.deleteVehicule(id);
         return ResponseEntity.noContent().build();
     }
@@ -77,10 +94,15 @@ public class VehiculeController {
 
     // Boost
     @PostMapping("/{id}/boost")
+    @PreAuthorize("hasAnyRole('VENDEUR', 'CONCESSIONNAIRE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<VehiculeResponse> boostVehicule(
             @PathVariable UUID id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            Authentication authentication) {
+        // Verifier la propriete
+        VehiculeResponse vehicule = vehiculeService.getVehiculeById(id);
+        authorizationService.checkCanBoostVehicule(authentication, vehicule.getProprietaireId());
         return ResponseEntity.ok(vehiculeService.boostVehicule(id, debut, fin));
     }
 }

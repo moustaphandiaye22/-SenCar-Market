@@ -25,4 +25,9 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, UUID> 
 
     @Query("SELECT u FROM Utilisateur u WHERE u.statutVerification.id = :statutId")
     java.util.List<Utilisateur> findByStatutVerificationId(@Param("statutId") UUID statutId);
+
+    // Méthodes de comptage pour le dashboard admin
+    long countByDeletedAtIsNull();
+
+    long countByDeletedAtIsNotNull();
 }

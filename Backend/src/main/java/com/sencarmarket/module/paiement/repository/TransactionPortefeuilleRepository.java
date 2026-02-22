@@ -1,6 +1,7 @@
 package com.sencarmarket.module.paiement.repository;
 
 import com.sencarmarket.module.paiement.entity.TransactionPortefeuille;
+import com.sencarmarket.module.paiement.enums.StatutTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,9 @@ public interface TransactionPortefeuilleRepository extends JpaRepository<Transac
     List<TransactionPortefeuille> findByPortefeuilleUtilisateurIdOrderByDateTransactionDesc(UUID utilisateurId);
     
     List<TransactionPortefeuille> findByReferenceExterne(String referenceExterne);
+    
+    List<TransactionPortefeuille> findByStatut(StatutTransaction statut);
+
+    // Méthodes de comptage pour le dashboard admin
+    long countByStatut(StatutTransaction statut);
 }

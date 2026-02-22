@@ -21,23 +21,51 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(usernameOrEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec: " + usernameOrEmail));
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve avec: " + usernameOrEmail));
 
         return new User(
                 utilisateur.getEmail(),
                 utilisateur.getMotDePasseHash(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                Collections.singletonList(new SimpleGrantedAuthority(getRoleFromTypeUtilisateur(utilisateur)))
         );
     }
 
     public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve avec: " + email));
 
         return new User(
                 utilisateur.getEmail(),
                 utilisateur.getMotDePasseHash(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                Collections.singletonList(new SimpleGrantedAuthority(getRoleFromTypeUtilisateur(utilisateur)))
         );
+    }
+    
+    /**
+     * Retourne le role Spring Security base sur le TypeUtilisateur
+     */
+    private String getRoleFromTypeUtilisateur(Utilisateur utilisateur) {
+        if (utilisateur.getTypeUtilisateur() == null || utilisateur.getTypeUtilisateur().getNom() == null) {
+            return "ROLE_UTILISATEUR"; // Role par defaut
+        }
+        
+        String typeNom = utilisateur.getTypeUtilisateur().getNom();
+        
+        // Mapper les types vers les roles Spring Security
+        return switch (typeNom) {
+            case "ADMIN" -> "ROLE_ADMIN";
+            case "SUPER_ADMIN" -> "ROLE_SUPER_ADMIN";
+            case "MODERATEUR" -> "ROLE_MODERATEUR";
+            case "VENDEUR" -> "ROLE_VENDEUR";
+            case "CONCESSIONNAIRE" -> "ROLE_CONCESSIONNAIRE";
+            case "ACHETEUR" -> "ROLE_ACHETEUR";
+            case "LOCATAIRE" -> "ROLE_LOCATAIRE";
+            case "PROPRIETAIRE_LOUEUR" -> "ROLE_PROPRIETAIRE_LOUEUR";
+            case "COMPAGNIE_ASSURANCE" -> "ROLE_COMPAGNIE_ASSURANCE";
+            case "INSPECTEUR" -> "ROLE_INSPECTEUR";
+            case "GARAGE" -> "ROLE_GARAGE";
+            case "PARTENAIRE_FINANCIER" -> "ROLE_PARTENAIRE_FINANCIER";
+            default -> "ROLE_UTILISATEUR";
+        };
     }
 }

@@ -1,7 +1,7 @@
 package com.sencarmarket.module.annonce.repository;
 
 import com.sencarmarket.module.annonce.entity.ReservationLocation;
-import com.sencarmarket.module.vehicule.entity.StatutAnnonce;
+import com.sencarmarket.module.commun.enums.StatutReservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,8 +18,13 @@ public interface ReservationLocationRepository extends JpaRepository<Reservation
 
     List<ReservationLocation> findByAnnonceLocationId(UUID annonceLocationId);
 
-    List<ReservationLocation> findByStatut(StatutAnnonce statut);
+    List<ReservationLocation> findByStatut(StatutReservation statut);
 
     boolean existsByAnnonceLocationIdAndDateDebutBeforeAndDateFinAfterAndStatut(
-            UUID annonceLocationId, LocalDateTime dateFin, LocalDateTime dateDebut, StatutAnnonce statut);
+            UUID annonceLocationId, LocalDateTime dateFin, LocalDateTime dateDebut, StatutReservation statut);
+
+    // Méthodes de comptage pour le dashboard admin
+    long count();
+
+    long countByStatut(StatutReservation statut);
 }

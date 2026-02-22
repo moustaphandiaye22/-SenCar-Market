@@ -63,7 +63,7 @@ public class VehiculeService implements IVehiculeService {
                 : Statut.PUBLIE;
 
         Vehicule vehicule = Vehicule.builder()
-                .vendeur(utilisateur)
+                .proprietaire(utilisateur)
                 .marque(marque)
                 .modele(modele)
                 .anneeFabrication(request.getAnneeFabrication())
@@ -135,7 +135,7 @@ public class VehiculeService implements IVehiculeService {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "email", userEmail));
 
-        return vehiculeMapper.toResponseList(vehiculeRepository.findByVendeurId(utilisateur.getId()));
+        return vehiculeMapper.toResponseList(vehiculeRepository.findByProprietaireId(utilisateur.getId()));
     }
 
     @Transactional

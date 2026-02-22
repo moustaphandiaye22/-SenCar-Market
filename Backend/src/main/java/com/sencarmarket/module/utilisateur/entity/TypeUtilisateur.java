@@ -19,4 +19,7 @@ public class TypeUtilisateur {
 
     @Column(name = "nom")
     private String nom;
+
+    @Column(name = "description")
+    private String description;
 }

@@ -12,18 +12,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Contrôleur REST pour la gestion des abonnements
+ * Controleur REST pour la gestion des abonnements
  */
 @RestController
 @RequestMapping("/api/abonnements")
 @RequiredArgsConstructor
 @Slf4j
+@PreAuthorize("isAuthenticated()")
 public class AbonnementController {
 
     private final IAbonnementService abonnementService;
@@ -31,33 +33,36 @@ public class AbonnementController {
     // ==================== GESTION DES PLANS D'ABONNEMENT ====================
 
     /**
-     * Créer un nouveau plan d'abonnement
+     * Creer un nouveau plan d'abonnement - Admin uniquement
      */
     @PostMapping("/plans")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AbonnementResponse> createPlan(@Valid @RequestBody CreateAbonnementRequest request) {
-        log.info("Requête de création d'un plan d'abonnement: {}", request.getNom());
+        log.info("Requete de creation d'un plan d'abonnement: {}", request.getNom());
         AbonnementResponse response = abonnementService.createAbonnement(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * Mettre à jour un plan d'abonnement
+     * Mettre a jour un plan d'abonnement - Admin uniquement
      */
     @PutMapping("/plans/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AbonnementResponse> updatePlan(
             @PathVariable UUID id,
             @Valid @RequestBody CreateAbonnementRequest request) {
-        log.info("Requête de mise à jour du plan d'abonnement: {}", id);
+        log.info("Requete de mise a jour du plan d'abonnement: {}", id);
         AbonnementResponse response = abonnementService.updateAbonnement(id, request);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Supprimer (désactiver) un plan d'abonnement
+     * Supprimer (desactiver) un plan d'abonnement - Admin uniquement
      */
     @DeleteMapping("/plans/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePlan(@PathVariable UUID id) {
-        log.info("Requête de suppression du plan d'abonnement: {}", id);
+        log.info("Requete de suppression du plan d'abonnement: {}", id);
         abonnementService.deleteAbonnement(id);
         return ResponseEntity.noContent().build();
     }

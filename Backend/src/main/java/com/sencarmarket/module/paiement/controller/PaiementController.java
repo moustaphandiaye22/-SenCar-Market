@@ -7,6 +7,7 @@ import com.sencarmarket.module.paiement.service.PaiementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/paiements")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class PaiementController {
 
     private final PaiementService paiementService;
@@ -63,6 +65,7 @@ public class PaiementController {
     }
 
     @GetMapping("/statut/{statut}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<List<PaiementResponse>> getPaiementsByStatut(@PathVariable String statut) {
         return ResponseEntity.ok(paiementService.getPaiementsByStatut(statut));
     }
@@ -80,6 +83,7 @@ public class PaiementController {
     }
 
     @PostMapping("/{id}/rembourser")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<PaiementResponse> RembourserPaiement(
             @PathVariable UUID id,
             @RequestParam(required = false) BigDecimal montant) {
@@ -95,6 +99,7 @@ public class PaiementController {
     // ========== WEBHOOKS ==========
 
     @PostMapping("/webhook/wave")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<String> webhookWave(
             @RequestBody String payload,
             @RequestHeader("X-Wave-Signature") String signature) {
@@ -103,6 +108,7 @@ public class PaiementController {
     }
 
     @PostMapping("/webhook/orange-money")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<String> webhookOrangeMoney(
             @RequestBody String payload,
             @RequestHeader("X-OM-Signature") String signature) {
@@ -156,6 +162,7 @@ public class PaiementController {
     // ========== LOGS ==========
 
     @GetMapping("/{id}/logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<List<PaiementLog>> getLogsByPaiement(@PathVariable UUID id) {
         return ResponseEntity.ok(paiementService.getLogsByPaiement(id));
     }
@@ -163,6 +170,7 @@ public class PaiementController {
     // ========== COMMISSION ==========
 
     @GetMapping("/commission/calculer")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<BigDecimal> calculateCommission(@RequestParam BigDecimal montant) {
         return ResponseEntity.ok(paiementService.calculateCommission(montant));
     }

@@ -77,7 +77,7 @@ public class Garage {
 
     // Propriétaire
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "proprietaire_id")
+    @JoinColumn(name = "utilisateur_id")
     private com.sencarmarket.module.utilisateur.entity.Utilisateur proprietaire;
 
     // Timestamps

@@ -2,6 +2,7 @@ package com.sencarmarket.module.utilisateur.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,4 +31,20 @@ public class RegisterRequest {
 
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;
+
+    /**
+     * Type d'utilisateur - doit être l'un des types valides:
+     * - UTILISATEUR (default)
+     * - ACHETEUR
+     * - VENDEUR
+     * - CONCESSIONNAIRE
+     * - LOCATAIRE
+     * - PROPRIETAIRE_LOUEUR
+     * 
+     * Les types suivants sont réservés et attribués manuellement:
+     * - ADMIN, MODERATEUR, SUPER_ADMIN
+     * - COMPAGNIE_ASSURANCE, INSPECTEUR, GARAGE, PARTENAIRE_FINANCIER
+     */
+    @NotNull(message = "Le type d'utilisateur est obligatoire")
+    private String typeUtilisateur;
 }

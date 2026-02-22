@@ -53,6 +53,8 @@ public class VehiculeMapper implements IVehiculeMapper {
                 .boostFin(vehicule.getBoostFin())
                 .vues(vehicule.getVues())
                 .createdAt(vehicule.getCreatedAt())
+                .proprietaireId(vehicule.getProprietaire() != null ? vehicule.getProprietaire().getId() : null)
+                .proprietaireNom(vehicule.getProprietaire() != null ? vehicule.getProprietaire().getNom() : null)
                 .build();
     }
 

@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +18,18 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/assurance")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class AssuranceController {
 
     private final AssuranceService assuranceService;
 
     // ==================== Produit Assurance ====================
 
+    /**
+     * Creer un produit d'assurance - Compagnie d'assurance uniquement
+     */
     @PostMapping("/produits")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<ProduitAssuranceResponse> createProduitAssurance(
             @Valid @RequestBody CreateProduitAssuranceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,14 +53,22 @@ public class AssuranceController {
         return ResponseEntity.ok(assuranceService.getActiveProduitAssurances());
     }
 
+    /**
+     * Mettre a jour un produit - Compagnie d'assurance ou Admin
+     */
     @PutMapping("/produits/{id}")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<ProduitAssuranceResponse> updateProduitAssurance(
             @PathVariable UUID id,
             @Valid @RequestBody CreateProduitAssuranceRequest request) {
         return ResponseEntity.ok(assuranceService.updateProduitAssurance(id, request));
     }
 
+    /**
+     * Supprimer un produit - Compagnie d'assurance ou Admin
+     */
     @DeleteMapping("/produits/{id}")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteProduitAssurance(@PathVariable UUID id) {
         assuranceService.deleteProduitAssurance(id);
         return ResponseEntity.noContent().build();
@@ -62,7 +76,11 @@ public class AssuranceController {
 
     // ==================== Option Assurance ====================
 
+    /**
+     * Creer une option - Compagnie d'assurance uniquement
+     */
     @PostMapping("/options")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<OptionAssuranceResponse> createOptionAssurance(
             @Valid @RequestBody CreateOptionAssuranceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -80,14 +98,22 @@ public class AssuranceController {
         return ResponseEntity.ok(assuranceService.getOptionsByProduitAssurance(produitId));
     }
 
+    /**
+     * Mettre a jour une option - Compagnie d'assurance ou Admin
+     */
     @PutMapping("/options/{id}")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<OptionAssuranceResponse> updateOptionAssurance(
             @PathVariable UUID id,
             @Valid @RequestBody CreateOptionAssuranceRequest request) {
         return ResponseEntity.ok(assuranceService.updateOptionAssurance(id, request));
     }
 
+    /**
+     * Supprimer une option - Compagnie d'assurance ou Admin
+     */
     @DeleteMapping("/options/{id}")
+    @PreAuthorize("hasRole('COMPAGNIE_ASSURANCE') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteOptionAssurance(@PathVariable UUID id) {
         assuranceService.deleteOptionAssurance(id);
         return ResponseEntity.noContent().build();

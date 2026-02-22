@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tradein")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class TradeInController {
 
     private final TradeInService tradeInService;
@@ -23,7 +25,7 @@ public class TradeInController {
     // ==================== Demande ====================
 
     /**
-     * Crée une nouvelle demande de trade-in
+     * Cree une nouvelle demande de trade-in
      */
     @PostMapping("/demandes")
     public ResponseEntity<DemandeTradeInResponse> createDemande(

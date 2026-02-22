@@ -21,8 +21,8 @@ public class Vehicule {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vendeur_id")
-    private Utilisateur vendeur;
+    @JoinColumn(name = "proprietaire_id", nullable = false)
+    private Utilisateur proprietaire;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marque_id")
@@ -61,6 +61,30 @@ public class Vehicule {
     @Column(name = "immatriculation")
     private String immatriculation;
 
+    @Column(name = "titre")
+    private String titre;
+
+    @Column(name = "nombre_portes")
+    private Integer nombrePortes;
+
+    @Column(name = "nombre_places")
+    private Integer nombrePlaces;
+
+    @Column(name = "cylindree")
+    private String cylindree;
+
+    @Column(name = "puissance_fiscale")
+    private String puissanceFiscale;
+
+    @Column(name = "est_garantie")
+    private Boolean estGarantie;
+
+    @Column(name = "garantie_mois")
+    private Integer garantieMois;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
     @Column(name = "prix_negociable")
     private Boolean prixNegociable;
 
@@ -82,6 +106,9 @@ public class Vehicule {
 
     @Column(name = "vues")
     private Integer vues;
+
+    @Column(name = "nombre_favoris")
+    private Integer nombreFavoris;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

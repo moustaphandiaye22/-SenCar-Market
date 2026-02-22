@@ -7,6 +7,7 @@ import com.sencarmarket.module.annonce.service.AnnonceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,13 +18,18 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/locations")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class LocationController {
 
     private final AnnonceService annonceService;
 
     // ========== ANNONCES DE LOCATION ==========
 
+    /**
+     * Creer une annonce de location - Proprietaire Loueur uniquement
+     */
     @PostMapping("/annonces")
+    @PreAuthorize("hasAnyRole('PROPRIETAIRE_LOUEUR', 'VENDEUR', 'CONCESSIONNAIRE', 'ADMIN')")
     public ResponseEntity<AnnonceLocationResponse> createAnnonceLocation(
             @Valid @RequestBody CreateAnnonceLocationRequest request,
             Authentication authentication) {

@@ -2,14 +2,19 @@ package com.sencarmarket.module.utilisateur.service.auth;
 
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.AuditService;
 import com.sencarmarket.module.utilisateur.dto.*;
 import com.sencarmarket.module.utilisateur.entity.OtpCode;
+import com.sencarmarket.module.utilisateur.entity.TypeUtilisateur;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
+import com.sencarmarket.module.utilisateur.repository.TypeUtilisateurRepository;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.utilisateur.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,11 +33,39 @@ import java.util.UUID;
 public class AuthenticationService implements IAuthenticationService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final TypeUtilisateurRepository typeUtilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
     private final OtpService otpService;
+    private final AuditService auditService;
+
+    /**
+     * Types d'utilisateur autorisés lors de l'inscription.
+     * Les types administratifs sont attribués manuellement par un administrateur.
+     */
+    private static final List<String> ALLOWED_USER_TYPES = Arrays.asList(
+            "UTILISATEUR",
+            "ACHETEUR", 
+            "VENDEUR",
+            "CONCESSIONNAIRE",
+            "LOCATAIRE",
+            "PROPRIETAIRE_LOUEUR"
+    );
+
+    /**
+     * Types d'utilisateur réservés (inscription non autorisée)
+     */
+    private static final List<String> RESTRICTED_USER_TYPES = Arrays.asList(
+            "ADMIN",
+            "MODERATEUR",
+            "SUPER_ADMIN",
+            "COMPAGNIE_ASSURANCE",
+            "INSPECTEUR",
+            "GARAGE",
+            "PARTENAIRE_FINANCIER"
+    );
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -44,6 +79,32 @@ public class AuthenticationService implements IAuthenticationService {
             throw new InvalidOperationException("Le numéro de téléphone existe déjà. Veuillez utiliser un autre numéro.");
         }
 
+        // Valider le type d'utilisateur
+        String userType = request.getTypeUtilisateur();
+        if (userType == null || userType.isBlank()) {
+            throw new InvalidOperationException("Le type d'utilisateur est obligatoire");
+        }
+
+        // Vérifier que le type n'est pas un type restreint (admin, etc.)
+        if (RESTRICTED_USER_TYPES.contains(userType.toUpperCase())) {
+            throw new InvalidOperationException(
+                    "Vous ne pouvez pas vous inscrire avec ce type de compte. Veuillez contacter l'administrateur.");
+        }
+
+        // Vérifier que le type est valide
+        if (!ALLOWED_USER_TYPES.contains(userType.toUpperCase())) {
+            throw new InvalidOperationException(
+                    "Type d'utilisateur invalide. Les types valides sont: " + 
+                    String.join(", ", ALLOWED_USER_TYPES));
+        }
+
+        // Rechercher le type d'utilisateur dans la base de données
+        TypeUtilisateur typeUtilisateur = typeUtilisateurRepository.findByNom(userType.toUpperCase())
+                .orElseThrow(() -> {
+                    log.error("Type d'utilisateur non trouvé: {}", userType);
+                    return new InvalidOperationException("Erreur système: type d'utilisateur invalide");
+                });
+
         // Créer l'utilisateur
         Utilisateur utilisateur = Utilisateur.builder()
                 .id(UUID.randomUUID())
@@ -52,12 +113,17 @@ public class AuthenticationService implements IAuthenticationService {
                 .motDePasseHash(passwordEncoder.encode(request.getMotDePasse()))
                 .prenom(request.getPrenom())
                 .nom(request.getNom())
+                .typeUtilisateur(typeUtilisateur)
                 .emailVerifie(false)
                 .telephoneVerifie(false)
                 .doubleAuthActive(false)
                 .build();
 
         utilisateurRepository.save(utilisateur);
+        log.info("Nouvel utilisateur inscrit: {} avec le type: {}", utilisateur.getEmail(), userType);
+
+        // Journaliser l'inscription
+        auditService.logRegistration(request.getEmail(), userType);
 
         // Générer les tokens
         UserDetails userDetails = userDetailsService.loadUserByEmail(request.getEmail());
@@ -75,12 +141,19 @@ public class AuthenticationService implements IAuthenticationService {
 
     public AuthResponse login(LoginRequest request) {
         // Authentifier l'utilisateur
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getIdentifiant(),
-                        request.getMotDePasse()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getIdentifiant(),
+                            request.getMotDePasse()
+                    )
+            );
+        } catch (Exception e) {
+            // Journaliser l'échec de connexion
+            String identifiant = request.getIdentifiant();
+            auditService.logLogin(null, identifiant, null, false, e.getMessage());
+            throw new BadCredentialsException("Identifiants invalides");
+        }
 
         // Rechercher l'utilisateur
         Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getIdentifiant())
@@ -90,6 +163,9 @@ public class AuthenticationService implements IAuthenticationService {
         // Mettre à jour la dernière connexion
         utilisateur.setDerniereConnexion(LocalDateTime.now());
         utilisateurRepository.save(utilisateur);
+
+        // Journaliser la connexion réussie
+        auditService.logLogin(utilisateur.getId(), utilisateur.getEmail(), null, true, null);
 
         // Générer les tokens
         UserDetails userDetails = userDetailsService.loadUserByEmail(utilisateur.getEmail());
@@ -175,12 +251,17 @@ public class AuthenticationService implements IAuthenticationService {
 
         // Vérifier l'ancien mot de passe
         if (!passwordEncoder.matches(request.getMotDePasseActuel(), utilisateur.getMotDePasseHash())) {
+            // Journaliser l'échec
+            auditService.logPasswordChange(utilisateur.getId(), email, false);
             throw new InvalidOperationException("Le mot de passe actuel est incorrect");
         }
 
         // Mettre à jour le mot de passe
         utilisateur.setMotDePasseHash(passwordEncoder.encode(request.getNouveauMotDePasse()));
         utilisateurRepository.save(utilisateur);
+        
+        // Journaliser le succès
+        auditService.logPasswordChange(utilisateur.getId(), email, true);
     }
 
     @Transactional
@@ -232,8 +313,7 @@ public class AuthenticationService implements IAuthenticationService {
                 .doubleAuthActive(utilisateur.getDoubleAuthActive())
                 .typeUtilisateur(utilisateur.getTypeUtilisateur() != null ? 
                         utilisateur.getTypeUtilisateur().getNom() : null)
-                .statutVerification(utilisateur.getStatutVerification() != null ? 
-                        utilisateur.getStatutVerification().getNom() : null)
+                .statutVerification(utilisateur.getStatutVerification())
                 .createdAt(utilisateur.getCreatedAt())
                 .build();
     }

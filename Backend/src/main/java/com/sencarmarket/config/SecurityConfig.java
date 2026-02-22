@@ -8,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -39,6 +41,19 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/ws/**"
                 ).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/vehicules/**").authenticated()
+                .requestMatchers("/api/paiements/**").authenticated()
+                .requestMatchers("/api/avis/**").authenticated()
+                .requestMatchers("/api/abonnements/**").authenticated()
+                .requestMatchers("/api/garages/**").authenticated()
+                .requestMatchers("/api/assurances/**").authenticated()
+                .requestMatchers("/api/certifications/**").authenticated()
+                .requestMatchers("/api/tradein/**").authenticated()
+                .requestMatchers("/api/locations/**").authenticated()
+                .requestMatchers("/api/messagerie/**").authenticated()
+                .requestMatchers("/api/notifications/**").authenticated()
+                .requestMatchers("/api/signalements/**").hasAnyRole("ADMIN", "MODERATEUR")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

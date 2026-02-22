@@ -37,9 +37,8 @@ public class Utilisateur {
     @JoinColumn(name = "type_utilisateur_id")
     private TypeUtilisateur typeUtilisateur;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "statut_verification_id")
-    private StatutVerification statutVerification;
+    @Column(name = "statut_verification")
+    private String statutVerification;
 
     @Column(name = "photo_profil_url")
     private String photoProfilUrl;

@@ -8,23 +8,25 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 /**
- * Contrôleur pour la gestion des avis
+ * Controleur pour la gestion des avis
  */
 @RestController
 @RequestMapping("/api/avis")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class AvisController {
 
     private final AvisService avisService;
 
     /**
-     * Créer un nouvel avis
+     * Creer un nouvel avis - Utilisateurs authentifies uniquement
      */
     @PostMapping
     public ResponseEntity<AvisResponse> createAvis(

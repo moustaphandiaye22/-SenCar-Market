@@ -25,10 +25,12 @@ public interface VehiculeRepository extends JpaRepository<Vehicule, UUID> {
     @Query("SELECT v FROM Vehicule v WHERE v.anneeFabrication BETWEEN :minYear AND :maxYear")
     List<Vehicule> findByAnneeBetween(@Param("minYear") Integer minYear, @Param("maxYear") Integer maxYear);
 
-    List<Vehicule> findByVendeurId(UUID vendeurId);
+    List<Vehicule> findByProprietaireId(UUID proprietaireId);
 
     Page<Vehicule> findByStatut(Statut statut, Pageable pageable);
 
     @Query("SELECT v FROM Vehicule v WHERE v.statut = :statut ORDER BY v.estBoost DESC, v.createdAt DESC")
     Page<Vehicule> findPublishedWithBoost(@Param("statut") Statut statut, Pageable pageable);
+
+    long countByStatut(Statut statut);
 }

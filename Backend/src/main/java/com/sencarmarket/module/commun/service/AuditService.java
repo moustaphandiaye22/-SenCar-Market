@@ -21,6 +21,7 @@ import java.util.UUID;
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
+    private final AuditActionResolverService auditActionResolverService;
 
     /**
      * Journalise une action avec informations complètes
@@ -133,7 +134,7 @@ public class AuditService {
      */
     public boolean hasRecentlyPerformedAction(UUID utilisateurId, String action, int minutes) {
         LocalDateTime since = LocalDateTime.now().minusMinutes(minutes);
-        long count = auditLogRepository.countRecentActions(action, since);
+        long count = auditLogRepository.countRecentActions(utilisateurId, action, since);
         return count > 0;
     }
 
@@ -170,23 +171,7 @@ public class AuditService {
      */
     public void logPaiementOperation(UUID utilisateurId, String email, String operation, 
                                     UUID paiementId, boolean success, String messageErreur) {
-        String action;
-        switch (operation) {
-            case "CREATE":
-                action = AuditLog.Actions.PAIEMENT_CREATE;
-                break;
-            case "CONFIRM":
-                action = AuditLog.Actions.PAIEMENT_CONFIRM;
-                break;
-            case "CANCEL":
-                action = AuditLog.Actions.PAIEMENT_CANCEL;
-                break;
-            case "REFUND":
-                action = AuditLog.Actions.PAIEMENT_REFUND;
-                break;
-            default:
-                action = "PAIEMENT_" + operation;
-        }
+        String action = auditActionResolverService.resolvePaiementAction(operation);
         
         logAction(utilisateurId, email, action, "PAIEMENT", paiementId, 
                   "Opération: " + operation, null, null, success ? "SUCCESS" : "FAILURE", messageErreur);
@@ -197,23 +182,7 @@ public class AuditService {
      */
     public void logAdminOperation(UUID adminId, String adminEmail, String operation, 
                                   String targetType, UUID targetId, String details) {
-        String action;
-        switch (operation) {
-            case "CREATE":
-                action = "ADMIN_" + targetType.toUpperCase() + "_CREATE";
-                break;
-            case "UPDATE":
-                action = "ADMIN_" + targetType.toUpperCase() + "_UPDATE";
-                break;
-            case "DELETE":
-                action = "ADMIN_" + targetType.toUpperCase() + "_DELETE";
-                break;
-            case "ROLE_CHANGE":
-                action = AuditLog.Actions.ADMIN_ROLE_CHANGE;
-                break;
-            default:
-                action = "ADMIN_" + operation;
-        }
+        String action = auditActionResolverService.resolveAdminAction(operation, targetType);
         
         logSuccess(adminId, adminEmail, action, targetType, targetId, details);
     }

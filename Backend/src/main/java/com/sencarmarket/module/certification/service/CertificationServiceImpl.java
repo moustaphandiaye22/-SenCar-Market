@@ -7,9 +7,11 @@ import com.sencarmarket.module.certification.entity.RapportInspection;
 import com.sencarmarket.module.certification.repository.DemandeCertificationRepository;
 import com.sencarmarket.module.certification.repository.InspectionRepository;
 import com.sencarmarket.module.certification.repository.RapportInspectionRepository;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.vehicule.entity.Vehicule;
@@ -22,10 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,14 +32,23 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CertificationServiceImpl implements CertificationService {
+    private static final String RESOURCE_UTILISATEUR = "Utilisateur";
+    private static final String RESOURCE_VEHICULE = "Véhicule";
+    private static final String RESOURCE_DEMANDE_CERTIFICATION = "Demande de certification";
+    private static final String RESOURCE_INSPECTEUR = "Inspecteur";
+    private static final String RESOURCE_INSPECTION = "Inspection";
+    private static final String FIELD_ID = "id";
 
     private final DemandeCertificationRepository demandeCertificationRepository;
     private final InspectionRepository inspectionRepository;
     private final RapportInspectionRepository rapportInspectionRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
+    private final CertificationStatusTransitionService certificationStatusTransitionService;
+    private final CertificationStorageService certificationStorageService;
+    private final CertificationResponseMapper certificationResponseMapper;
+    private final PaginationService paginationService;
 
-    private static final String UPLOAD_DIR = "uploads/certifications/";
     private static final double MONTANT_INSPECTION = 50000.0; // 50,000 XOF
 
     @Override
@@ -50,10 +57,10 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Creating certification request for vehicle {} by user {}", request.getVehiculeId(), utilisateurId);
         
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'ID: " + utilisateurId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_UTILISATEUR, FIELD_ID, utilisateurId));
 
         Vehicule vehicule = vehiculeRepository.findById(request.getVehiculeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Véhicule non trouvé avec l'ID: " + request.getVehiculeId()));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_VEHICULE, FIELD_ID, request.getVehiculeId()));
 
         // Vérifier si une demande de certification existe déjà pour ce véhicule
         List<DemandeCertification> existingDemandes = demandeCertificationRepository.findByVehiculeId(vehicule.getId());
@@ -63,7 +70,7 @@ public class CertificationServiceImpl implements CertificationService {
         
         if (hasActiveDemande) {
             log.warn("Active certification request already exists for vehicle {}", request.getVehiculeId());
-            throw new InvalidOperationException("Une demande de certification est déjà en cours pour ce véhicule");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_REQUEST_ALREADY_ACTIVE);
         }
 
         DemandeCertification demande = DemandeCertification.builder()
@@ -75,7 +82,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         demande = demandeCertificationRepository.save(demande);
         log.info("Certification request created with ID: {}", demande.getId());
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -84,11 +91,11 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Processing payment for certification request {}", demandeId);
         
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
 
         if (demande.getStatut() != DemandeCertification.StatutDemande.EN_ATTENTE) {
             log.warn("Invalid status transition for request {}: {}", demandeId, demande.getStatut());
-            throw new InvalidOperationException("La demande n'est pas dans un état permettant le paiement");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_PAYMENT_INVALID_STATE);
         }
 
         demande.setPaiementId(paiementId);
@@ -97,7 +104,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         demande = demandeCertificationRepository.save(demande);
         log.info("Payment processed successfully for request {}", demandeId);
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -106,22 +113,22 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Assigning inspector {} to certification request {}", inspecteurId, demandeId);
         
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
 
         if (demande.getStatut() != DemandeCertification.StatutDemande.PAYEE) {
             log.warn("Cannot assign inspector - invalid status: {}", demande.getStatut());
-            throw new InvalidOperationException("La demande doit être payée avant d'assigner un inspecteur");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_ASSIGN_INSPECTOR_REQUIRES_PAID);
         }
 
         Utilisateur inspecteur = utilisateurRepository.findById(inspecteurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspecteur non trouvé avec l'ID: " + inspecteurId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTEUR, FIELD_ID, inspecteurId));
         
         demande.setInspecteur(inspecteur);
         demande.setStatut(DemandeCertification.StatutDemande.INSPECTION_PROGRAMMEE);
 
         demande = demandeCertificationRepository.save(demande);
         log.info("Inspector assigned successfully to request {}", demandeId);
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -130,10 +137,10 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Updating status of certification request {} to {}", demandeId, nouveauStatut);
         
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
 
         // Validation des transitions de statut
-        validateStatutTransition(demande.getStatut(), nouveauStatut);
+        certificationStatusTransitionService.validateTransition(demande.getStatut(), nouveauStatut);
 
         demande.setStatut(nouveauStatut);
         
@@ -143,7 +150,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         demande = demandeCertificationRepository.save(demande);
         log.info("Status updated successfully for request {}", demandeId);
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -152,15 +159,15 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Updating certification request {}", id);
         
         DemandeCertification demande = demandeCertificationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, id));
 
         if (demande.getStatut() != DemandeCertification.StatutDemande.EN_ATTENTE) {
-            throw new InvalidOperationException("Seules les demandes en attente peuvent être modifiées");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_ONLY_PENDING_UPDATE);
         }
 
         demande = demandeCertificationRepository.save(demande);
         log.info("Certification request {} updated", id);
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -169,10 +176,10 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Deleting certification request {}", id);
         
         DemandeCertification demande = demandeCertificationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, id));
 
         if (demande.getStatut() == DemandeCertification.StatutDemande.CERTIFIEE) {
-            throw new InvalidOperationException("Impossible de supprimer une demande certifiée");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_CANNOT_DELETE_CERTIFIED);
         }
 
         demandeCertificationRepository.delete(demande);
@@ -185,11 +192,11 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Creating inspection for certification request {}", demandeId);
         
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
 
         if (demande.getStatut() != DemandeCertification.StatutDemande.INSPECTION_PROGRAMMEE) {
             log.warn("Cannot create inspection - invalid status: {}", demande.getStatut());
-            throw new InvalidOperationException("La demande doit être programmée pour l'inspection");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_REQUIRES_SCHEDULED_INSPECTION);
         }
 
         Inspection inspection = Inspection.builder()
@@ -216,7 +223,7 @@ public class CertificationServiceImpl implements CertificationService {
         demandeCertificationRepository.save(demande);
 
         log.info("Inspection created with ID: {}", inspection.getId());
-        return mapToInspectionResponse(inspection);
+        return certificationResponseMapper.toInspectionResponse(inspection);
     }
 
     @Override
@@ -225,11 +232,11 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Updating inspection {}", id);
         
         Inspection inspection = inspectionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspection non trouvée avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTION, FIELD_ID, id));
 
         if (inspection.getResultat() == Inspection.ResultatInspection.REUSSI || 
             inspection.getResultat() == Inspection.ResultatInspection.ECHEC) {
-            throw new InvalidOperationException("Impossible de modifier une inspection terminée");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_CANNOT_UPDATE_FINISHED_INSPECTION);
         }
 
         inspection.setDateInspection(request.getDateInspection());
@@ -245,7 +252,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         inspection = inspectionRepository.save(inspection);
         log.info("Inspection {} updated", id);
-        return mapToInspectionResponse(inspection);
+        return certificationResponseMapper.toInspectionResponse(inspection);
     }
 
     @Override
@@ -254,7 +261,7 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Deleting inspection {}", id);
         
         Inspection inspection = inspectionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspection non trouvée avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTION, FIELD_ID, id));
 
         inspectionRepository.delete(inspection);
         log.info("Inspection {} deleted", id);
@@ -266,37 +273,20 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Uploading PDF rapport for inspection {}", inspectionId);
         
         Inspection inspection = inspectionRepository.findById(inspectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspection non trouvée avec l'ID: " + inspectionId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTION, FIELD_ID, inspectionId));
 
-        try {
-            // Créer le répertoire de téléchargement s'il n'existe pas
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+        String storedPath = certificationStorageService.storePdf(file);
+        RapportInspection rapport = rapportInspectionRepository.findByInspectionId(inspectionId)
+                .orElse(RapportInspection.builder()
+                        .inspection(inspection)
+                        .build());
 
-            // Générer un nom de fichier unique
-            String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(file.getInputStream(), filePath);
+        rapport.setUrlRapportPdf(storedPath);
+        rapport.setDateGeneration(java.time.LocalDateTime.now());
 
-            // Créer ou mettre à jour le rapport d'inspection
-            RapportInspection rapport = rapportInspectionRepository.findByInspectionId(inspectionId)
-                    .orElse(RapportInspection.builder()
-                            .inspection(inspection)
-                            .build());
-
-            rapport.setUrlRapportPdf(filePath.toString());
-            rapport.setDateGeneration(java.time.LocalDateTime.now());
-
-            rapport = rapportInspectionRepository.save(rapport);
-            log.info("PDF rapport uploaded successfully for inspection {}", inspectionId);
-            return mapToRapportResponse(rapport);
-
-        } catch (IOException e) {
-            log.error("Error uploading PDF rapport: {}", e.getMessage());
-            throw new InvalidOperationException("Erreur lors de l'upload du fichier: " + e.getMessage());
-        }
+        rapport = rapportInspectionRepository.save(rapport);
+        log.info("PDF rapport uploaded successfully for inspection {}", inspectionId);
+        return certificationResponseMapper.toRapportResponse(rapport);
     }
 
     @Override
@@ -305,7 +295,7 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Saving inspection result for inspection {}", inspectionId);
         
         Inspection inspection = inspectionRepository.findById(inspectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspection non trouvée avec l'ID: " + inspectionId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTION, FIELD_ID, inspectionId));
 
         // Créer ou mettre à jour le rapport
         RapportInspection rapport = rapportInspectionRepository.findByInspectionId(inspectionId)
@@ -344,7 +334,7 @@ public class CertificationServiceImpl implements CertificationService {
         demande.setDateTraitement(java.time.LocalDateTime.now());
         demandeCertificationRepository.save(demande);
 
-        return mapToInspectionResponse(inspection);
+        return certificationResponseMapper.toInspectionResponse(inspection);
     }
 
     @Override
@@ -353,15 +343,15 @@ public class CertificationServiceImpl implements CertificationService {
         log.info("Generating badge for certification request {}", demandeId);
         
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
 
         if (demande.getStatut() != DemandeCertification.StatutDemande.CERTIFIEE) {
             log.warn("Cannot generate badge - invalid status: {}", demande.getStatut());
-            throw new InvalidOperationException("La demande doit être certifiée pour générer un badge");
+            throw new InvalidOperationException(AppMessages.CERTIFICATION_REQUIRES_CERTIFIED);
         }
 
         // Générer une URL de badge (ici juste un exemple - à implémenter selon vos besoins)
-        String badgeUrl = UPLOAD_DIR + "badge_" + demande.getId() + ".png";
+        String badgeUrl = certificationStorageService.generateBadgeUrl(demande.getId());
         
         demande.setBadgeCertifieUrl(badgeUrl);
         demande = demandeCertificationRepository.save(demande);
@@ -371,15 +361,15 @@ public class CertificationServiceImpl implements CertificationService {
         vehiculeRepository.save(vehicule);
 
         log.info("Badge generated successfully for request {}", demandeId);
-        return mapToDemandeResponse(demande);
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
     public DemandeCertificationResponse getDemandeById(UUID demandeId) {
         log.debug("Fetching certification request by ID: {}", demandeId);
         DemandeCertification demande = demandeCertificationRepository.findById(demandeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Demande de certification non trouvée avec l'ID: " + demandeId));
-        return mapToDemandeResponse(demande);
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_DEMANDE_CERTIFICATION, FIELD_ID, demandeId));
+        return certificationResponseMapper.toDemandeResponse(demande);
     }
 
     @Override
@@ -389,17 +379,17 @@ public class CertificationServiceImpl implements CertificationService {
         Page<DemandeCertification> demandePage = demandeCertificationRepository.findAll(PageRequest.of(page, size));
         
         List<DemandeCertificationResponse> content = demandePage.getContent().stream()
-                .map(this::mapToDemandeResponse)
+                .map(certificationResponseMapper::toDemandeResponse)
                 .collect(Collectors.toList());
         
-        return buildPaginatedResponse(demandePage, content);
+        return paginationService.build(demandePage, content);
     }
 
     @Override
     public List<DemandeCertificationResponse> getDemandesByUtilisateur(UUID utilisateurId) {
         log.debug("Fetching certification requests for user: {}", utilisateurId);
         return demandeCertificationRepository.findByUtilisateurId(utilisateurId).stream()
-                .map(this::mapToDemandeResponse)
+                .map(certificationResponseMapper::toDemandeResponse)
                 .collect(Collectors.toList());
     }
 
@@ -410,129 +400,20 @@ public class CertificationServiceImpl implements CertificationService {
         Page<Inspection> inspectionPage = inspectionRepository.findByInspecteurId(inspecteurId, PageRequest.of(page, size));
         
         List<InspectionResponse> content = inspectionPage.getContent().stream()
-                .map(this::mapToInspectionResponse)
+                .map(certificationResponseMapper::toInspectionResponse)
                 .collect(Collectors.toList());
         
-        return buildPaginatedResponse(inspectionPage, content);
+        return paginationService.build(inspectionPage, content);
     }
 
     @Override
     public InspectionResponse getInspectionById(UUID inspectionId) {
         log.debug("Fetching inspection by ID: {}", inspectionId);
         Inspection inspection = inspectionRepository.findById(inspectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inspection non trouvée avec l'ID: " + inspectionId));
-        return mapToInspectionResponse(inspection);
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_INSPECTION, FIELD_ID, inspectionId));
+        return certificationResponseMapper.toInspectionResponse(inspection);
     }
 
     // ========== METHODES PRIVEES ==========
 
-    /**
-     * Méthode helper pour construire une réponse paginée
-     */
-    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
-        return PaginatedResponse.<T>builder()
-                .content(content)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
-    }
-    private DemandeCertificationResponse mapToDemandeResponse(DemandeCertification demande) {
-        return DemandeCertificationResponse.builder()
-                .id(demande.getId())
-                .utilisateurId(demande.getUtilisateur() != null ? demande.getUtilisateur().getId() : null)
-                .utilisateurNom(demande.getUtilisateur() != null ? demande.getUtilisateur().getNom() : null)
-                .vehiculeId(demande.getVehicule() != null ? demande.getVehicule().getId() : null)
-                .vehiculeDescription(demande.getVehicule() != null ? 
-                        demande.getVehicule().getMarque() + " " + demande.getVehicule().getModele() : null)
-                .statut(demande.getStatut())
-                .montantPaiement(demande.getMontantPaiement())
-                .paiementId(demande.getPaiementId())
-                .inspecteurId(demande.getInspecteur() != null ? demande.getInspecteur().getId() : null)
-                .inspecteurNom(demande.getInspecteur() != null ? demande.getInspecteur().getNom() : null)
-                .dateSoumission(demande.getDateSoumission())
-                .dateTraitement(demande.getDateTraitement())
-                .dateInspection(demande.getDateInspection())
-                .motifRejet(demande.getMotifRejet())
-                .badgeCertifieUrl(demande.getBadgeCertifieUrl())
-                .createdAt(demande.getCreatedAt())
-                .updatedAt(demande.getUpdatedAt())
-                .build();
-    }
-
-    private InspectionResponse mapToInspectionResponse(Inspection inspection) {
-        return InspectionResponse.builder()
-                .id(inspection.getId())
-                .demandeCertificationId(inspection.getDemandeCertification() != null ? 
-                        inspection.getDemandeCertification().getId() : null)
-                .inspecteurId(inspection.getInspecteur() != null ? inspection.getInspecteur().getId() : null)
-                .inspecteurNom(inspection.getInspecteur() != null ? inspection.getInspecteur().getNom() : null)
-                .dateInspection(inspection.getDateInspection())
-                .resultat(inspection.getResultat())
-                .commentaire(inspection.getCommentaire())
-                .kilometrage(inspection.getKilometrage())
-                .etatMoteur(inspection.getEtatMoteur())
-                .etatGenerateur(inspection.getEtatGenerateur())
-                .etatFreinage(inspection.getEtatFreinage())
-                .etatSuspension(inspection.getEtatSuspension())
-                .etatTransmission(inspection.getEtatTransmission())
-                .etatPneus(inspection.getEtatPneus())
-                .etatCarrosserie(inspection.getEtatCarrosserie())
-                .etatInterieur(inspection.getEtatInterieur())
-                .scoreTotal(inspection.getScoreTotal())
-                .createdAt(inspection.getCreatedAt())
-                .updatedAt(inspection.getUpdatedAt())
-                .build();
-    }
-
-    private RapportInspectionResponse mapToRapportResponse(RapportInspection rapport) {
-        return RapportInspectionResponse.builder()
-                .id(rapport.getId())
-                .inspectionId(rapport.getInspection() != null ? rapport.getInspection().getId() : null)
-                .urlRapportPdf(rapport.getUrlRapportPdf())
-                .dateGeneration(rapport.getDateGeneration())
-                .scoreGlobale(rapport.getScoreGlobale())
-                .recommendations(rapport.getRecommendations())
-                .conclusion(rapport.getConclusion())
-                .estApprouve(rapport.getEstApprouve())
-                .createdAt(rapport.getCreatedAt())
-                .updatedAt(rapport.getUpdatedAt())
-                .build();
-    }
-
-    private void validateStatutTransition(DemandeCertification.StatutDemande currentStatut, 
-                                          DemandeCertification.StatutDemande newStatut) {
-        switch (currentStatut) {
-            case EN_ATTENTE:
-                if (newStatut != DemandeCertification.StatutDemande.PAYEE 
-                    && newStatut != DemandeCertification.StatutDemande.REJETEE) {
-                    throw new InvalidOperationException("Transition de statut invalide: " + currentStatut + " -> " + newStatut);
-                }
-                break;
-            case PAYEE:
-                if (newStatut != DemandeCertification.StatutDemande.INSPECTION_PROGRAMMEE 
-                    && newStatut != DemandeCertification.StatutDemande.REJETEE) {
-                    throw new InvalidOperationException("Transition de statut invalide: " + currentStatut + " -> " + newStatut);
-                }
-                break;
-            case INSPECTION_PROGRAMMEE:
-                if (newStatut != DemandeCertification.StatutDemande.INSPECTE 
-                    && newStatut != DemandeCertification.StatutDemande.REJETEE) {
-                    throw new InvalidOperationException("Transition de statut invalide: " + currentStatut + " -> " + newStatut);
-                }
-                break;
-            case INSPECTE:
-                if (newStatut != DemandeCertification.StatutDemande.CERTIFIEE 
-                    && newStatut != DemandeCertification.StatutDemande.REJETEE) {
-                    throw new InvalidOperationException("Transition de statut invalide: " + currentStatut + " -> " + newStatut);
-                }
-                break;
-            case CERTIFIEE:
-            case REJETEE:
-                throw new InvalidOperationException("Impossible de modifier le statut d'une demande certifiée ou rejetée");
-        }
-    }
 }

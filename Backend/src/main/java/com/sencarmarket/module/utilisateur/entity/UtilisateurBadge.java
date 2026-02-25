@@ -6,6 +6,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "utilisateur_badge")
+@IdClass(UtilisateurBadgeId.class)
 @Getter
 @Setter
 @NoArgsConstructor

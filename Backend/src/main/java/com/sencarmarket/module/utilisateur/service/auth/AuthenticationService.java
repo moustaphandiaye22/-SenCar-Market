@@ -1,19 +1,17 @@
 package com.sencarmarket.module.utilisateur.service.auth;
 
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
-import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.service.AuditService;
 import com.sencarmarket.module.utilisateur.dto.*;
 import com.sencarmarket.module.utilisateur.entity.OtpCode;
 import com.sencarmarket.module.utilisateur.entity.TypeUtilisateur;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
-import com.sencarmarket.module.utilisateur.repository.TypeUtilisateurRepository;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.utilisateur.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -33,77 +29,18 @@ import java.util.UUID;
 public class AuthenticationService implements IAuthenticationService {
 
     private final UtilisateurRepository utilisateurRepository;
-    private final TypeUtilisateurRepository typeUtilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
     private final OtpService otpService;
     private final AuditService auditService;
-
-    /**
-     * Types d'utilisateur autorisés lors de l'inscription.
-     * Les types administratifs sont attribués manuellement par un administrateur.
-     */
-    private static final List<String> ALLOWED_USER_TYPES = Arrays.asList(
-            "UTILISATEUR",
-            "ACHETEUR", 
-            "VENDEUR",
-            "CONCESSIONNAIRE",
-            "LOCATAIRE",
-            "PROPRIETAIRE_LOUEUR"
-    );
-
-    /**
-     * Types d'utilisateur réservés (inscription non autorisée)
-     */
-    private static final List<String> RESTRICTED_USER_TYPES = Arrays.asList(
-            "ADMIN",
-            "MODERATEUR",
-            "SUPER_ADMIN",
-            "COMPAGNIE_ASSURANCE",
-            "INSPECTEUR",
-            "GARAGE",
-            "PARTENAIRE_FINANCIER"
-    );
+    private final RegistrationPolicyService registrationPolicyService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        // Vérifier si l'email existe déjà
-        if (utilisateurRepository.existsByEmail(request.getEmail())) {
-            throw new InvalidOperationException("L'email existe déjà. Veuillez utiliser un autre email.");
-        }
-
-        // Vérifier si le téléphone existe déjà
-        if (utilisateurRepository.existsByTelephone(request.getTelephone())) {
-            throw new InvalidOperationException("Le numéro de téléphone existe déjà. Veuillez utiliser un autre numéro.");
-        }
-
-        // Valider le type d'utilisateur
-        String userType = request.getTypeUtilisateur();
-        if (userType == null || userType.isBlank()) {
-            throw new InvalidOperationException("Le type d'utilisateur est obligatoire");
-        }
-
-        // Vérifier que le type n'est pas un type restreint (admin, etc.)
-        if (RESTRICTED_USER_TYPES.contains(userType.toUpperCase())) {
-            throw new InvalidOperationException(
-                    "Vous ne pouvez pas vous inscrire avec ce type de compte. Veuillez contacter l'administrateur.");
-        }
-
-        // Vérifier que le type est valide
-        if (!ALLOWED_USER_TYPES.contains(userType.toUpperCase())) {
-            throw new InvalidOperationException(
-                    "Type d'utilisateur invalide. Les types valides sont: " + 
-                    String.join(", ", ALLOWED_USER_TYPES));
-        }
-
-        // Rechercher le type d'utilisateur dans la base de données
-        TypeUtilisateur typeUtilisateur = typeUtilisateurRepository.findByNom(userType.toUpperCase())
-                .orElseThrow(() -> {
-                    log.error("Type d'utilisateur non trouvé: {}", userType);
-                    return new InvalidOperationException("Erreur système: type d'utilisateur invalide");
-                });
+        registrationPolicyService.validateUniqueCredentials(request.getEmail(), request.getTelephone());
+        TypeUtilisateur typeUtilisateur = registrationPolicyService.resolveRegistrationType(request.getTypeUtilisateur());
 
         // Créer l'utilisateur
         Utilisateur utilisateur = Utilisateur.builder()
@@ -120,45 +57,39 @@ public class AuthenticationService implements IAuthenticationService {
                 .build();
 
         utilisateurRepository.save(utilisateur);
-        log.info("Nouvel utilisateur inscrit: {} avec le type: {}", utilisateur.getEmail(), userType);
+        log.info("Nouvel utilisateur inscrit: {} avec le type: {}", utilisateur.getEmail(), typeUtilisateur.getNom());
+        otpService.generateOtp(utilisateur, OtpCode.OtpType.VERIFICATION_EMAIL);
 
         // Journaliser l'inscription
-        auditService.logRegistration(request.getEmail(), userType);
+        auditService.logRegistration(request.getEmail(), typeUtilisateur.getNom());
 
         // Générer les tokens
         UserDetails userDetails = userDetailsService.loadUserByEmail(request.getEmail());
         String accessToken = jwtService.generateToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(jwtService.getJwtExpiration() / 1000)
-                .utilisateur(mapToUtilisateurResponse(utilisateur))
-                .build();
+        return buildAuthResponse(accessToken, refreshToken, utilisateur);
     }
 
     public AuthResponse login(LoginRequest request) {
+        String identifiant = request.getIdentifiant().trim();
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(identifiant)
+                .orElseGet(() -> utilisateurRepository.findByTelephone(identifiant)
+                        .orElseThrow(() -> new BadCredentialsException(AppMessages.INVALID_CREDENTIALS)));
+
         // Authentifier l'utilisateur
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getIdentifiant(),
+                            utilisateur.getEmail(),
                             request.getMotDePasse()
                     )
             );
         } catch (Exception e) {
             // Journaliser l'échec de connexion
-            String identifiant = request.getIdentifiant();
             auditService.logLogin(null, identifiant, null, false, e.getMessage());
-            throw new BadCredentialsException("Identifiants invalides");
+            throw new BadCredentialsException(AppMessages.INVALID_CREDENTIALS);
         }
-
-        // Rechercher l'utilisateur
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getIdentifiant())
-                .orElseGet(() -> utilisateurRepository.findByTelephone(request.getIdentifiant())
-                        .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé")));
 
         // Mettre à jour la dernière connexion
         utilisateur.setDerniereConnexion(LocalDateTime.now());
@@ -172,13 +103,7 @@ public class AuthenticationService implements IAuthenticationService {
         String accessToken = jwtService.generateToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(jwtService.getJwtExpiration() / 1000)
-                .utilisateur(mapToUtilisateurResponse(utilisateur))
-                .build();
+        return buildAuthResponse(accessToken, refreshToken, utilisateur);
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest request) {
@@ -189,36 +114,30 @@ public class AuthenticationService implements IAuthenticationService {
         // Charger l'utilisateur
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         Utilisateur utilisateur = utilisateurRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
 
         // Vérifier si le token est valide
         if (!jwtService.isTokenValid(refreshToken, userDetails)) {
-            throw new InvalidOperationException("Le refresh token est invalide ou a expiré");
+            throw new InvalidOperationException(AppMessages.AUTH_REFRESH_TOKEN_INVALID);
         }
 
         // Générer nouveaux tokens
         String newAccessToken = jwtService.generateToken(userDetails);
         String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
-        return AuthResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .tokenType("Bearer")
-                .expiresIn(jwtService.getJwtExpiration() / 1000)
-                .utilisateur(mapToUtilisateurResponse(utilisateur))
-                .build();
+        return buildAuthResponse(newAccessToken, newRefreshToken, utilisateur);
     }
 
     public UtilisateurResponse getCurrentUser(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
         return mapToUtilisateurResponse(utilisateur);
     }
 
     @Transactional
     public UtilisateurResponse updateProfile(String email, UpdateProfileRequest request) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
 
         if (request.getPrenom() != null) {
             utilisateur.setPrenom(request.getPrenom());
@@ -231,7 +150,7 @@ public class AuthenticationService implements IAuthenticationService {
             utilisateurRepository.findByTelephone(request.getTelephone())
                     .ifPresent(u -> {
                         if (!u.getId().equals(utilisateur.getId())) {
-                            throw new InvalidOperationException("Ce numéro de téléphone est déjà utilisé par un autre utilisateur");
+                            throw new InvalidOperationException(AppMessages.AUTH_PHONE_ALREADY_USED);
                         }
                     });
             utilisateur.setTelephone(request.getTelephone());
@@ -247,13 +166,13 @@ public class AuthenticationService implements IAuthenticationService {
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
 
         // Vérifier l'ancien mot de passe
         if (!passwordEncoder.matches(request.getMotDePasseActuel(), utilisateur.getMotDePasseHash())) {
             // Journaliser l'échec
             auditService.logPasswordChange(utilisateur.getId(), email, false);
-            throw new InvalidOperationException("Le mot de passe actuel est incorrect");
+            throw new InvalidOperationException(AppMessages.AUTH_CURRENT_PASSWORD_INVALID);
         }
 
         // Mettre à jour le mot de passe
@@ -273,26 +192,36 @@ public class AuthenticationService implements IAuthenticationService {
     @Transactional
     public void verifyEmail(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
+        utilisateur.setEmailVerifie(true);
+        utilisateurRepository.save(utilisateur);
+    }
+    
+    @Override
+    @Transactional
+    public void verifyEmailWithOtp(String email, String otpCode) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
+        otpService.verifyOtp(utilisateur, OtpCode.OtpType.VERIFICATION_EMAIL, otpCode);
         utilisateur.setEmailVerifie(true);
         utilisateurRepository.save(utilisateur);
     }
 
     @Transactional
     public void resendOtp(String email) {
-        // Cette méthode est un hook - l'OTP est généré par OtpService
-        // Pas d'action nécessaire ici car l'OTP est géré par OtpService
+        utilisateurRepository.findByEmail(email)
+                .ifPresent(utilisateur -> otpService.generateOtp(utilisateur, OtpCode.OtpType.VERIFICATION_EMAIL));
     }
 
     public void sendPasswordResetOtp(String email) {
-        // Cette méthode est un hook - l'OTP est généré par OtpService
-        // Pas d'action nécessaire ici car l'OTP est géré par OtpService
+        utilisateurRepository.findByEmail(email)
+                .ifPresent(utilisateur -> otpService.generateOtp(utilisateur, OtpCode.OtpType.MOT_DE_PASSE_OUBLIE));
     }
 
     @Transactional
     public void resetPasswordByEmail(String email, String codeOtp, String nouveauMotDePasse) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND));
 
         otpService.verifyOtp(utilisateur, OtpCode.OtpType.MOT_DE_PASSE_OUBLIE, codeOtp);
 
@@ -315,6 +244,16 @@ public class AuthenticationService implements IAuthenticationService {
                         utilisateur.getTypeUtilisateur().getNom() : null)
                 .statutVerification(utilisateur.getStatutVerification())
                 .createdAt(utilisateur.getCreatedAt())
+                .build();
+    }
+
+    private AuthResponse buildAuthResponse(String accessToken, String refreshToken, Utilisateur utilisateur) {
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getJwtExpiration() / 1000)
+                .utilisateur(mapToUtilisateurResponse(utilisateur))
                 .build();
     }
 }

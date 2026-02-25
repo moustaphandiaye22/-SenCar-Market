@@ -1,5 +1,6 @@
 package com.sencarmarket.module.notification.controller;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 import com.sencarmarket.module.notification.dto.ActionAdminRequest;
 import com.sencarmarket.module.notification.dto.CreateSignalementRequest;
@@ -8,6 +9,8 @@ import com.sencarmarket.module.notification.entity.Signalement;
 import com.sencarmarket.module.notification.enums.StatutTraitementSignalement;
 import com.sencarmarket.module.notification.enums.TypeEntiteSignalable;
 import com.sencarmarket.module.notification.service.ISignalementService;
+import com.sencarmarket.module.commun.exception.UnauthorizedAccessException;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -36,13 +40,20 @@ import java.util.UUID;
 public class SignalementController {
 
     private final ISignalementService signalementService;
+    private final AccessControlService accessControlService;
 
     /**
      * Creer un nouveau signalement - Tous les utilisateurs authentifies
      */
     @PostMapping
     public ResponseEntity<SignalementResponse> createSignalement(
-            @Valid @RequestBody CreateSignalementRequest request) {
+            @Valid @RequestBody CreateSignalementRequest request,
+            Authentication authentication) {
+        UUID currentUserId = accessControlService.getCurrentUserId(authentication);
+        if (request.getUtilisateurId() != null && !request.getUtilisateurId().equals(currentUserId)) {
+            throw new UnauthorizedAccessException(AppMessages.SIGNALMENT_CANNOT_CREATE_FOR_OTHER);
+        }
+        request.setUtilisateurId(currentUserId);
         log.info("Creation d'un nouveau signalement - Type: {}", request.getTypeEntite());
         
         Signalement signalement = signalementService.createSignalement(request);
@@ -148,7 +159,10 @@ public class SignalementController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR')")
     public ResponseEntity<SignalementResponse> traiterSignalement(
             @PathVariable UUID id,
-            @Valid @RequestBody ActionAdminRequest request) {
+            @Valid @RequestBody ActionAdminRequest request,
+            Authentication authentication) {
+        UUID currentAdminId = accessControlService.getCurrentUserId(authentication);
+        request.setAdminId(currentAdminId);
         
         log.info("Traitement du signalement {} - Action: {}", id, request.getActionAdmin());
         
@@ -193,4 +207,5 @@ public class SignalementController {
                 .dateSignalement(signalement.getDateSignalement())
                 .build();
     }
+
 }

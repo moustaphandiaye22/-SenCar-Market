@@ -1,5 +1,6 @@
 package com.sencarmarket.module.commun.service;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.exception.UnauthorizedAccessException;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
@@ -78,78 +79,63 @@ public class AuthorizationService {
      * Verifie si l'utilisateur peut creer des vehicules
      */
     public void checkCanCreateVehicule(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_CREATE_VEHICULE)) {
-            log.warn("Utilisateur {} tente de creer un vehicule sans autorisation", 
-                    authentication != null ? authentication.getName() : "unknown");
-            throw new UnauthorizedAccessException(
-                    "Seuls les vendeurs et concessionnaires peuvent publier des vehicules");
-        }
+        checkAnyRoleOrThrow(authentication, "Seuls les vendeurs et concessionnaires peuvent publier des vehicules",
+                ROLES_CAN_CREATE_VEHICULE);
     }
 
     /**
      * Verifie si l'utilisateur peut acheter
      */
     public void checkCanBuy(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_BUY)) {
-            throw new UnauthorizedAccessException("Vous n'etes pas autorise a effectuer des achats");
-        }
+        checkAnyRoleOrThrow(authentication, "Vous n'etes pas autorise a effectuer des achats", ROLES_CAN_BUY);
     }
 
     /**
      * Verifie si l'utilisateur peut publier des locations
      */
     public void checkCanPublishRental(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_PUBLISH_RENTAL)) {
-            throw new UnauthorizedAccessException(
-                    "Seuls les proprietaires loueurs peuvent publier des annonces de location");
-        }
+        checkAnyRoleOrThrow(authentication,
+                "Seuls les proprietaires loueurs peuvent publier des annonces de location",
+                ROLES_CAN_PUBLISH_RENTAL);
     }
 
     /**
      * Verifie si l'utilisateur peut reserver
      */
     public void checkCanRent(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_RENT)) {
-            throw new UnauthorizedAccessException("Vous n'etes pas autorise a reserver des vehicules");
-        }
+        checkAnyRoleOrThrow(authentication, "Vous n'etes pas autorise a reserver des vehicules", ROLES_CAN_RENT);
     }
 
     /**
      * Verifie si l'utilisateur peut creer un garage
      */
     public void checkCanCreateGarage(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_CREATE_GARAGE)) {
-            throw new UnauthorizedAccessException("Seuls les garages peuvent creer un profil");
-        }
+        checkAnyRoleOrThrow(authentication, "Seuls les garages peuvent creer un profil", ROLES_CAN_CREATE_GARAGE);
     }
 
     /**
      * Verifie si l'utilisateur peut creer des produits assurance
      */
     public void checkCanCreateInsurance(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_CREATE_INSURANCE)) {
-            throw new UnauthorizedAccessException(
-                    "Seules les compagnies d'assurance peuvent creer des produits");
-        }
+        checkAnyRoleOrThrow(authentication, "Seules les compagnies d'assurance peuvent creer des produits",
+                ROLES_CAN_CREATE_INSURANCE);
     }
 
     /**
      * Verifie si l'utilisateur peut effectuer des inspections
      */
     public void checkCanInspect(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_INSPECT)) {
-            throw new UnauthorizedAccessException("Seuls les inspecteurs peuvent effectuer des inspections");
-        }
+        checkAnyRoleOrThrow(authentication, "Seuls les inspecteurs peuvent effectuer des inspections",
+                ROLES_CAN_INSPECT);
     }
 
     /**
      * Verifie si l'utilisateur peut gerer les signalements
      */
     public void checkCanManageReports(Authentication authentication) {
-        if (!hasAnyRole(authentication, ROLES_CAN_MANAGE_REPORTS)) {
-            throw new UnauthorizedAccessException(
-                    "Seuls les administrateurs et moderateurs peuvent gerer les signalements");
-        }
+        checkAnyRoleOrThrow(authentication,
+                "Seuls les administrateurs et moderateurs peuvent gerer les signalements",
+                ROLES_CAN_MANAGE_REPORTS);
     }
 
     /**
@@ -177,7 +163,7 @@ public class AuthorizationService {
         if (!isOwner(authentication, ownerId)) {
             log.warn("Tentative d'acces non autorise a la ressource par {}", 
                     authentication.getName());
-            throw new UnauthorizedAccessException("Vous n'etes pas proprietaire de cette ressource");
+            throw new UnauthorizedAccessException(AppMessages.OWNER_REQUIRED);
         }
     }
 
@@ -185,32 +171,14 @@ public class AuthorizationService {
      * Verifie si l'utilisateur peut supprimer un vehicule
      */
     public void checkCanDeleteVehicule(Authentication authentication, UUID vehiculeOwnerId) {
-        // Admin peut supprimer n'importe quel vehicule
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, vehiculeOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez supprimer que vos propres vehicules");
-        }
+        checkAdminOrOwner(authentication, vehiculeOwnerId, "Vous ne pouvez supprimer que vos propres vehicules");
     }
 
     /**
      * Verifie si l'utilisateur peut booster un vehicule
      */
     public void checkCanBoostVehicule(Authentication authentication, UUID vehiculeOwnerId) {
-        // Admin peut booster n'importe quel vehicule
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, vehiculeOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez booster que vos propres vehicules");
-        }
+        checkAdminOrOwner(authentication, vehiculeOwnerId, "Vous ne pouvez booster que vos propres vehicules");
     }
 
     /**
@@ -242,16 +210,7 @@ public class AuthorizationService {
      * (proprietaire du paiement ou admin)
      */
     public void checkCanAccessPaiement(Authentication authentication, UUID paiementOwnerId) {
-        // Admin peut acceder a tous les paiements
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, paiementOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous n'avez pas acces a ce paiement");
-        }
+        checkAdminOrOwner(authentication, paiementOwnerId, "Vous n'avez pas acces a ce paiement");
     }
 
     /**
@@ -259,16 +218,7 @@ public class AuthorizationService {
      * (proprietaire du portefeuille ou admin)
      */
     public void checkCanAccessPortefeuille(Authentication authentication, UUID portefeuilleOwnerId) {
-        // Admin peut acceder a tous les portefeuille
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, portefeuilleOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous n'avez pas acces a ce portefeuille");
-        }
+        checkAdminOrOwner(authentication, portefeuilleOwnerId, "Vous n'avez pas acces a ce portefeuille");
     }
 
     /**
@@ -292,16 +242,7 @@ public class AuthorizationService {
      * (proprietaire de la notification ou admin)
      */
     public void checkCanAccessNotification(Authentication authentication, UUID notificationOwnerId) {
-        // Admin peut acceder a toutes les notifications
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, notificationOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous n'avez pas acces a cette notification");
-        }
+        checkAdminOrOwner(authentication, notificationOwnerId, "Vous n'avez pas acces a cette notification");
     }
 
     /**
@@ -309,16 +250,7 @@ public class AuthorizationService {
      * (auteur du message ou admin)
      */
     public void checkCanDeleteMessage(Authentication authentication, UUID messageAuthorId) {
-        // Admin peut supprimer tous les messages
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, messageAuthorId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez supprimer que vos propres messages");
-        }
+        checkAdminOrOwner(authentication, messageAuthorId, "Vous ne pouvez supprimer que vos propres messages");
     }
 
     /**
@@ -326,16 +258,7 @@ public class AuthorizationService {
      * (auteur de l'avis ou admin)
      */
     public void checkCanDeleteAvis(Authentication authentication, UUID avisAuthorId) {
-        // Admin peut supprimer tous les avis
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, avisAuthorId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez supprimer que vos propres avis");
-        }
+        checkAdminOrOwner(authentication, avisAuthorId, "Vous ne pouvez supprimer que vos propres avis");
     }
 
     /**
@@ -343,16 +266,7 @@ public class AuthorizationService {
      * (locataire ou proprietaire de l'annonce)
      */
     public void checkCanModifyReservation(Authentication authentication, UUID reservationOwnerId) {
-        // Admin peut modifier toutes les reservations
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, reservationOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez modifier que vos propres reservations");
-        }
+        checkAdminOrOwner(authentication, reservationOwnerId, "Vous ne pouvez modifier que vos propres reservations");
     }
 
     /**
@@ -360,16 +274,7 @@ public class AuthorizationService {
      * (proprietaire du garage ou admin)
      */
     public void checkCanAccessGarage(Authentication authentication, UUID garageOwnerId) {
-        // Admin peut acceder a tous les garages
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
-            return;
-        }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, garageOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous n'avez pas acces a ce garage");
-        }
+        checkAdminOrOwner(authentication, garageOwnerId, "Vous n'avez pas acces a ce garage");
     }
 
     /**
@@ -377,15 +282,28 @@ public class AuthorizationService {
      * (proprietaire de l'abonnement ou admin)
      */
     public void checkCanManageAbonnement(Authentication authentication, UUID abonnementOwnerId) {
-        // Admin peut gerer tous les abonnements
-        if (hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN")) {
+        checkAdminOrOwner(authentication, abonnementOwnerId, "Vous ne pouvez gerer que vos propres abonnements");
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return hasRole(authentication, "ADMIN") || hasRole(authentication, "SUPER_ADMIN");
+    }
+
+    private void checkAnyRoleOrThrow(Authentication authentication, String message, String... roles) {
+        if (!hasAnyRole(authentication, roles)) {
+            if (authentication != null) {
+                log.warn("Acces refuse pour utilisateur {}", authentication.getName());
+            }
+            throw new UnauthorizedAccessException(message);
+        }
+    }
+
+    private void checkAdminOrOwner(Authentication authentication, UUID ownerId, String message) {
+        if (isAdmin(authentication)) {
             return;
         }
-        
-        // Verifier la propriete
-        if (!isOwner(authentication, abonnementOwnerId)) {
-            throw new UnauthorizedAccessException(
-                    "Vous ne pouvez gerer que vos propres abonnements");
+        if (!isOwner(authentication, ownerId)) {
+            throw new UnauthorizedAccessException(message);
         }
     }
 }

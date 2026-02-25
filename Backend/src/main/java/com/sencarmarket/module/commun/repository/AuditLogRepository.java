@@ -31,6 +31,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
                                      @Param("action") String action, 
                                      @Param("since") LocalDateTime since);
 
-    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.action = :action AND a.dateAction > :since")
-    long countRecentActions(@Param("action") String action, @Param("since") LocalDateTime since);
+    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.utilisateurId = :utilisateurId AND a.action = :action AND a.dateAction > :since")
+    long countRecentActions(@Param("utilisateurId") UUID utilisateurId,
+                            @Param("action") String action,
+                            @Param("since") LocalDateTime since);
 }

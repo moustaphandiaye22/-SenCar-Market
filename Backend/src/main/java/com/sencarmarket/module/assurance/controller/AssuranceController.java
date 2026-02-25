@@ -3,25 +3,26 @@ package com.sencarmarket.module.assurance.controller;
 import com.sencarmarket.module.assurance.dto.*;
 import com.sencarmarket.module.assurance.service.AssuranceService;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/assurance")
+@RequestMapping({"/api/assurance", "/api/assurances"})
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
 public class AssuranceController {
 
     private final AssuranceService assuranceService;
+    private final AccessControlService accessControlService;
 
     // ==================== Produit Assurance ====================
 
@@ -123,22 +124,29 @@ public class AssuranceController {
 
     @PostMapping("/souscriptions")
     public ResponseEntity<SouscriptionAssuranceResponse> createSouscription(
-            @AuthenticationPrincipal UserDetails userDetails,
+            Authentication authentication,
             @Valid @RequestBody CreateSouscriptionAssuranceRequest request) {
-        // In a real app, get user ID from security context
-        UUID utilisateurId = UUID.fromString(userDetails.getUsername());
+        UUID utilisateurId = accessControlService.getCurrentUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(assuranceService.createSouscription(utilisateurId, request));
     }
 
     @GetMapping("/souscriptions/{id}")
-    public ResponseEntity<SouscriptionAssuranceResponse> getSouscriptionById(@PathVariable UUID id) {
-        return ResponseEntity.ok(assuranceService.getSouscriptionById(id));
+    public ResponseEntity<SouscriptionAssuranceResponse> getSouscriptionById(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        SouscriptionAssuranceResponse response = assuranceService.getSouscriptionById(id);
+        accessControlService.checkOwnerOrAdmin(authentication, response.getUtilisateurId(),
+                "Accès refusé à cette souscription");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/souscriptions/utilisateur/{utilisateurId}")
     public ResponseEntity<List<SouscriptionAssuranceResponse>> getSouscriptionsByUtilisateur(
-            @PathVariable UUID utilisateurId) {
+            @PathVariable UUID utilisateurId,
+            Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId,
+                "Accès refusé à cette souscription");
         return ResponseEntity.ok(assuranceService.getSouscriptionsByUtilisateur(utilisateurId));
     }
 
@@ -154,14 +162,23 @@ public class AssuranceController {
     @PostMapping("/souscriptions/{id}/payment")
     public ResponseEntity<SouscriptionAssuranceResponse> processPayment(
             @PathVariable UUID id,
-            @RequestParam UUID paiementId) {
+            @RequestParam UUID paiementId,
+            Authentication authentication) {
+        SouscriptionAssuranceResponse existing = assuranceService.getSouscriptionById(id);
+        accessControlService.checkOwnerOrAdmin(authentication, existing.getUtilisateurId(),
+                "Accès refusé à cette souscription");
         return ResponseEntity.ok(assuranceService.processPayment(id, paiementId));
     }
 
     // ==================== Contract ====================
 
     @PostMapping("/souscriptions/{id}/contrat")
-    public ResponseEntity<SouscriptionAssuranceResponse> generateContract(@PathVariable UUID id) {
+    public ResponseEntity<SouscriptionAssuranceResponse> generateContract(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        SouscriptionAssuranceResponse existing = assuranceService.getSouscriptionById(id);
+        accessControlService.checkOwnerOrAdmin(authentication, existing.getUtilisateurId(),
+                "Accès refusé à cette souscription");
         return ResponseEntity.ok(assuranceService.generateContract(id));
     }
 
@@ -171,7 +188,12 @@ public class AssuranceController {
     public ResponseEntity<SouscriptionAssuranceResponse> uploadDocument(
             @PathVariable UUID id,
             @RequestParam String documentType,
-            @RequestParam String documentUrl) {
+            @RequestParam String documentUrl,
+            Authentication authentication) {
+        SouscriptionAssuranceResponse existing = assuranceService.getSouscriptionById(id);
+        accessControlService.checkOwnerOrAdmin(authentication, existing.getUtilisateurId(),
+                "Accès refusé à cette souscription");
         return ResponseEntity.ok(assuranceService.uploadDocument(id, documentType, documentUrl));
     }
+
 }

@@ -17,7 +17,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SouscriptionRequest {
 
-    @NotNull(message = "L'ID de l'utilisateur est requis")
     private UUID utilisateurId;
 
     @NotNull(message = "L'ID de l'abonnement est requis")

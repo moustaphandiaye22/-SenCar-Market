@@ -57,5 +57,6 @@ public class CreateVehiculeRequest {
 
     private List<String> photosUrls;
 
+    @Builder.Default
     private Boolean enregistrerEnBrouillon = false;
 }

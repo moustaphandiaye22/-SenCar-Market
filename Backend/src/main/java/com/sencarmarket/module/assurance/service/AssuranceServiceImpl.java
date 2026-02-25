@@ -11,6 +11,7 @@ import com.sencarmarket.module.assurance.repository.SouscriptionAssuranceReposit
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.vehicule.entity.Vehicule;
@@ -39,6 +40,10 @@ public class AssuranceServiceImpl implements AssuranceService {
     private final SouscriptionAssuranceRepository subscriptionAssuranceRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
+    private final AssurancePricingService assurancePricingService;
+    private final AssuranceLifecycleService assuranceLifecycleService;
+    private final PaginationService paginationService;
+    private final AssuranceResponseMapper assuranceResponseMapper;
 
     @Override
     @Transactional
@@ -53,7 +58,7 @@ public class AssuranceServiceImpl implements AssuranceService {
                 .build();
 
         produit = produitAssuranceRepository.save(produit);
-        return mapToProduitResponse(produit);
+        return assuranceResponseMapper.toProduitResponse(produit);
     }
 
     @Override
@@ -61,7 +66,7 @@ public class AssuranceServiceImpl implements AssuranceService {
     public ProduitAssuranceResponse getProduitAssuranceById(UUID id) {
         ProduitAssurance produit = produitAssuranceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ProduitAssurance", "id", id));
-        return mapToProduitResponse(produit);
+        return assuranceResponseMapper.toProduitResponse(produit);
     }
 
     @Override
@@ -70,17 +75,17 @@ public class AssuranceServiceImpl implements AssuranceService {
         Page<ProduitAssurance> produitPage = produitAssuranceRepository.findAll(PageRequest.of(page, size));
         
         List<ProduitAssuranceResponse> responses = produitPage.getContent().stream()
-                .map(this::mapToProduitResponse)
+                .map(assuranceResponseMapper::toProduitResponse)
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(produitPage, responses);
+        return paginationService.build(produitPage, responses);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProduitAssuranceResponse> getActiveProduitAssurances() {
         return produitAssuranceRepository.findByEstActifTrue().stream()
-                .map(this::mapToProduitResponse)
+                .map(assuranceResponseMapper::toProduitResponse)
                 .collect(Collectors.toList());
     }
 
@@ -97,7 +102,7 @@ public class AssuranceServiceImpl implements AssuranceService {
         produit.setDureeMois(request.getDureeMois());
 
         produit = produitAssuranceRepository.save(produit);
-        return mapToProduitResponse(produit);
+        return assuranceResponseMapper.toProduitResponse(produit);
     }
 
     @Override
@@ -124,7 +129,7 @@ public class AssuranceServiceImpl implements AssuranceService {
                 .build();
 
         option = optionAssuranceRepository.save(option);
-        return mapToOptionResponse(option);
+        return assuranceResponseMapper.toOptionResponse(option);
     }
 
     @Override
@@ -132,14 +137,14 @@ public class AssuranceServiceImpl implements AssuranceService {
     public OptionAssuranceResponse getOptionAssuranceById(UUID id) {
         OptionAssurance option = optionAssuranceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("OptionAssurance", "id", id));
-        return mapToOptionResponse(option);
+        return assuranceResponseMapper.toOptionResponse(option);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<OptionAssuranceResponse> getOptionsByProduitAssurance(UUID produitAssuranceId) {
         return optionAssuranceRepository.findByProduitAssuranceId(produitAssuranceId).stream()
-                .map(this::mapToOptionResponse)
+                .map(assuranceResponseMapper::toOptionResponse)
                 .collect(Collectors.toList());
     }
 
@@ -160,7 +165,7 @@ public class AssuranceServiceImpl implements AssuranceService {
         option.setPrixSupplementaire(request.getPrixSupplementaire());
 
         option = optionAssuranceRepository.save(option);
-        return mapToOptionResponse(option);
+        return assuranceResponseMapper.toOptionResponse(option);
     }
 
     @Override
@@ -184,14 +189,8 @@ public class AssuranceServiceImpl implements AssuranceService {
         ProduitAssurance produit = produitAssuranceRepository.findById(request.getProduitAssuranceId())
                 .orElseThrow(() -> new ResourceNotFoundException("ProduitAssurance", "id", request.getProduitAssuranceId()));
 
-        // Calculate total price
-        BigDecimal montantTotal = calculateTotalPrice(produit, request.getOptionIds());
-
-        // Get selected options
-        List<OptionAssurance> selectedOptions = new ArrayList<>();
-        if (request.getOptionIds() != null && !request.getOptionIds().isEmpty()) {
-            selectedOptions = optionAssuranceRepository.findAllById(request.getOptionIds());
-        }
+        List<OptionAssurance> selectedOptions = assurancePricingService.getSelectedOptions(request.getOptionIds());
+        BigDecimal montantTotal = assurancePricingService.calculateTotalPrice(produit, selectedOptions);
 
         // Calculate dates
         LocalDateTime dateDebut = LocalDateTime.now();
@@ -211,7 +210,7 @@ public class AssuranceServiceImpl implements AssuranceService {
                 .build();
 
         subscription = subscriptionAssuranceRepository.save(subscription);
-        return mapToSouscriptionResponse(subscription);
+        return assuranceResponseMapper.toSouscriptionResponse(subscription);
     }
 
     @Override
@@ -219,14 +218,14 @@ public class AssuranceServiceImpl implements AssuranceService {
     public SouscriptionAssuranceResponse getSouscriptionById(UUID id) {
         SouscriptionAssurance subscription = subscriptionAssuranceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SouscriptionAssurance", "id", id));
-        return mapToSouscriptionResponse(subscription);
+        return assuranceResponseMapper.toSouscriptionResponse(subscription);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SouscriptionAssuranceResponse> getSouscriptionsByUtilisateur(UUID utilisateurId) {
         return subscriptionAssuranceRepository.findByUtilisateurId(utilisateurId).stream()
-                .map(this::mapToSouscriptionResponse)
+                .map(assuranceResponseMapper::toSouscriptionResponse)
                 .collect(Collectors.toList());
     }
 
@@ -236,12 +235,13 @@ public class AssuranceServiceImpl implements AssuranceService {
         ProduitAssurance produit = produitAssuranceRepository.findById(produitAssuranceId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProduitAssurance", "id", produitAssuranceId));
 
-        BigDecimal montantTotal = calculateTotalPrice(produit, optionIds);
+        List<OptionAssurance> selectedOptions = assurancePricingService.getSelectedOptions(optionIds);
+        BigDecimal montantTotal = assurancePricingService.calculateTotalPrice(produit, selectedOptions);
 
         List<OptionAssuranceResponse> optionResponses = new ArrayList<>();
-        if (optionIds != null && !optionIds.isEmpty()) {
-            optionResponses = optionAssuranceRepository.findAllById(optionIds).stream()
-                    .map(this::mapToOptionResponse)
+        if (!selectedOptions.isEmpty()) {
+            optionResponses = selectedOptions.stream()
+                    .map(assuranceResponseMapper::toOptionResponse)
                     .collect(Collectors.toList());
         }
 
@@ -259,19 +259,11 @@ public class AssuranceServiceImpl implements AssuranceService {
         SouscriptionAssurance subscription = subscriptionAssuranceRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("SouscriptionAssurance", "id", subscriptionId));
 
-        // Validate status before payment
-        if (subscription.getStatut() != StatutAssurance.EN_ATTENTE) {
-            throw new InvalidOperationException(
-                "Impossible de traiter le paiement. Le statut actuel est : " + subscription.getStatut() + 
-                ". Seul le statut EN_ATTENTE permet un paiement.");
-        }
-
-        // Update payment ID and status
-        subscription.setPaiementId(paiementId);
-        subscription.setStatut(StatutAssurance.PAYEE);
+        assuranceLifecycleService.ensureCanProcessPayment(subscription);
+        assuranceLifecycleService.applyPayment(subscription, paiementId);
 
         subscription = subscriptionAssuranceRepository.save(subscription);
-        return mapToSouscriptionResponse(subscription);
+        return assuranceResponseMapper.toSouscriptionResponse(subscription);
     }
 
     @Override
@@ -280,19 +272,11 @@ public class AssuranceServiceImpl implements AssuranceService {
         SouscriptionAssurance subscription = subscriptionAssuranceRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("SouscriptionAssurance", "id", subscriptionId));
 
-        // Validate that payment was made before generating contract
-        if (subscription.getStatut() != StatutAssurance.PAYEE) {
-            throw new InvalidOperationException(
-                "Impossible de générer le contrat. Le paiement doit être confirmé avant la génération du contrat.");
-        }
-
-        // Generate contract URL (in real app, this would generate a PDF)
-        String contractUrl = "/contracts/" + subscription.getNumeroContrat() + ".pdf";
-        subscription.setDocumentUrl(contractUrl);
-        subscription.setStatut(StatutAssurance.ACTIVE);
+        assuranceLifecycleService.ensureCanGenerateContract(subscription);
+        assuranceLifecycleService.activateWithContract(subscription);
 
         subscription = subscriptionAssuranceRepository.save(subscription);
-        return mapToSouscriptionResponse(subscription);
+        return assuranceResponseMapper.toSouscriptionResponse(subscription);
     }
 
     @Override
@@ -305,94 +289,7 @@ public class AssuranceServiceImpl implements AssuranceService {
         subscription.setDocumentUrl(documentUrl);
 
         subscription = subscriptionAssuranceRepository.save(subscription);
-        return mapToSouscriptionResponse(subscription);
+        return assuranceResponseMapper.toSouscriptionResponse(subscription);
     }
 
-    // Helper methods
-    private BigDecimal calculateTotalPrice(ProduitAssurance produit, List<UUID> optionIds) {
-        BigDecimal total = produit.getPrixBase();
-        
-        if (optionIds != null && !optionIds.isEmpty()) {
-            List<OptionAssurance> options = optionAssuranceRepository.findAllById(optionIds);
-            for (OptionAssurance option : options) {
-                total = total.add(option.getPrixSupplementaire());
-            }
-        }
-        
-        return total;
-    }
-
-    /**
-     * Méthode helper pour construire une réponse paginée
-     */
-    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
-        return PaginatedResponse.<T>builder()
-                .content(content)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
-    }
-
-    private ProduitAssuranceResponse mapToProduitResponse(ProduitAssurance produit) {
-        List<OptionAssuranceResponse> options = optionAssuranceRepository
-                .findByProduitAssuranceId(produit.getId()).stream()
-                .map(this::mapToOptionResponse)
-                .collect(Collectors.toList());
-
-        return ProduitAssuranceResponse.builder()
-                .id(produit.getId())
-                .nom(produit.getNom())
-                .description(produit.getDescription())
-                .prixBase(produit.getPrixBase())
-                .typeAssurance(produit.getTypeAssurance())
-                .dureeMois(produit.getDureeMois())
-                .estActif(produit.getEstActif())
-                .options(options)
-                .createdAt(produit.getCreatedAt())
-                .updatedAt(produit.getUpdatedAt())
-                .build();
-    }
-
-    private OptionAssuranceResponse mapToOptionResponse(OptionAssurance option) {
-        return OptionAssuranceResponse.builder()
-                .id(option.getId())
-                .nom(option.getNom())
-                .description(option.getDescription())
-                .prixSupplementaire(option.getPrixSupplementaire())
-                .produitAssuranceId(option.getProduitAssurance().getId())
-                .estActif(option.getEstActif())
-                .createdAt(option.getCreatedAt())
-                .updatedAt(option.getUpdatedAt())
-                .build();
-    }
-
-    private SouscriptionAssuranceResponse mapToSouscriptionResponse(SouscriptionAssurance subscription) {
-        List<OptionAssuranceResponse> options = subscription.getOptionsSelectionnees().stream()
-                .map(this::mapToOptionResponse)
-                .collect(Collectors.toList());
-
-        return SouscriptionAssuranceResponse.builder()
-                .id(subscription.getId())
-                .utilisateurId(subscription.getUtilisateur().getId())
-                .utilisateurNom(subscription.getUtilisateur().getNom())
-                .vehiculeId(subscription.getVehicule().getId())
-                .vehiculeDescription(subscription.getVehicule().getMarque() + " " + subscription.getVehicule().getModele())
-                .produitAssuranceId(subscription.getProduitAssurance().getId())
-                .produitAssuranceNom(subscription.getProduitAssurance().getNom())
-                .optionsSelectionnees(options)
-                .montantTotal(subscription.getMontantTotal())
-                .statut(subscription.getStatut())
-                .dateDebut(subscription.getDateDebut())
-                .dateFin(subscription.getDateFin())
-                .numeroContrat(subscription.getNumeroContrat())
-                .documentUrl(subscription.getDocumentUrl())
-                .paiementId(subscription.getPaiementId())
-                .createdAt(subscription.getCreatedAt())
-                .updatedAt(subscription.getUpdatedAt())
-                .build();
-    }
 }

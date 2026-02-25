@@ -25,6 +25,5 @@ public class ActionAdminRequest {
     @NotBlank(message = "L'action admin est requise")
     private String actionAdmin;
 
-    @NotNull(message = "L'ID de l'admin est requis")
     private UUID adminId;
 }

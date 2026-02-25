@@ -4,9 +4,11 @@ import com.sencarmarket.module.avis.dto.AvisResponse;
 import com.sencarmarket.module.avis.dto.CreateAvisRequest;
 import com.sencarmarket.module.avis.entity.Avis;
 import com.sencarmarket.module.avis.repository.AvisRepository;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.garage.entity.Garage;
 import com.sencarmarket.module.garage.repository.GarageRepository;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
@@ -36,6 +38,8 @@ public class AvisServiceImpl implements AvisService {
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
     private final GarageRepository garageRepository;
+    private final AvisValidationService avisValidationService;
+    private final PaginationService paginationService;
 
     @Override
     @Transactional
@@ -43,22 +47,16 @@ public class AvisServiceImpl implements AvisService {
         log.info("Creating avis by user {} for transaction {}", auteurId, request.getTransactionId());
 
         // Vérifier le type d'avis valide
-        Avis.TypeAvis typeAvis;
-        try {
-            typeAvis = Avis.TypeAvis.valueOf(request.getTypeAvis());
-        } catch (IllegalArgumentException e) {
-            throw new InvalidOperationException("Type d'avis invalide. Types valides: " + 
-                String.join(", ", java.util.Arrays.stream(Avis.TypeAvis.values()).map(Enum::name).toList()));
-        }
+        Avis.TypeAvis typeAvis = avisValidationService.parseTypeAvis(request.getTypeAvis());
 
         // Vérifier la transaction valide
         if (!isTransactionValide(request.getTransactionId(), typeAvis.name())) {
-            throw new InvalidOperationException("Transaction invalide ou expirée");
+            throw new InvalidOperationException(AppMessages.INVALID_TRANSACTION);
         }
 
         // Vérifier qu'un avis n'existe pas déjà pour cette transaction
         if (avisRepository.existsByTransactionIdAndAuteurId(request.getTransactionId(), auteurId)) {
-            throw new InvalidOperationException("Vous avez déjà laissé un avis pour cette transaction");
+            throw new InvalidOperationException(AppMessages.AVIS_ALREADY_EXISTS_FOR_TRANSACTION);
         }
 
         // Vérifier qu'une cible est spécifiée
@@ -67,17 +65,11 @@ public class AvisServiceImpl implements AvisService {
         if (request.getVehiculeId() != null) cibleCount++;
         if (request.getGarageId() != null) cibleCount++;
 
-        if (cibleCount == 0) {
-            throw new InvalidOperationException("Veuillez spécifier une cible (utilisateur, véhicule ou garage)");
-        }
-
-        if (cibleCount > 1) {
-            throw new InvalidOperationException("Veuillez spécifier une seule cible");
-        }
+        avisValidationService.validateSingleTarget(cibleCount);
 
         // Récupérer l'auteur
         Utilisateur auteur = utilisateurRepository.findById(auteurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.USER_NOT_FOUND));
 
         // Vérifier que l'auteur peut noter cette cible (logique métier)
         // Par exemple, on ne peut pas noter un véhicule qu'on n'a pas acheté/loué
@@ -98,23 +90,21 @@ public class AvisServiceImpl implements AvisService {
         // Ajouter la cible
         if (request.getCibleUtilisateurId() != null) {
             Utilisateur cible = utilisateurRepository.findById(request.getCibleUtilisateurId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Utilisateur cible non trouvé"));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppMessages.TARGET_USER_NOT_FOUND));
             // Ne pas permettre de s'auto-noter
-            if (cible.getId().equals(auteurId)) {
-                throw new InvalidOperationException("Vous ne pouvez pas noter votre propre profil");
-            }
+            avisValidationService.validateNotSelfReview(cible.getId().equals(auteurId));
             avisBuilder.cibleUtilisateur(cible);
         }
 
         if (request.getVehiculeId() != null) {
             Vehicule vehicule = vehiculeRepository.findById(request.getVehiculeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Véhicule non trouvé"));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppMessages.VEHICULE_NOT_FOUND));
             avisBuilder.vehicule(vehicule);
         }
 
         if (request.getGarageId() != null) {
             Garage garage = garageRepository.findById(request.getGarageId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé"));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppMessages.GARAGE_NOT_FOUND));
             avisBuilder.garage(garage);
         }
 
@@ -127,7 +117,7 @@ public class AvisServiceImpl implements AvisService {
     @Override
     public AvisResponse getAvisById(UUID avisId) {
         Avis avis = avisRepository.findById(avisId)
-                .orElseThrow(() -> new ResourceNotFoundException("Avis non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.AVIS_NOT_FOUND));
         return AvisResponse.fromEntity(avis);
     }
 
@@ -156,19 +146,7 @@ public class AvisServiceImpl implements AvisService {
      * Méthode helper pour construire la réponse paginée
      */
     private PaginatedResponse<AvisResponse> buildPaginatedResponse(Page<Avis> avisPage) {
-        List<AvisResponse> content = avisPage.getContent().stream()
-                .map(AvisResponse::fromEntity)
-                .collect(Collectors.toList());
-
-        return PaginatedResponse.<AvisResponse>builder()
-                .content(content)
-                .page(avisPage.getNumber())
-                .size(avisPage.getSize())
-                .totalElements(avisPage.getTotalElements())
-                .totalPages(avisPage.getTotalPages())
-                .last(avisPage.isLast())
-                .first(avisPage.isFirst())
-                .build();
+        return paginationService.map(avisPage, AvisResponse::fromEntity);
     }
 
     @Override
@@ -214,11 +192,11 @@ public class AvisServiceImpl implements AvisService {
     @Transactional
     public void signalerAvis(UUID avisId, UUID utilisateurId) {
         Avis avis = avisRepository.findById(avisId)
-                .orElseThrow(() -> new ResourceNotFoundException("Avis non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.AVIS_NOT_FOUND));
 
         // Vérifier que l'utilisateur n'est pas l'auteur
         if (avis.getAuteur().getId().equals(utilisateurId)) {
-            throw new InvalidOperationException("Vous ne pouvez pas signaler votre propre avis");
+            throw new InvalidOperationException(AppMessages.AVIS_CANNOT_REPORT_SELF);
         }
 
         avis.setStatut(Avis.StatutAvis.SIGNALEE);
@@ -230,12 +208,12 @@ public class AvisServiceImpl implements AvisService {
     @Transactional
     public void deleteAvis(UUID avisId, UUID utilisateurId) {
         Avis avis = avisRepository.findById(avisId)
-                .orElseThrow(() -> new ResourceNotFoundException("Avis non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.AVIS_NOT_FOUND));
 
         // Vérifier que l'utilisateur est l'auteur ou un admin
         // Pour l'instant, seul l'auteur peut supprimer
         if (!avis.getAuteur().getId().equals(utilisateurId)) {
-            throw new InvalidOperationException("Vous ne pouvez pas supprimer cet avis");
+            throw new InvalidOperationException(AppMessages.AVIS_CANNOT_DELETE);
         }
 
         avis.setStatut(Avis.StatutAvis.SUPPRIMEE);

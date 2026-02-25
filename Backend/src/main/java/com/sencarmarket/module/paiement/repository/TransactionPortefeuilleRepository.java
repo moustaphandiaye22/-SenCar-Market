@@ -19,6 +19,8 @@ public interface TransactionPortefeuilleRepository extends JpaRepository<Transac
     
     List<TransactionPortefeuille> findByStatut(StatutTransaction statut);
 
+    boolean existsByIdAndPortefeuilleUtilisateurId(UUID id, UUID utilisateurId);
+
     // Méthodes de comptage pour le dashboard admin
     long countByStatut(StatutTransaction statut);
 }

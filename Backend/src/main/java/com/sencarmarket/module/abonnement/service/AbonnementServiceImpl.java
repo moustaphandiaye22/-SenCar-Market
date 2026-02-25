@@ -1,7 +1,9 @@
 package com.sencarmarket.module.abonnement.service;
 
 import com.sencarmarket.module.abonnement.dto.AbonnementResponse;
+import com.sencarmarket.module.abonnement.dto.BoostAnnonceResponse;
 import com.sencarmarket.module.abonnement.dto.CreateAbonnementRequest;
+import com.sencarmarket.module.abonnement.dto.CreateBoostRequest;
 import com.sencarmarket.module.abonnement.dto.SouscriptionRequest;
 import com.sencarmarket.module.abonnement.dto.UtilisateurAbonnementResponse;
 import com.sencarmarket.module.abonnement.entity.Abonnement;
@@ -11,8 +13,11 @@ import com.sencarmarket.module.abonnement.enums.StatutAbonnement;
 import com.sencarmarket.module.abonnement.repository.AbonnementRepository;
 import com.sencarmarket.module.abonnement.repository.BoostAnnonceRepository;
 import com.sencarmarket.module.abonnement.repository.UtilisateurAbonnementRepository;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,10 +39,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class AbonnementServiceImpl implements IAbonnementService {
+    private static final String RESOURCE_ABONNEMENT = "Abonnement";
+    private static final String RESOURCE_BOOST = "Boost";
+    private static final String FIELD_ID = "id";
 
     private final AbonnementRepository abonnementRepository;
     private final UtilisateurAbonnementRepository utilisateurAbonnementRepository;
     private final BoostAnnonceRepository boostAnnonceRepository;
+    private final SubscriptionLifecycleService subscriptionLifecycleService;
+    private final PaginationService paginationService;
 
     // ==================== GESTION DES PLANS D'ABONNEMENT ====================
 
@@ -70,7 +80,7 @@ public class AbonnementServiceImpl implements IAbonnementService {
         log.info("Mise à jour du plan d'abonnement: {}", id);
 
         Abonnement abonnement = abonnementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ABONNEMENT, FIELD_ID, id));
 
         abonnement.setNom(request.getNom());
         abonnement.setDescription(request.getDescription());
@@ -93,7 +103,7 @@ public class AbonnementServiceImpl implements IAbonnementService {
         log.info("Suppression du plan d'abonnement: {}", id);
 
         Abonnement abonnement = abonnementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ABONNEMENT, FIELD_ID, id));
 
         // Désactiver au lieu de supprimer
         abonnement.setEstActif(false);
@@ -105,7 +115,7 @@ public class AbonnementServiceImpl implements IAbonnementService {
     @Override
     public AbonnementResponse getAbonnementById(UUID id) {
         Abonnement abonnement = abonnementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ABONNEMENT, FIELD_ID, id));
         return AbonnementResponse.fromEntity(abonnement);
     }
 
@@ -127,28 +137,11 @@ public class AbonnementServiceImpl implements IAbonnementService {
 
         // Vérifier l'abonnement
         Abonnement abonnement = abonnementRepository.findById(request.getAbonnementId())
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.ABONNEMENT_NOT_FOUND));
 
-        // Vérifier si l'utilisateur a déjà un abonnement actif
-        var existingSub = utilisateurAbonnementRepository.findActiveSubscription(
-                request.getUtilisateurId(), LocalDateTime.now());
-
-        if (existingSub.isPresent()) {
-            throw new IllegalStateException("L'utilisateur a déjà un abonnement actif");
-        }
-
-        // Créer la subscription
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime dateFin = now.plusDays(abonnement.getDureeJours());
-
-        UtilisateurAbonnement subscription = UtilisateurAbonnement.builder()
-                .utilisateurId(request.getUtilisateurId())
-                .abonnementId(abonnement.getId())
-                .dateDebut(now)
-                .dateFin(dateFin)
-                .statut(StatutAbonnement.ACTIF)
-                .nombreAnnoncesUtilisees(0)
-                .build();
+        subscriptionLifecycleService.ensureNoActiveSubscription(request.getUtilisateurId());
+        UtilisateurAbonnement subscription =
+                subscriptionLifecycleService.createActiveSubscription(request.getUtilisateurId(), abonnement);
 
         UtilisateurAbonnement saved = utilisateurAbonnementRepository.save(subscription);
         log.info("Souscription créée avec ID: {}", saved.getId());
@@ -161,20 +154,15 @@ public class AbonnementServiceImpl implements IAbonnementService {
     public UtilisateurAbonnementResponse renewSubscription(UUID utilisateurId) {
         log.info("Renouvellement de l'abonnement pour l'utilisateur: {}", utilisateurId);
 
-        UtilisateurAbonnement subscription = utilisateurAbonnementRepository.findActiveSubscription(
-                utilisateurId, LocalDateTime.now())
-                .orElseThrow(() -> new ResourceNotFoundException("Aucun abonnement actif trouvé"));
+        UtilisateurAbonnement subscription = subscriptionLifecycleService.getActiveSubscriptionOrThrow(utilisateurId);
 
         Abonnement abonnement = abonnementRepository.findById(subscription.getAbonnementId())
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.ABONNEMENT_NOT_FOUND));
 
-        // Étendre la date de fin
-        LocalDateTime newDateFin = subscription.getDateFin().plusDays(abonnement.getDureeJours());
-        subscription.setDateFin(newDateFin);
-        subscription.setStatut(StatutAbonnement.ACTIF);
+        subscriptionLifecycleService.renew(subscription, abonnement);
 
         UtilisateurAbonnement saved = utilisateurAbonnementRepository.save(subscription);
-        log.info("Abonnement renouvelé jusqu'au: {}", newDateFin);
+        log.info("Abonnement renouvelé jusqu'au: {}", saved.getDateFin());
 
         return UtilisateurAbonnementResponse.fromEntity(saved);
     }
@@ -184,11 +172,8 @@ public class AbonnementServiceImpl implements IAbonnementService {
     public void cancelSubscription(UUID utilisateurId) {
         log.info("Annulation de l'abonnement pour l'utilisateur: {}", utilisateurId);
 
-        UtilisateurAbonnement subscription = utilisateurAbonnementRepository.findActiveSubscription(
-                utilisateurId, LocalDateTime.now())
-                .orElseThrow(() -> new ResourceNotFoundException("Aucun abonnement actif trouvé"));
-
-        subscription.setStatut(StatutAbonnement.ANNULE);
+        UtilisateurAbonnement subscription = subscriptionLifecycleService.getActiveSubscriptionOrThrow(utilisateurId);
+        subscriptionLifecycleService.cancel(subscription);
         utilisateurAbonnementRepository.save(subscription);
 
         log.info("Abonnement annulé");
@@ -210,37 +195,35 @@ public class AbonnementServiceImpl implements IAbonnementService {
                 .map(UtilisateurAbonnementResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<UtilisateurAbonnementResponse>builder()
-                .content(content)
-                .page(subscriptionsPage.getNumber())
-                .size(subscriptionsPage.getSize())
-                .totalElements(subscriptionsPage.getTotalElements())
-                .totalPages(subscriptionsPage.getTotalPages())
-                .last(subscriptionsPage.isLast())
-                .first(subscriptionsPage.isFirst())
-                .build();
+        return paginationService.build(subscriptionsPage, content);
     }
 
     // ==================== BOOST ====================
 
     @Override
     @Transactional
-    public BoostAnnonce createBoost(BoostAnnonce boost) {
+    public BoostAnnonceResponse createBoost(CreateBoostRequest boost) {
         log.info("Création d'un boost pour l'annonce: {}", boost.getAnnonceLocationId());
-        return boostAnnonceRepository.save(boost);
+        BoostAnnonce entity = BoostAnnonce.builder()
+                .annonceLocationId(boost.getAnnonceLocationId())
+                .dateDebut(boost.getDateDebut())
+                .dateFin(boost.getDateFin())
+                .niveauBoost(boost.getNiveauBoost())
+                .build();
+        return BoostAnnonceResponse.fromEntity(boostAnnonceRepository.save(entity));
     }
 
     @Override
     @Transactional
-    public BoostAnnonce updateBoost(UUID id, BoostAnnonce boost) {
+    public BoostAnnonceResponse updateBoost(UUID id, CreateBoostRequest boost) {
         BoostAnnonce existingBoost = boostAnnonceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Boost non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_BOOST, FIELD_ID, id));
 
         existingBoost.setDateDebut(boost.getDateDebut());
         existingBoost.setDateFin(boost.getDateFin());
         existingBoost.setNiveauBoost(boost.getNiveauBoost());
 
-        return boostAnnonceRepository.save(existingBoost);
+        return BoostAnnonceResponse.fromEntity(boostAnnonceRepository.save(existingBoost));
     }
 
     @Override
@@ -251,15 +234,18 @@ public class AbonnementServiceImpl implements IAbonnementService {
     }
 
     @Override
-    public BoostAnnonce getBoostById(UUID id) {
+    public BoostAnnonceResponse getBoostById(UUID id) {
         return boostAnnonceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Boost non trouvé"));
+                .map(BoostAnnonceResponse::fromEntity)
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_BOOST, FIELD_ID, id));
     }
 
     @Override
-    public List<BoostAnnonce> getBoostsByVehicule(UUID vehiculeId) {
+    public List<BoostAnnonceResponse> getBoostsByVehicule(UUID vehiculeId) {
         return boostAnnonceRepository.findByAnnonceLocationIdAndDateFinAfter(
-                vehiculeId, LocalDateTime.now());
+                vehiculeId, LocalDateTime.now()).stream()
+                .map(BoostAnnonceResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     // ==================== EXPIRATION AUTOMATIQUE ====================
@@ -270,18 +256,8 @@ public class AbonnementServiceImpl implements IAbonnementService {
     @Transactional
     public void expireSubscriptions() {
         log.info("Vérification des abonnements expirés");
-
-        List<UtilisateurAbonnement> expiredSubscriptions = utilisateurAbonnementRepository
-                .findExpiredSubscriptions(LocalDateTime.now());
-
-        for (UtilisateurAbonnement subscription : expiredSubscriptions) {
-            subscription.setStatut(StatutAbonnement.EXPIRE);
-            utilisateurAbonnementRepository.save(subscription);
-            log.info("Abonnement {} expiré pour l'utilisateur {}", 
-                    subscription.getId(), subscription.getUtilisateurId());
-        }
-
-        log.info("{} abonnements expirés", expiredSubscriptions.size());
+        int expired = subscriptionLifecycleService.expireDueSubscriptions();
+        log.info("{} abonnements expirés", expired);
     }
 
     /**
@@ -293,13 +269,7 @@ public class AbonnementServiceImpl implements IAbonnementService {
                     Abonnement abonnement = abonnementRepository.findById(subscription.getAbonnementId())
                             .orElse(null);
                     if (abonnement == null) return false;
-
-                    int used = subscription.getNombreAnnoncesUtilisees() != null 
-                            ? subscription.getNombreAnnoncesUtilisees() : 0;
-                    int allowed = abonnement.getNombreAnnonces() != null 
-                            ? abonnement.getNombreAnnonces() : 0;
-
-                    return used < allowed;
+                    return subscriptionLifecycleService.canPostAnnonce(subscription, abonnement);
                 })
                 .orElse(false);
     }
@@ -311,9 +281,7 @@ public class AbonnementServiceImpl implements IAbonnementService {
     public void incrementerAnnoncesUtilisees(UUID utilisateurId) {
         utilisateurAbonnementRepository.findActiveSubscription(utilisateurId, LocalDateTime.now())
                 .ifPresent(subscription -> {
-                    int current = subscription.getNombreAnnoncesUtilisees() != null 
-                            ? subscription.getNombreAnnoncesUtilisees() : 0;
-                    subscription.setNombreAnnoncesUtilisees(current + 1);
+                    subscriptionLifecycleService.incrementUsedAnnonces(subscription);
                     utilisateurAbonnementRepository.save(subscription);
                 });
     }
@@ -352,14 +320,14 @@ public class AbonnementServiceImpl implements IAbonnementService {
         // Rechercher la subscription en attente
         UtilisateurAbonnement subscription = utilisateurAbonnementRepository
                 .findByUtilisateurIdAndStatut(utilisateurId, StatutAbonnement.EN_ATTENTE)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune subscription en attente"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.NO_PENDING_SUBSCRIPTION));
         
         // Activer l'abonnement
         subscription.setStatut(StatutAbonnement.ACTIF);
         
         // Calculer la date de fin
         Abonnement abonnement = abonnementRepository.findById(subscription.getAbonnementId())
-                .orElseThrow(() -> new ResourceNotFoundException("Abonnement non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.ABONNEMENT_NOT_FOUND));
         
         subscription.setDateFin(LocalDateTime.now().plusDays(abonnement.getDureeJours()));
         

@@ -1,18 +1,22 @@
 package com.sencarmarket.module.abonnement.controller;
 
 import com.sencarmarket.module.abonnement.dto.AbonnementResponse;
+import com.sencarmarket.module.abonnement.dto.BoostAnnonceResponse;
 import com.sencarmarket.module.abonnement.dto.CreateAbonnementRequest;
+import com.sencarmarket.module.abonnement.dto.CreateBoostRequest;
 import com.sencarmarket.module.abonnement.dto.SouscriptionRequest;
 import com.sencarmarket.module.abonnement.dto.UtilisateurAbonnementResponse;
-import com.sencarmarket.module.abonnement.entity.BoostAnnonce;
 import com.sencarmarket.module.abonnement.service.IAbonnementService;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +33,7 @@ import java.util.UUID;
 public class AbonnementController {
 
     private final IAbonnementService abonnementService;
+    private final AccessControlService accessControlService;
 
     // ==================== GESTION DES PLANS D'ABONNEMENT ====================
 
@@ -94,7 +99,10 @@ public class AbonnementController {
      */
     @PostMapping("/souscription")
     public ResponseEntity<UtilisateurAbonnementResponse> subscribe(
-            @Valid @RequestBody SouscriptionRequest request) {
+            @Valid @RequestBody SouscriptionRequest request,
+            Authentication authentication) {
+        applyAuthenticatedUtilisateurId(request, authentication);
+        accessControlService.checkOwnerOrAdmin(authentication, request.getUtilisateurId(), AppMessages.ACCESS_DENIED_RESOURCE);
         log.info("Requête de souscription - Utilisateur: {}, Abonnement: {}", 
                 request.getUtilisateurId(), request.getAbonnementId());
         UtilisateurAbonnementResponse response = abonnementService.subscribe(request);
@@ -106,7 +114,9 @@ public class AbonnementController {
      */
     @PostMapping("/utilisateurs/{utilisateurId}/renew")
     public ResponseEntity<UtilisateurAbonnementResponse> renewSubscription(
-            @PathVariable UUID utilisateurId) {
+            @PathVariable UUID utilisateurId,
+            Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId, AppMessages.ACCESS_DENIED_RESOURCE);
         log.info("Requête de renouvellement pour l'utilisateur: {}", utilisateurId);
         UtilisateurAbonnementResponse response = abonnementService.renewSubscription(utilisateurId);
         return ResponseEntity.ok(response);
@@ -116,7 +126,8 @@ public class AbonnementController {
      * Annuler un abonnement
      */
     @PostMapping("/utilisateurs/{utilisateurId}/cancel")
-    public ResponseEntity<Void> cancelSubscription(@PathVariable UUID utilisateurId) {
+    public ResponseEntity<Void> cancelSubscription(@PathVariable UUID utilisateurId, Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId, AppMessages.ACCESS_DENIED_RESOURCE);
         log.info("Requête d'annulation pour l'utilisateur: {}", utilisateurId);
         abonnementService.cancelSubscription(utilisateurId);
         return ResponseEntity.noContent().build();
@@ -127,7 +138,9 @@ public class AbonnementController {
      */
     @GetMapping("/utilisateurs/{utilisateurId}/actif")
     public ResponseEntity<UtilisateurAbonnementResponse> getActiveSubscription(
-            @PathVariable UUID utilisateurId) {
+            @PathVariable UUID utilisateurId,
+            Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId, AppMessages.ACCESS_DENIED_RESOURCE);
         log.info("Requête de récupération de l'abonnement actif pour: {}", utilisateurId);
         UtilisateurAbonnementResponse response = abonnementService.getActiveSubscription(utilisateurId);
         
@@ -144,7 +157,9 @@ public class AbonnementController {
     public ResponseEntity<PaginatedResponse<UtilisateurAbonnementResponse>> getSubscriptionsHistory(
             @PathVariable UUID utilisateurId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId, AppMessages.ACCESS_DENIED_RESOURCE);
         log.info("Requête de récupération de l'historique pour l'utilisateur: {}", utilisateurId);
         PaginatedResponse<UtilisateurAbonnementResponse> response = 
                 abonnementService.getSubscriptionsByUtilisateur(utilisateurId, page, size);
@@ -157,9 +172,9 @@ public class AbonnementController {
      * Créer un boost pour une annonce
      */
     @PostMapping("/boosts")
-    public ResponseEntity<BoostAnnonce> createBoost(@RequestBody BoostAnnonce boost) {
+    public ResponseEntity<BoostAnnonceResponse> createBoost(@Valid @RequestBody CreateBoostRequest boost) {
         log.info("Requête de création d'un boost pour l'annonce: {}", boost.getAnnonceLocationId());
-        BoostAnnonce response = abonnementService.createBoost(boost);
+        BoostAnnonceResponse response = abonnementService.createBoost(boost);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -167,11 +182,11 @@ public class AbonnementController {
      * Mettre à jour un boost
      */
     @PutMapping("/boosts/{id}")
-    public ResponseEntity<BoostAnnonce> updateBoost(
+    public ResponseEntity<BoostAnnonceResponse> updateBoost(
             @PathVariable UUID id,
-            @RequestBody BoostAnnonce boost) {
+            @Valid @RequestBody CreateBoostRequest boost) {
         log.info("Requête de mise à jour du boost: {}", id);
-        BoostAnnonce response = abonnementService.updateBoost(id, boost);
+        BoostAnnonceResponse response = abonnementService.updateBoost(id, boost);
         return ResponseEntity.ok(response);
     }
 
@@ -189,9 +204,9 @@ public class AbonnementController {
      * Obtenir un boost par ID
      */
     @GetMapping("/boosts/{id}")
-    public ResponseEntity<BoostAnnonce> getBoostById(@PathVariable UUID id) {
+    public ResponseEntity<BoostAnnonceResponse> getBoostById(@PathVariable UUID id) {
         log.info("Requête de récupération du boost: {}", id);
-        BoostAnnonce response = abonnementService.getBoostById(id);
+        BoostAnnonceResponse response = abonnementService.getBoostById(id);
         return ResponseEntity.ok(response);
     }
 
@@ -199,9 +214,16 @@ public class AbonnementController {
      * Obtenir les boosts actifs pour un véhicule
      */
     @GetMapping("/vehicules/{vehiculeId}/boosts")
-    public ResponseEntity<List<BoostAnnonce>> getBoostsByVehicule(@PathVariable UUID vehiculeId) {
+    public ResponseEntity<List<BoostAnnonceResponse>> getBoostsByVehicule(@PathVariable UUID vehiculeId) {
         log.info("Requête de récupération des boosts pour le véhicule: {}", vehiculeId);
-        List<BoostAnnonce> response = abonnementService.getBoostsByVehicule(vehiculeId);
+        List<BoostAnnonceResponse> response = abonnementService.getBoostsByVehicule(vehiculeId);
         return ResponseEntity.ok(response);
+    }
+
+    private void applyAuthenticatedUtilisateurId(SouscriptionRequest request, Authentication authentication) {
+        UUID currentUserId = accessControlService.getCurrentUserId(authentication);
+        if (!accessControlService.isAdmin(authentication) || request.getUtilisateurId() == null) {
+            request.setUtilisateurId(currentUserId);
+        }
     }
 }

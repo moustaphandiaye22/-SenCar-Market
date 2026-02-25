@@ -50,7 +50,4 @@ public final class PaiementConstants {
     public static final String REGEX_TELEPHONE = "^[+]?[0-9]{8,15}$";
     public static final String REGEX_REFERENCE = "^[A-Z0-9]{10,50}$";
     
-    // ========== URLs ==========
-    public static final String URL_WAVE_API = "https://api.wave.com";
-    public static final String URL_OM_API = "https://api.orange.com";
 }

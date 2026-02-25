@@ -42,7 +42,7 @@ public class Conversation {
     private UUID annonceId;
 
     // Message épinglé
-    @Column(name = "message_epinglé_id")
+    @Column(name = "message_epingle_id")
     private UUID messageEpingleId;
 
     // Avatar du groupe

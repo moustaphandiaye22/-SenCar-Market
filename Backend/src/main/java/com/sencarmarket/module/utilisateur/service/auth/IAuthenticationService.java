@@ -12,6 +12,8 @@ public interface IAuthenticationService {
     AuthResponse register(RegisterRequest request);
 
     void verifyEmail(String email);
+    
+    void verifyEmailWithOtp(String email, String otpCode);
 
     void resendOtp(String email);
 

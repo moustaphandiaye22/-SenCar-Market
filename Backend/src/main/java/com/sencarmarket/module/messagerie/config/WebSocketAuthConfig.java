@@ -1,9 +1,13 @@
 package com.sencarmarket.module.messagerie.config;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
+import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +36,10 @@ import java.util.UUID;
 @EnableWebSocketMessageBroker
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 @Slf4j
+@RequiredArgsConstructor
 public class WebSocketAuthConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final UtilisateurRepository utilisateurRepository;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -68,15 +75,16 @@ public class WebSocketAuthConfig implements WebSocketMessageBrokerConfigurer {
                                 log.info("WebSocket authenticated for user: {}", userId);
                             } else {
                                 log.warn("Invalid JWT token for WebSocket connection");
-                                throw new IllegalArgumentException("Token JWT invalide");
+                                throw new IllegalArgumentException(AppMessages.JWT_INVALID);
                             }
                         } catch (Exception e) {
                             log.error("WebSocket authentication failed: {}", e.getMessage());
-                            throw new IllegalArgumentException("Authentication failed: " + e.getMessage());
+                            throw new IllegalArgumentException(AppMessages.concat(
+                                    AppMessages.AUTHENTICATION_FAILED_PREFIX, e.getMessage()));
                         }
                     } else {
                         log.warn("No Authorization header in WebSocket CONNECT");
-                        throw new IllegalArgumentException("Authorization header required");
+                        throw new IllegalArgumentException(AppMessages.AUTHORIZATION_HEADER_REQUIRED);
                     }
                 }
 
@@ -112,10 +120,14 @@ public class WebSocketAuthConfig implements WebSocketMessageBrokerConfigurer {
         Claims claims = extractAllClaims(token);
         String userIdStr = claims.get("userId", String.class);
         if (userIdStr == null) {
-            // Fallback: utiliser le username (email)
             String username = claims.getSubject();
-            // Retourner un UUID basé sur le username pour l'identification
-            return UUID.nameUUIDFromBytes(username.getBytes());
+            if (username == null || username.isBlank()) {
+                throw new InvalidOperationException(AppMessages.JWT_INVALID_SUBJECT);
+            }
+            return utilisateurRepository.findByEmail(username)
+                    .map(utilisateur -> utilisateur.getId())
+                    .orElseThrow(() -> new InvalidOperationException(
+                            AppMessages.concat(AppMessages.USER_NOT_FOUND_FOR_JWT_PREFIX, username)));
         }
         return UUID.fromString(userIdStr);
     }

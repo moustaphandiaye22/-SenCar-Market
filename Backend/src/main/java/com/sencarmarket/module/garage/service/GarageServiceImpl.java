@@ -1,8 +1,10 @@
 package com.sencarmarket.module.garage.service;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.garage.dto.*;
 import com.sencarmarket.module.garage.entity.Garage;
 import com.sencarmarket.module.garage.entity.GarageServiceAssociation;
@@ -31,11 +33,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class GarageServiceImpl implements GarageService {
+    private static final String RESOURCE_UTILISATEUR = "Utilisateur";
+    private static final String RESOURCE_GARAGE = "Garage";
+    private static final String RESOURCE_SERVICE = "Service";
+    private static final String RESOURCE_ASSOCIATION = "Association";
+    private static final String FIELD_ID = "id";
 
     private final GarageRepository garageRepository;
     private final ServiceGarageRepository serviceGarageRepository;
     private final GarageServiceRepository garageServiceRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final GarageRulesService garageRulesService;
+    private final PaginationService paginationService;
 
     // ========== GARAGE ==========
 
@@ -45,7 +54,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Creating garage '{}' for user {}", request.getNom(), proprietaireId);
 
         Utilisateur proprietaire = utilisateurRepository.findById(proprietaireId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'ID: " + proprietaireId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_UTILISATEUR, FIELD_ID, proprietaireId));
 
         Garage garage = Garage.builder()
                 .nom(request.getNom())
@@ -75,7 +84,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Updating garage {}", id);
 
         Garage garage = garageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, id));
 
         garage.setNom(request.getNom());
         garage.setAdresse(request.getAdresse());
@@ -100,7 +109,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Deleting garage {}", id);
 
         Garage garage = garageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, id));
 
         List<GarageServiceAssociation> associations = garageServiceRepository.findByGarageId(id);
         garageServiceRepository.deleteAll(associations);
@@ -113,7 +122,7 @@ public class GarageServiceImpl implements GarageService {
     public GarageResponse getGarageById(UUID id) {
         log.debug("Fetching garage by ID: {}", id);
         Garage garage = garageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, id));
         return GarageResponse.fromEntity(garage);
     }
 
@@ -121,7 +130,7 @@ public class GarageServiceImpl implements GarageService {
     public PaginatedResponse<GarageResponse> getAllGarages(int page, int size) {
         log.debug("Fetching all garages - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository.findAll(PageRequest.of(page, size));
-        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+        return paginationService.build(garagePage, garagePage.getContent().stream()
                 .map(GarageResponse::fromEntity).collect(Collectors.toList()));
     }
 
@@ -130,7 +139,7 @@ public class GarageServiceImpl implements GarageService {
         log.debug("Fetching active garages - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository
                 .findByStatutValidationEquals(Garage.StatutValidation.ACTIF, PageRequest.of(page, size));
-        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+        return paginationService.build(garagePage, garagePage.getContent().stream()
                 .map(GarageResponse::fromEntity).collect(Collectors.toList()));
     }
 
@@ -139,23 +148,8 @@ public class GarageServiceImpl implements GarageService {
         log.debug("Fetching garages en attente - page: {}, size: {}", page, size);
         Page<Garage> garagePage = garageRepository
                 .findByStatutValidation(Garage.StatutValidation.EN_ATTENTE, PageRequest.of(page, size));
-        return buildPaginatedResponse(garagePage, garagePage.getContent().stream()
+        return paginationService.build(garagePage, garagePage.getContent().stream()
                 .map(GarageResponse::fromEntity).collect(Collectors.toList()));
-    }
-
-    /**
-     * Méthode helper pour construire une réponse paginée
-     */
-    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
-        return PaginatedResponse.<T>builder()
-                .content(content)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
     }
 
     @Override
@@ -177,13 +171,11 @@ public class GarageServiceImpl implements GarageService {
     @Override
     public List<GarageResponse> searchByProximity(Double latitude, Double longitude, Double rayonKm) {
         log.debug("Searching garages near ({}, {}) within {} km", latitude, longitude, rayonKm);
-
-        double latDelta = rayonKm / 111.0;
-        double lonDelta = rayonKm / (111.0 * Math.cos(Math.toRadians(latitude)));
+        double[] bounds = garageRulesService.calculateSearchBounds(latitude, longitude, rayonKm);
 
         return garageRepository.findByLocation(
-                latitude - latDelta, latitude + latDelta,
-                longitude - lonDelta, longitude + lonDelta
+                bounds[0], bounds[1],
+                bounds[2], bounds[3]
         ).stream().map(GarageResponse::fromEntity).collect(Collectors.toList());
     }
 
@@ -201,9 +193,9 @@ public class GarageServiceImpl implements GarageService {
         log.info("Validating garage {} with status {}", id, request.getNouveauStatut());
 
         Garage garage = garageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, id));
 
-        validateStatutTransition(garage.getStatutValidation(), request.getNouveauStatut());
+        garageRulesService.validateStatutTransition(garage.getStatutValidation(), request.getNouveauStatut());
 
         garage.setStatutValidation(request.getNouveauStatut());
         garage.setCommentaireAdmin(request.getCommentaireAdmin());
@@ -221,7 +213,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Updating logo for garage {}", id);
 
         Garage garage = garageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, id));
 
         garage.setLogoUrl(logoUrl);
         garage = garageRepository.save(garage);
@@ -257,7 +249,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Updating service {}", id);
 
         ServiceGarage service = serviceGarageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_SERVICE, FIELD_ID, id));
 
         service.setNom(request.getNom());
         service.setDescription(request.getDescription());
@@ -275,7 +267,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Deleting service {}", id);
 
         ServiceGarage service = serviceGarageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_SERVICE, FIELD_ID, id));
 
         List<GarageServiceAssociation> associations = garageServiceRepository.findByServiceId(id);
         garageServiceRepository.deleteAll(associations);
@@ -286,7 +278,7 @@ public class GarageServiceImpl implements GarageService {
     @Override
     public ServiceGarageResponse getServiceById(UUID id) {
         ServiceGarage service = serviceGarageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_SERVICE, FIELD_ID, id));
         return ServiceGarageResponse.fromEntity(service);
     }
 
@@ -312,14 +304,14 @@ public class GarageServiceImpl implements GarageService {
         log.info("Associating service {} to garage {}", request.getServiceId(), request.getGarageId());
 
         Garage garage = garageRepository.findById(request.getGarageId())
-                .orElseThrow(() -> new ResourceNotFoundException("Garage non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_GARAGE, FIELD_ID, request.getGarageId()));
 
         ServiceGarage service = serviceGarageRepository.findById(request.getServiceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_SERVICE, FIELD_ID, request.getServiceId()));
 
         garageServiceRepository.findByGarageIdAndServiceId(request.getGarageId(), request.getServiceId())
                 .ifPresent(gs -> {
-                    throw new InvalidOperationException("Ce service est déjà associé à ce garage");
+                    throw new InvalidOperationException(AppMessages.GARAGE_SERVICE_ALREADY_ASSOCIATED);
                 });
 
         GarageServiceAssociation garageService = GarageServiceAssociation.builder()
@@ -342,7 +334,7 @@ public class GarageServiceImpl implements GarageService {
         log.info("Updating association {}", id);
 
         GarageServiceAssociation garageService = garageServiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Association non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ASSOCIATION, FIELD_ID, id));
 
         garageService.setPrix(request.getPrix());
         garageService.setDureeEstimee(request.getDureeEstimee());
@@ -357,7 +349,8 @@ public class GarageServiceImpl implements GarageService {
         log.info("Disassociating service {} from garage {}", serviceId, garageId);
 
         GarageServiceAssociation garageService = garageServiceRepository.findByGarageIdAndServiceId(garageId, serviceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Association non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        RESOURCE_ASSOCIATION, "garageId/serviceId", garageId + "/" + serviceId));
 
         garageServiceRepository.delete(garageService);
     }
@@ -376,15 +369,4 @@ public class GarageServiceImpl implements GarageService {
                 .collect(Collectors.toList());
     }
 
-    // ========== METHODES PRIVEES ==========
-
-    private void validateStatutTransition(Garage.StatutValidation current, Garage.StatutValidation next) {
-        if (current == Garage.StatutValidation.ACTIF && next != Garage.StatutValidation.SUSPENDU) {
-            throw new InvalidOperationException("Impossible de modifier le statut d'un garage actif sauf pour suspendre");
-        }
-        if ((current == Garage.StatutValidation.REJET || current == Garage.StatutValidation.SUSPENDU) 
-                && next != Garage.StatutValidation.ACTIF) {
-            throw new InvalidOperationException("Un garage rejeté ou suspendu ne peut être que réactivé");
-        }
-    }
 }

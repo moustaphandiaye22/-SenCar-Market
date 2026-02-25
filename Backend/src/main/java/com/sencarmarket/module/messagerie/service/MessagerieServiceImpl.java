@@ -1,8 +1,10 @@
 package com.sencarmarket.module.messagerie.service;
 
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.messagerie.dto.*;
 import com.sencarmarket.module.messagerie.entity.Conversation;
 import com.sencarmarket.module.messagerie.entity.ConversationParticipant;
@@ -38,6 +40,9 @@ public class MessagerieServiceImpl implements MessagerieService {
     private final ConversationParticipantRepository participantRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final MessagerieWebSocketHandler webSocketHandler;
+    private final MessagerieAccessService messagerieAccessService;
+    private final MessagerieConversationAssembler messagerieConversationAssembler;
+    private final PaginationService paginationService;
 
     // ========== CONVERSATION ==========
 
@@ -47,7 +52,7 @@ public class MessagerieServiceImpl implements MessagerieService {
         log.info("Creating conversation '{}' by user {}", request.getTitre(), createurId);
 
         Utilisateur createur = utilisateurRepository.findById(createurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.USER_NOT_FOUND));
 
         Conversation.TypeConversation type = Conversation.TypeConversation.valueOf(
                 request.getTypeConversation() != null ? request.getTypeConversation() : "DIRECT");
@@ -56,7 +61,7 @@ public class MessagerieServiceImpl implements MessagerieService {
         if (type == Conversation.TypeConversation.DIRECT && request.getAutreUtilisateurId() != null) {
             conversationRepository.findDirectConversation(createurId, request.getAutreUtilisateurId())
                     .ifPresent(existing -> {
-                        throw new InvalidOperationException("Une conversation directe existe déjà");
+                        throw new InvalidOperationException(AppMessages.MESSAGERIE_DIRECT_CONVERSATION_EXISTS);
                     });
         }
 
@@ -79,20 +84,16 @@ public class MessagerieServiceImpl implements MessagerieService {
         participantRepository.save(participant);
 
         log.info("Conversation created with ID: {}", conversation.getId());
-        return getConversationResponse(conversation, createurId);
+        return messagerieConversationAssembler.assemble(conversation, createurId);
     }
 
     @Override
     public ConversationResponse getConversationById(UUID conversationId, UUID utilisateurId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.CONVERSATION_NOT_FOUND));
+        messagerieAccessService.ensureParticipant(conversationId, utilisateurId);
 
-        boolean isParticipant = participantRepository.existsByConversationIdAndUtilisateurId(conversationId, utilisateurId);
-        if (!isParticipant) {
-            throw new InvalidOperationException("Vous n'êtes pas participant");
-        }
-
-        return getConversationResponse(conversation, utilisateurId);
+        return messagerieConversationAssembler.assemble(conversation, utilisateurId);
     }
 
     @Override
@@ -101,16 +102,16 @@ public class MessagerieServiceImpl implements MessagerieService {
                 utilisateurId, PageRequest.of(page, size));
 
         List<ConversationResponse> content = conversationPage.getContent().stream()
-                .map(c -> getConversationResponse(c, utilisateurId))
+                .map(c -> messagerieConversationAssembler.assemble(c, utilisateurId))
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(conversationPage, content);
+        return paginationService.build(conversationPage, content);
     }
 
     @Override
     public List<ConversationResponse> searchConversations(UUID utilisateurId, String query) {
         return conversationRepository.search(utilisateurId, query).stream()
-                .map(c -> getConversationResponse(c, utilisateurId))
+                .map(c -> messagerieConversationAssembler.assemble(c, utilisateurId))
                 .collect(Collectors.toList());
     }
 
@@ -118,13 +119,13 @@ public class MessagerieServiceImpl implements MessagerieService {
     @Transactional
     public ConversationResponse addParticipant(UUID conversationId, UUID utilisateurId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.CONVERSATION_NOT_FOUND));
 
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.USER_NOT_FOUND));
 
         if (participantRepository.existsByConversationIdAndUtilisateurId(conversationId, utilisateurId)) {
-            throw new InvalidOperationException("L'utilisateur est déjà participant");
+            throw new InvalidOperationException(AppMessages.MESSAGERIE_PARTICIPANT_ALREADY_EXISTS);
         }
 
         ConversationParticipant participant = ConversationParticipant.builder()
@@ -136,7 +137,7 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .build();
 
         participantRepository.save(participant);
-        return getConversationResponse(conversation, utilisateurId);
+        return messagerieConversationAssembler.assemble(conversation, utilisateurId);
     }
 
     @Override
@@ -144,7 +145,7 @@ public class MessagerieServiceImpl implements MessagerieService {
     public void removeParticipant(UUID conversationId, UUID utilisateurId) {
         ConversationParticipant participant = participantRepository
                 .findByConversationIdAndUtilisateurId(conversationId, utilisateurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Participant non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.PARTICIPANT_NOT_FOUND));
 
         participantRepository.delete(participant);
         log.info("User {} removed from conversation {}", utilisateurId, conversationId);
@@ -165,17 +166,12 @@ public class MessagerieServiceImpl implements MessagerieService {
         log.info("Sending message to conversation {} by user {}", request.getConversationId(), expediteurId);
 
         Conversation conversation = conversationRepository.findById(request.getConversationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.CONVERSATION_NOT_FOUND));
 
         Utilisateur utilisateur = utilisateurRepository.findById(expediteurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.USER_NOT_FOUND));
 
-        // Vérifier que l'utilisateur est participant
-        boolean isParticipant = participantRepository.existsByConversationIdAndUtilisateurId(
-                request.getConversationId(), expediteurId);
-        if (!isParticipant) {
-            throw new InvalidOperationException("Vous n'êtes pas participant à cette conversation");
-        }
+        messagerieAccessService.ensureParticipant(request.getConversationId(), expediteurId);
 
         Message message = Message.builder()
                 .conversation(conversation)
@@ -208,11 +204,7 @@ public class MessagerieServiceImpl implements MessagerieService {
 
     @Override
     public PaginatedResponse<MessageResponse> getMessagesByConversation(UUID conversationId, UUID utilisateurId, int page, int size) {
-        // Vérifier que l'utilisateur est participant
-        boolean isParticipant = participantRepository.existsByConversationIdAndUtilisateurId(conversationId, utilisateurId);
-        if (!isParticipant) {
-            throw new InvalidOperationException("Vous n'êtes pas participant à cette conversation");
-        }
+        messagerieAccessService.ensureParticipant(conversationId, utilisateurId);
 
         Page<Message> messagePage = messageRepository.findByConversationIdOrderByDateEnvoiDesc(
                 conversationId, PageRequest.of(page, size));
@@ -221,7 +213,7 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .map(MessageResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(messagePage, content);
+        return paginationService.build(messagePage, content);
     }
 
     @Override
@@ -235,11 +227,9 @@ public class MessagerieServiceImpl implements MessagerieService {
     @Transactional
     public void deleteMessage(UUID messageId, UUID utilisateurId) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Message non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.MESSAGE_NOT_FOUND));
 
-        if (!message.getUtilisateur().getId().equals(utilisateurId)) {
-            throw new InvalidOperationException("Vous ne pouvez pas supprimer ce message");
-        }
+        messagerieAccessService.ensureMessageOwner(message, utilisateurId);
 
         message.setEstSupprime(true);
         messageRepository.save(message);
@@ -250,16 +240,9 @@ public class MessagerieServiceImpl implements MessagerieService {
     @Transactional
     public MessageResponse pinMessage(UUID messageId, UUID utilisateurId) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Message non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.MESSAGE_NOT_FOUND));
 
-        // Vérifier que l'utilisateur est admin de la conversation
-        ConversationParticipant participant = participantRepository
-                .findByConversationIdAndUtilisateurId(message.getConversation().getId(), utilisateurId)
-                .orElseThrow(() -> new InvalidOperationException("Vous n'êtes pas participant"));
-
-        if (participant.getEstAdmin() == null || !participant.getEstAdmin()) {
-            throw new InvalidOperationException("Seul un admin peut épingler un message");
-        }
+        messagerieAccessService.ensureAdmin(message.getConversation().getId(), utilisateurId);
 
         message.setEstEpingle(!message.getEstEpingle());
         message = messageRepository.save(message);
@@ -281,11 +264,7 @@ public class MessagerieServiceImpl implements MessagerieService {
 
     @Override
     public void sendTypingIndicator(UUID conversationId, UUID utilisateurId, boolean isTyping) {
-        // Vérifier que l'utilisateur est participant
-        boolean isParticipant = participantRepository.existsByConversationIdAndUtilisateurId(conversationId, utilisateurId);
-        if (!isParticipant) {
-            throw new InvalidOperationException("Vous n'êtes pas participant à cette conversation");
-        }
+        messagerieAccessService.ensureParticipant(conversationId, utilisateurId);
 
         // Envoyer via WebSocket
         if (webSocketHandler != null) {
@@ -296,11 +275,7 @@ public class MessagerieServiceImpl implements MessagerieService {
 
     @Override
     public PaginatedResponse<MessageResponse> searchMessages(UUID conversationId, UUID utilisateurId, String query, int page, int size) {
-        // Vérifier que l'utilisateur est participant
-        boolean isParticipant = participantRepository.existsByConversationIdAndUtilisateurId(conversationId, utilisateurId);
-        if (!isParticipant) {
-            throw new InvalidOperationException("Vous n'êtes pas participant à cette conversation");
-        }
+        messagerieAccessService.ensureParticipant(conversationId, utilisateurId);
 
         Page<Message> messagePage = messageRepository.searchMessages(
                 conversationId, query, PageRequest.of(page, size));
@@ -309,63 +284,18 @@ public class MessagerieServiceImpl implements MessagerieService {
                 .map(MessageResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(messagePage, content);
+        return paginationService.build(messagePage, content);
     }
 
     // ========== METHODES PRIVEES ==========
-
-    /**
-     * Méthode helper pour construire une réponse paginée
-     */
-    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
-        return PaginatedResponse.<T>builder()
-                .content(content)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
-    }
-
-    private ConversationResponse getConversationResponse(Conversation conversation, UUID utilisateurId) {
-        // Dernier message
-        Message dernierMessage = messageRepository.findLastMessage(conversation.getId());
-        MessageResponse dernierMessageResponse = dernierMessage != null ? 
-                MessageResponse.fromEntity(dernierMessage) : null;
-
-        // Nombre de messages non lus
-        long nonLus = messageRepository.countUnread(conversation.getId(), utilisateurId);
-
-        // Participants
-        List<ParticipantResponse> participants = participantRepository.findByConversationId(conversation.getId())
-                .stream()
-                .map(ParticipantResponse::fromEntity)
-                .collect(Collectors.toList());
-
-        ConversationResponse response = ConversationResponse.fromEntity(conversation);
-        response.setDernierMessage(dernierMessageResponse);
-        response.setNombreNonLus((int) nonLus);
-        response.setParticipants(participants);
-
-        return response;
-    }
 
     @Override
     @Transactional
     public ConversationResponse updateConversation(UUID conversationId, UUID utilisateurId, String titre, String avatarUrl) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.CONVERSATION_NOT_FOUND));
 
-        // Vérifier que l'utilisateur est admin
-        ConversationParticipant participant = participantRepository
-                .findByConversationIdAndUtilisateurId(conversationId, utilisateurId)
-                .orElseThrow(() -> new InvalidOperationException("Vous n'êtes pas participant"));
-
-        if (participant.getEstAdmin() == null || !participant.getEstAdmin()) {
-            throw new InvalidOperationException("Seul un admin peut modifier la conversation");
-        }
+        messagerieAccessService.ensureAdmin(conversationId, utilisateurId);
 
         if (titre != null) {
             conversation.setTitre(titre);
@@ -377,33 +307,17 @@ public class MessagerieServiceImpl implements MessagerieService {
         conversation = conversationRepository.save(conversation);
         log.info("Conversation {} updated by user {}", conversationId, utilisateurId);
 
-        return getConversationResponse(conversation, utilisateurId);
+        return messagerieConversationAssembler.assemble(conversation, utilisateurId);
     }
 
     @Override
     @Transactional
     public void leaveConversation(UUID conversationId, UUID utilisateurId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.CONVERSATION_NOT_FOUND));
 
-        // Ne pas permettre de quitter une conversation directe
-        if (conversation.getTypeConversation() == Conversation.TypeConversation.DIRECT) {
-            throw new InvalidOperationException("Vous ne pouvez pas quitter une conversation directe");
-        }
-
-        ConversationParticipant participant = participantRepository
-                .findByConversationIdAndUtilisateurId(conversationId, utilisateurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vous n'êtes pas participant"));
-
-        // Si dernier admin, ne pas permettre de quitter
-        if (participant.getEstAdmin() != null && participant.getEstAdmin()) {
-            long adminCount = participantRepository.findByConversationId(conversationId).stream()
-                    .filter(p -> p.getEstAdmin() != null && p.getEstAdmin())
-                    .count();
-            if (adminCount <= 1) {
-                throw new InvalidOperationException("Vous êtes le dernier admin, transférez le rôle avant de quitter");
-            }
-        }
+        ConversationParticipant participant = messagerieAccessService.getParticipantOrThrow(conversationId, utilisateurId);
+        messagerieAccessService.ensureCanLeaveConversation(conversation, participant);
 
         participantRepository.delete(participant);
         log.info("User {} left conversation {}", utilisateurId, conversationId);

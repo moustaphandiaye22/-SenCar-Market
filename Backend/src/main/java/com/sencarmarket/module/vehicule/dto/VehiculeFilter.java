@@ -29,8 +29,12 @@ public class VehiculeFilter {
     private String statut; // BROUILLON, PUBLIE, VENDU
 
     // Pagination
+    @Builder.Default
     private Integer page = 0;
+    @Builder.Default
     private Integer size = 20;
+    @Builder.Default
     private String sortBy = "createdAt";
+    @Builder.Default
     private String sortDir = "DESC";
 }

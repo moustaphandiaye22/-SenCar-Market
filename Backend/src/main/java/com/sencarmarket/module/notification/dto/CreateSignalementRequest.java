@@ -20,7 +20,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreateSignalementRequest {
 
-    @NotNull(message = "L'ID de l'utilisateur est requis")
     private UUID utilisateurId;
 
     @NotNull(message = "Le type d'entité est requis")

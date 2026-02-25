@@ -3,12 +3,15 @@ package com.sencarmarket.module.certification.controller;
 import com.sencarmarket.module.certification.dto.*;
 import com.sencarmarket.module.certification.entity.DemandeCertification;
 import com.sencarmarket.module.certification.service.CertificationService;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class CertificationController {
 
     private final CertificationService certificationService;
+    private final AccessControlService accessControlService;
 
     // ==================== Demande Certification ====================
 
@@ -31,7 +35,8 @@ public class CertificationController {
     @PostMapping("/demandes")
     public ResponseEntity<DemandeCertificationResponse> createDemandeCertification(
             @Valid @RequestBody CreateDemandeCertificationRequest request,
-            @RequestHeader("X-User-Id") UUID utilisateurId) {
+            Authentication authentication) {
+        UUID utilisateurId = accessControlService.getCurrentUserId(authentication);
         DemandeCertificationResponse response = certificationService.createDemandeCertification(request, utilisateurId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -40,6 +45,7 @@ public class CertificationController {
      * Récupère toutes les demandes de certification avec pagination
      */
     @GetMapping("/demandes")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<PaginatedResponse<DemandeCertificationResponse>> getAllDemandes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -51,7 +57,8 @@ public class CertificationController {
      * Récupère une demande de certification par ID
      */
     @GetMapping("/demandes/{id}")
-    public ResponseEntity<DemandeCertificationResponse> getDemandeById(@PathVariable UUID id) {
+    public ResponseEntity<DemandeCertificationResponse> getDemandeById(@PathVariable UUID id, Authentication authentication) {
+        checkDemandeOwnerOrAdmin(authentication, id);
         DemandeCertificationResponse response = certificationService.getDemandeById(id);
         return ResponseEntity.ok(response);
     }
@@ -61,7 +68,9 @@ public class CertificationController {
      */
     @GetMapping("/demandes/utilisateur/{utilisateurId}")
     public ResponseEntity<List<DemandeCertificationResponse>> getDemandesByUtilisateur(
-            @PathVariable UUID utilisateurId) {
+            @PathVariable UUID utilisateurId,
+            Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, utilisateurId, AppMessages.ACCESS_DENIED_RESOURCE);
         List<DemandeCertificationResponse> response = certificationService.getDemandesByUtilisateur(utilisateurId);
         return ResponseEntity.ok(response);
     }
@@ -72,7 +81,9 @@ public class CertificationController {
     @PutMapping("/demandes/{id}")
     public ResponseEntity<DemandeCertificationResponse> updateDemandeCertification(
             @PathVariable UUID id,
-            @Valid @RequestBody CreateDemandeCertificationRequest request) {
+            @Valid @RequestBody CreateDemandeCertificationRequest request,
+            Authentication authentication) {
+        checkDemandeOwnerOrAdmin(authentication, id);
         DemandeCertificationResponse response = certificationService.updateDemandeCertification(id, request);
         return ResponseEntity.ok(response);
     }
@@ -81,7 +92,8 @@ public class CertificationController {
      * Supprime une demande de certification
      */
     @DeleteMapping("/demandes/{id}")
-    public ResponseEntity<Void> deleteDemandeCertification(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteDemandeCertification(@PathVariable UUID id, Authentication authentication) {
+        checkDemandeOwnerOrAdmin(authentication, id);
         certificationService.deleteDemandeCertification(id);
         return ResponseEntity.noContent().build();
     }
@@ -94,7 +106,9 @@ public class CertificationController {
     @PostMapping("/demandes/{demandeId}/payment")
     public ResponseEntity<DemandeCertificationResponse> processPayment(
             @PathVariable UUID demandeId,
-            @RequestParam UUID paiementId) {
+            @RequestParam UUID paiementId,
+            Authentication authentication) {
+        checkDemandeOwnerOrAdmin(authentication, demandeId);
         DemandeCertificationResponse response = certificationService.processPayment(demandeId, paiementId);
         return ResponseEntity.ok(response);
     }
@@ -105,6 +119,7 @@ public class CertificationController {
      * Attribue un inspecteur à une demande de certification
      */
     @PostMapping("/demandes/{demandeId}/assign-inspector")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<DemandeCertificationResponse> assignInspector(
             @PathVariable UUID demandeId,
             @RequestParam UUID inspecteurId) {
@@ -118,6 +133,7 @@ public class CertificationController {
      * Met à jour le statut d'une demande de certification
      */
     @PatchMapping("/demandes/{demandeId}/statut")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<DemandeCertificationResponse> updateStatut(
             @PathVariable UUID demandeId,
             @RequestParam DemandeCertification.StatutDemande statut) {
@@ -131,6 +147,7 @@ public class CertificationController {
      * Crée une inspection pour une demande de certification
      */
     @PostMapping("/inspections")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<InspectionResponse> createInspection(
             @Valid @RequestBody CreateInspectionRequest request,
             @RequestParam UUID demandeId) {
@@ -142,6 +159,7 @@ public class CertificationController {
      * Récupère une inspection par ID
      */
     @GetMapping("/inspections/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<InspectionResponse> getInspectionById(@PathVariable UUID id) {
         InspectionResponse response = certificationService.getInspectionById(id);
         return ResponseEntity.ok(response);
@@ -151,6 +169,7 @@ public class CertificationController {
      * Récupère les inspections d'un inspecteur avec pagination
      */
     @GetMapping("/inspections/inspecteur/{inspecteurId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<PaginatedResponse<InspectionResponse>> getInspectionsByInspecteur(
             @PathVariable UUID inspecteurId,
             @RequestParam(defaultValue = "0") int page,
@@ -163,6 +182,7 @@ public class CertificationController {
      * Met à jour une inspection
      */
     @PutMapping("/inspections/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<InspectionResponse> updateInspection(
             @PathVariable UUID id,
             @Valid @RequestBody CreateInspectionRequest request) {
@@ -174,6 +194,7 @@ public class CertificationController {
      * Supprime une inspection
      */
     @DeleteMapping("/inspections/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteInspection(@PathVariable UUID id) {
         certificationService.deleteInspection(id);
         return ResponseEntity.noContent().build();
@@ -185,6 +206,7 @@ public class CertificationController {
      * Upload le PDF du rapport d'inspection
      */
     @PostMapping("/inspections/{inspectionId}/upload-rapport")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<RapportInspectionResponse> uploadRapportPdf(
             @PathVariable UUID inspectionId,
             @RequestParam("file") MultipartFile file) {
@@ -196,6 +218,7 @@ public class CertificationController {
      * Enregistre le résultat de l'inspection
      */
     @PostMapping("/inspections/{inspectionId}/resultat")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN', 'INSPECTEUR')")
     public ResponseEntity<InspectionResponse> saveRapportResult(
             @PathVariable UUID inspectionId,
             @Valid @RequestBody CreateRapportInspectionRequest request) {
@@ -209,8 +232,18 @@ public class CertificationController {
      * Génère le badge certifié pour un véhicule
      */
     @PostMapping("/demandes/{demandeId}/generate-badge")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<DemandeCertificationResponse> generateBadge(@PathVariable UUID demandeId) {
         DemandeCertificationResponse response = certificationService.generateBadge(demandeId);
         return ResponseEntity.ok(response);
+    }
+
+    private void checkDemandeOwnerOrAdmin(Authentication authentication, UUID demandeId) {
+        if (accessControlService.isAdmin(authentication)) {
+            return;
+        }
+        DemandeCertificationResponse demande = certificationService.getDemandeById(demandeId);
+        accessControlService.checkOwnerOrAdmin(authentication, demande.getUtilisateurId(),
+                AppMessages.ACCESS_DENIED_RESOURCE);
     }
 }

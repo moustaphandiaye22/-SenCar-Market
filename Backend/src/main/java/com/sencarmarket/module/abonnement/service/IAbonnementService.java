@@ -1,12 +1,11 @@
 package com.sencarmarket.module.abonnement.service;
 
 import com.sencarmarket.module.abonnement.dto.AbonnementResponse;
+import com.sencarmarket.module.abonnement.dto.BoostAnnonceResponse;
 import com.sencarmarket.module.abonnement.dto.CreateAbonnementRequest;
+import com.sencarmarket.module.abonnement.dto.CreateBoostRequest;
 import com.sencarmarket.module.abonnement.dto.SouscriptionRequest;
 import com.sencarmarket.module.abonnement.dto.UtilisateurAbonnementResponse;
-import com.sencarmarket.module.abonnement.entity.Abonnement;
-import com.sencarmarket.module.abonnement.entity.BoostAnnonce;
-import com.sencarmarket.module.abonnement.entity.UtilisateurAbonnement;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
 
 import java.util.List;
@@ -44,15 +43,15 @@ public interface IAbonnementService {
 
     // ==================== BOOST ====================
 
-    BoostAnnonce createBoost(BoostAnnonce boost);
+    BoostAnnonceResponse createBoost(CreateBoostRequest boost);
 
-    BoostAnnonce updateBoost(UUID id, BoostAnnonce boost);
+    BoostAnnonceResponse updateBoost(UUID id, CreateBoostRequest boost);
 
     void deleteBoost(UUID id);
 
-    BoostAnnonce getBoostById(UUID id);
+    BoostAnnonceResponse getBoostById(UUID id);
 
-    List<BoostAnnonce> getBoostsByVehicule(UUID vehiculeId);
+    List<BoostAnnonceResponse> getBoostsByVehicule(UUID vehiculeId);
 
     // ==================== TÂCHE PLANIFIÉE ====================
 

@@ -5,11 +5,10 @@ import com.sencarmarket.module.annonce.entity.AnnonceLocation;
 import com.sencarmarket.module.annonce.entity.DisponibiliteLocation;
 import com.sencarmarket.module.annonce.entity.HistoriqueStatutReservation;
 import com.sencarmarket.module.annonce.entity.ReservationLocation;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.enums.StatutReservation;
-import com.sencarmarket.module.commun.exception.InvalidStatusException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
 import com.sencarmarket.module.commun.exception.ReservationException;
-import com.sencarmarket.module.commun.exception.UnauthorizedAccessException;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import com.sencarmarket.module.vehicule.entity.Vehicule;
@@ -24,8 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +39,8 @@ public class AnnonceService implements IAnnonceService {
     private final HistoriqueStatutReservationRepository historiqueStatutReservationRepository;
     private final VehiculeRepository vehiculeRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final ReservationRulesService reservationRulesService;
+    private final AnnonceResponseMapper annonceResponseMapper;
 
     @Override
     @Transactional
@@ -73,7 +72,7 @@ public class AnnonceService implements IAnnonceService {
         annonceLocationRepository.save(annonce);
         log.info("Annonce de location créée avec succès: ID={}", annonce.getId());
 
-        return mapToAnnonceResponse(annonce);
+        return annonceResponseMapper.toAnnonceResponse(annonce);
     }
 
     @Override
@@ -107,7 +106,7 @@ public class AnnonceService implements IAnnonceService {
         annonceLocationRepository.save(annonce);
 
         log.info("Annonce de location mise à jour avec succès: {}", id);
-        return mapToAnnonceResponse(annonce);
+        return annonceResponseMapper.toAnnonceResponse(annonce);
     }
 
     @Override
@@ -125,14 +124,14 @@ public class AnnonceService implements IAnnonceService {
         log.debug("Récupération de l'annonce de location par ID: {}", id);
         AnnonceLocation annonce = annonceLocationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AnnonceLocation", "id", id));
-        return mapToAnnonceResponse(annonce);
+        return annonceResponseMapper.toAnnonceResponse(annonce);
     }
 
     @Override
     public List<AnnonceLocationResponse> getAllAnnoncesLocation() {
         log.debug("Récupération de toutes les annonces de location");
         return annonceLocationRepository.findAll().stream()
-                .map(this::mapToAnnonceResponse)
+                .map(annonceResponseMapper::toAnnonceResponse)
                 .collect(Collectors.toList());
     }
 
@@ -140,7 +139,7 @@ public class AnnonceService implements IAnnonceService {
     public List<AnnonceLocationResponse> getAnnoncesLocationByVendeur(UUID proprietaireId) {
         log.debug("Récupération des annonces de location pour le propriétaire: {}", proprietaireId);
         return annonceLocationRepository.findByProprietaireId(proprietaireId).stream()
-                .map(this::mapToAnnonceResponse)
+                .map(annonceResponseMapper::toAnnonceResponse)
                 .collect(Collectors.toList());
     }
     
@@ -150,7 +149,7 @@ public class AnnonceService implements IAnnonceService {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "email", userEmail));
         return annonceLocationRepository.findByProprietaireId(utilisateur.getId()).stream()
-                .map(this::mapToAnnonceResponse)
+                .map(annonceResponseMapper::toAnnonceResponse)
                 .collect(Collectors.toList());
     }
 
@@ -164,7 +163,7 @@ public class AnnonceService implements IAnnonceService {
         annonce.setUpdatedAt(LocalDateTime.now());
         annonceLocationRepository.save(annonce);
         log.info("Annonce de location {} avec succès: {}", actif ? "activée" : "désactivée", id);
-        return mapToAnnonceResponse(annonce);
+        return annonceResponseMapper.toAnnonceResponse(annonce);
     }
 
     // Reservation methods
@@ -182,16 +181,16 @@ public class AnnonceService implements IAnnonceService {
 
         // Vérifier la disponibilité
         if (!checkDisponibilite(annonce.getId(), request.getDateDebut(), request.getDateFin())) {
-            throw new ReservationException("Le véhicule n'est pas disponible pour les dates sélectionnées");
+            throw new ReservationException(AppMessages.RESERVATION_VEHICULE_NOT_AVAILABLE);
         }
 
         // Vérifier que les dates sont valides
         if (request.getDateDebut().isAfter(request.getDateFin())) {
-            throw new ReservationException("La date de début doit être antérieure à la date de fin");
+            throw new ReservationException(AppMessages.RESERVATION_INVALID_DATE_ORDER);
         }
 
         if (request.getDateDebut().isBefore(LocalDateTime.now())) {
-            throw new ReservationException("La date de début ne peut pas être dans le passé");
+            throw new ReservationException(AppMessages.RESERVATION_START_DATE_PAST);
         }
 
         // Calculer le coût total
@@ -211,7 +210,7 @@ public class AnnonceService implements IAnnonceService {
         reservationLocationRepository.save(reservation);
         log.info("Réservation créée avec succès: ID={}, Coût total={}", reservation.getId(), coutTotal);
 
-        return mapToReservationResponse(reservation);
+        return annonceResponseMapper.toReservationResponse(reservation);
     }
 
     @Override
@@ -230,7 +229,7 @@ public class AnnonceService implements IAnnonceService {
 
         log.info("Statut de la réservation mis à jour: {} -> {}", ancienStatut, nouveauStatutEnum);
 
-        return mapToReservationResponse(reservation);
+        return annonceResponseMapper.toReservationResponse(reservation);
     }
 
     @Override
@@ -253,14 +252,14 @@ public class AnnonceService implements IAnnonceService {
         log.debug("Récupération de la réservation par ID: {}", id);
         ReservationLocation reservation = reservationLocationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Réservation", "id", id));
-        return mapToReservationResponse(reservation);
+        return annonceResponseMapper.toReservationResponse(reservation);
     }
 
     @Override
     public List<ReservationLocationResponse> getReservationsByLocataire(UUID locataireId) {
         log.debug("Récupération des réservations pour le locataire: {}", locataireId);
         return reservationLocationRepository.findByLocataireId(locataireId).stream()
-                .map(this::mapToReservationResponse)
+                .map(annonceResponseMapper::toReservationResponse)
                 .collect(Collectors.toList());
     }
     
@@ -270,7 +269,7 @@ public class AnnonceService implements IAnnonceService {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "email", userEmail));
         return reservationLocationRepository.findByLocataireId(utilisateur.getId()).stream()
-                .map(this::mapToReservationResponse)
+                .map(annonceResponseMapper::toReservationResponse)
                 .collect(Collectors.toList());
     }
 
@@ -278,128 +277,23 @@ public class AnnonceService implements IAnnonceService {
     public List<ReservationLocationResponse> getReservationsByAnnonce(UUID annonceId) {
         log.debug("Récupération des réservations pour l'annonce: {}", annonceId);
         return reservationLocationRepository.findByAnnonceLocationId(annonceId).stream()
-                .map(this::mapToReservationResponse)
+                .map(annonceResponseMapper::toReservationResponse)
                 .collect(Collectors.toList());
     }
 
     // Helper methods
 
     public boolean checkDisponibilite(UUID annonceId, LocalDateTime dateDebut, LocalDateTime dateFin) {
-        List<ReservationLocation> reservations = reservationLocationRepository
-                .findByAnnonceLocationId(annonceId);
-
-        for (ReservationLocation res : reservations) {
-            if (res.getStatut() == StatutReservation.CONFIRME || res.getStatut() == StatutReservation.EN_ATTENTE) {
-                // Vérifier le chevauchement des dates
-                if (!(dateFin.isBefore(res.getDateDebut()) || dateDebut.isAfter(res.getDateFin()))) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return reservationRulesService.checkDisponibilite(annonceId, dateDebut, dateFin);
     }
 
     public BigDecimal calculateCoutTotal(AnnonceLocation annonce, LocalDateTime dateDebut, LocalDateTime dateFin) {
-        long jours = Duration.between(dateDebut, dateFin).toDays();
-        if (jours == 0) {
-            jours = 1; // Minimum 1 jour
-        }
-        return annonce.getTarifJournalier().multiply(BigDecimal.valueOf(jours));
+        return reservationRulesService.calculateCoutTotal(annonce, dateDebut, dateFin);
     }
 
-    private AnnonceLocationResponse mapToAnnonceResponse(AnnonceLocation annonce) {
-        return AnnonceLocationResponse.builder()
-                .id(annonce.getId())
-                .vehiculeId(annonce.getVehicule() != null ? annonce.getVehicule().getId() : null)
-                .vehiculeMarque(annonce.getVehicule() != null && annonce.getVehicule().getMarque() != null ? 
-                        annonce.getVehicule().getMarque().getNom() : null)
-                .vehiculeModele(annonce.getVehicule() != null && annonce.getVehicule().getModele() != null ? 
-                        annonce.getVehicule().getModele().getNom() : null)
-                .proprietaireId(annonce.getProprietaire() != null ? annonce.getProprietaire().getId() : null)
-                .proprietaireNom(annonce.getProprietaire() != null ? 
-                        annonce.getProprietaire().getNom() + " " + annonce.getProprietaire().getPrenom() : null)
-                .tarifJournalier(annonce.getTarifJournalier())
-                .description(annonce.getDescription())
-                .conditions(annonce.getConditions())
-                .caution(annonce.getCaution())
-                .kilometrageInclus(annonce.getKilometrageInclus())
-                .tarifKmSupplementaire(annonce.getTarifKmSupplementaire())
-                .statut(annonce.getStatut() != null ? annonce.getStatut().name() : null)
-                .actif(annonce.getActif())
-                .createdAt(annonce.getCreatedAt())
-                .updatedAt(annonce.getUpdatedAt())
-                .build();
-    }
-
-    private ReservationLocationResponse mapToReservationResponse(ReservationLocation reservation) {
-        return ReservationLocationResponse.builder()
-                .id(reservation.getId())
-                .annonceLocationId(reservation.getAnnonceLocation() != null ? reservation.getAnnonceLocation().getId() : null)
-                .vehiculeMarque(reservation.getAnnonceLocation() != null && 
-                        reservation.getAnnonceLocation().getVehicule() != null &&
-                        reservation.getAnnonceLocation().getVehicule().getMarque() != null ?
-                        reservation.getAnnonceLocation().getVehicule().getMarque().getNom() : null)
-                .vehiculeModele(reservation.getAnnonceLocation() != null && 
-                        reservation.getAnnonceLocation().getVehicule() != null &&
-                        reservation.getAnnonceLocation().getVehicule().getModele() != null ?
-                        reservation.getAnnonceLocation().getVehicule().getModele().getNom() : null)
-                .locataireId(reservation.getLocataire() != null ? reservation.getLocataire().getId() : null)
-                .locataireNom(reservation.getLocataire() != null ? 
-                        reservation.getLocataire().getNom() + " " + reservation.getLocataire().getPrenom() : null)
-                .locataireEmail(reservation.getLocataire() != null ? reservation.getLocataire().getEmail() : null)
-                .statut(reservation.getStatut() != null ? reservation.getStatut().name() : null)
-                .coutTotal(reservation.getCoutTotal())
-                .caution(reservation.getAnnonceLocation() != null ? reservation.getAnnonceLocation().getCaution() : null)
-                .dateDebut(reservation.getDateDebut())
-                .dateFin(reservation.getDateFin())
-                .dateCreation(reservation.getDateCreation())
-                .motifAnnulation(reservation.getMotifAnnulation())
-                .paiementId(reservation.getPaiement() != null ? reservation.getPaiement().getId() : null)
-                .build();
-    }
-    
     // Méthode helper pour convertir le statut en enum avec validation
     private StatutReservation parseStatut(String statut) {
-        if (statut == null || statut.isBlank()) {
-            throw new InvalidStatusException("Le statut ne peut pas être nul ou vide", 
-                getValidStatutNames());
-        }
-        try {
-            return StatutReservation.valueOf(statut.toUpperCase().trim());
-        } catch (IllegalArgumentException e) {
-            throw new InvalidStatusException(statut, getValidStatutNames());
-        }
-    }
-    
-    // Méthode helper pour obtenir les noms des statuts valides
-    private String[] getValidStatutNames() {
-        java.util.Arrays.stream(StatutReservation.values())
-            .map(StatutReservation::name)
-            .toArray(String[]::new);
-        return java.util.Arrays.stream(StatutReservation.values())
-            .map(StatutReservation::name)
-            .toArray(String[]::new);
-    }
-    
-    // Méthode helper pour vérifier l'autorisation du propriétaire
-    private void verifierProprietaire(Utilisateur utilisateur, AnnonceLocation annonce) {
-        if (annonce.getProprietaire() == null || 
-            !annonce.getProprietaire().getId().equals(utilisateur.getId())) {
-            throw new UnauthorizedAccessException();
-        }
-    }
-    
-    // Méthode helper pour vérifier l'autorisation (propriétaire ou locataire)
-    private void verifierProprietaireOuLocataire(Utilisateur utilisateur, ReservationLocation reservation) {
-        boolean isProprietaire = reservation.getAnnonceLocation() != null && 
-            reservation.getAnnonceLocation().getProprietaire() != null &&
-            reservation.getAnnonceLocation().getProprietaire().getId().equals(utilisateur.getId());
-        boolean isLocataire = reservation.getLocataire() != null &&
-            reservation.getLocataire().getId().equals(utilisateur.getId());
-        
-        if (!isProprietaire && !isLocataire) {
-            throw new UnauthorizedAccessException();
-        }
+        return reservationRulesService.parseStatut(statut);
     }
     
     // ===== Méthodes de gestion des disponibilités =====
@@ -411,15 +305,19 @@ public class AnnonceService implements IAnnonceService {
         
         AnnonceLocation annonce = annonceLocationRepository.findById(annonceId)
                 .orElseThrow(() -> new ResourceNotFoundException("AnnonceLocation", "id", annonceId));
-        
+
+        if (disponibilites == null || disponibilites.isEmpty()) {
+            return List.of();
+        }
+
         List<DisponibiliteLocation> result = disponibilites.stream()
-                .flatMap(d -> d.getDates().stream())
-                .map(date -> DisponibiliteLocation.builder()
-                        .id(UUID.randomUUID())
-                        .annonceLocation(annonce)
-                        .date(date)
-                        .estDisponible(disponibilites.get(0).getEstDisponible() != null ? disponibilites.get(0).getEstDisponible() : true)
-                        .build())
+                .flatMap(request -> request.getDates().stream()
+                        .map(date -> DisponibiliteLocation.builder()
+                                .id(UUID.randomUUID())
+                                .annonceLocation(annonce)
+                                .date(date)
+                                .estDisponible(request.getEstDisponible() != null ? request.getEstDisponible() : true)
+                                .build()))
                 .collect(Collectors.toList());
         
         disponibiliteLocationRepository.saveAll(result);
@@ -495,6 +393,6 @@ public class AnnonceService implements IAnnonceService {
         
         log.info("Statut de la réservation mis à jour avec historique: {} -> {}", ancienStatut, nouveauStatutEnum);
         
-        return mapToReservationResponse(reservation);
+        return annonceResponseMapper.toReservationResponse(reservation);
     }
 }

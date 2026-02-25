@@ -4,7 +4,9 @@ import com.sencarmarket.module.commun.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,7 +33,7 @@ public class GlobalExceptionHandler {
         
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
+            String fieldName = error instanceof FieldError fieldError ? fieldError.getField() : ((ObjectError) error).getObjectName();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
@@ -44,6 +46,17 @@ public class GlobalExceptionHandler {
         
         log.warn("Validation error: {}", errors);
         return ResponseEntity.badRequest().body(response);
+    }
+    
+    @ExceptionHandler({UnauthorizedAccessException.class, AccessDeniedException.class})
+    public ResponseEntity<ApiResponse<Object>> handleUnauthorized(Exception ex) {
+        ApiResponse<Object> response = ApiResponse.error(
+                "FORBIDDEN",
+                ex.getMessage() != null ? ex.getMessage() : "Accès refusé",
+                null
+        );
+        log.warn("Unauthorized access: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     /**

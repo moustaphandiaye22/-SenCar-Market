@@ -1,6 +1,9 @@
 package com.sencarmarket.module.notification.service;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
+import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
 import com.sencarmarket.module.notification.dto.CreateSignalementRequest;
 import com.sencarmarket.module.notification.dto.SignalementResponse;
 import com.sencarmarket.module.notification.entity.Signalement;
@@ -54,7 +57,7 @@ public class SignalementServiceImpl implements ISignalementService {
     @Override
     public Signalement getSignalementById(UUID id) {
         return signalementRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Signalement non trouvé: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Signalement", "id", id));
     }
 
     @Override
@@ -92,7 +95,7 @@ public class SignalementServiceImpl implements ISignalementService {
         // Vérifier que le signalement peut être traité
         if (signalement.getStatutTraitement() == StatutTraitementSignalement.TRAITE ||
             signalement.getStatutTraitement() == StatutTraitementSignalement.RESOLU) {
-            throw new IllegalStateException("Ce signalement a déjà été traité");
+            throw new InvalidOperationException(AppMessages.SIGNALMENT_ALREADY_PROCESSED);
         }
 
         // Déterminer le nouveau statut

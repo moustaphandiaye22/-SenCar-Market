@@ -23,12 +23,15 @@ CREATE TABLE utilisateur (
     photo_profil_url VARCHAR(500),
     email_verifie BOOLEAN DEFAULT FALSE,
     telephone_verifie BOOLEAN DEFAULT FALSE,
+    note_moyenne DECIMAL(3,2),
+    nombre_total_avis INTEGER DEFAULT 0,
     double_auth_active BOOLEAN DEFAULT FALSE,
     type_utilisateur_id UUID REFERENCES type_utilisateur(id),
     statut_verification VARCHAR(50),
     derniere_connexion TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 -- Index pour performance
@@ -40,10 +43,11 @@ CREATE INDEX idx_utilisateur_type ON utilisateur(type_utilisateur_id);
 CREATE TABLE otp_code (
     id UUID PRIMARY KEY,
     utilisateur_id UUID NOT NULL REFERENCES utilisateur(id),
-    code VARCHAR(10) NOT NULL,
+    code VARCHAR(6) NOT NULL,
     type VARCHAR(50) NOT NULL,
-    expire_le TIMESTAMP NOT NULL,
+    expiration TIMESTAMP NOT NULL,
     utilise BOOLEAN DEFAULT FALSE,
+    tentatives INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -197,7 +201,8 @@ CREATE TABLE transaction_portefeuille (
     statut VARCHAR(50) NOT NULL,
     description TEXT,
     reference_externe VARCHAR(100),
-    date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_transaction_portefeuille ON transaction_portefeuille(portefeuille_id);
@@ -208,7 +213,7 @@ CREATE TABLE paiement (
     utilisateur_id UUID REFERENCES utilisateur(id),
     reservation_id UUID,
     montant DECIMAL(15,2) NOT NULL,
-    montant_esrow DECIMAL(15,2),
+    montant_escrow DECIMAL(15,2),
     commission DECIMAL(15,2) DEFAULT 0,
     methode_paiement VARCHAR(50),
     statut VARCHAR(50) NOT NULL,
@@ -217,6 +222,7 @@ CREATE TABLE paiement (
     reference_externe VARCHAR(100),
     url_paiement VARCHAR(500),
     date_paiement TIMESTAMP,
+    date_expiration TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -601,3 +607,96 @@ CREATE TABLE audit_log (
 CREATE INDEX idx_audit_utilisateur ON audit_log(utilisateur_id);
 CREATE INDEX idx_audit_action ON audit_log(action);
 CREATE INDEX idx_audit_date ON audit_log(date_action);
+
+-- ============================================
+-- COMPATIBILITE ENTITES JPA
+-- ============================================
+
+-- Messagerie
+ALTER TABLE conversation ADD COLUMN IF NOT EXISTS type_conversation VARCHAR(50);
+ALTER TABLE conversation ADD COLUMN IF NOT EXISTS annonce_id UUID;
+ALTER TABLE conversation ADD COLUMN IF NOT EXISTS message_epingle_id UUID;
+ALTER TABLE conversation ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+
+ALTER TABLE conversation_participant ADD COLUMN IF NOT EXISTS date_join TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE conversation_participant ADD COLUMN IF NOT EXISTS est_mute BOOLEAN DEFAULT FALSE;
+ALTER TABLE conversation_participant ADD COLUMN IF NOT EXISTS derniere_lecture_date TIMESTAMP;
+ALTER TABLE conversation_participant ADD COLUMN IF NOT EXISTS nombre_non_lus INTEGER DEFAULT 0;
+
+ALTER TABLE message ADD COLUMN IF NOT EXISTS utilisateur_id UUID;
+ALTER TABLE message ADD COLUMN IF NOT EXISTS date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE message ADD COLUMN IF NOT EXISTS type_message VARCHAR(50) DEFAULT 'TEXTE';
+
+-- Garage
+ALTER TABLE service_garage ADD COLUMN IF NOT EXISTS prix DECIMAL(15,2);
+ALTER TABLE service_garage ADD COLUMN IF NOT EXISTS duree_estimee INTEGER;
+ALTER TABLE service_garage ADD COLUMN IF NOT EXISTS actif BOOLEAN DEFAULT TRUE;
+ALTER TABLE service_garage ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE garage_service_association ADD COLUMN IF NOT EXISTS duree_estimee INTEGER;
+ALTER TABLE garage_service_association ADD COLUMN IF NOT EXISTS actif BOOLEAN DEFAULT TRUE;
+ALTER TABLE garage_service_association ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE garage_service_association ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Assurance
+ALTER TABLE produit_assurance ADD COLUMN IF NOT EXISTS prix_base DECIMAL(15,2);
+ALTER TABLE produit_assurance ADD COLUMN IF NOT EXISTS duree_mois INTEGER;
+ALTER TABLE produit_assurance ADD COLUMN IF NOT EXISTS est_actif BOOLEAN DEFAULT TRUE;
+ALTER TABLE produit_assurance ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE option_assurance ADD COLUMN IF NOT EXISTS produit_assurance_id UUID;
+ALTER TABLE option_assurance ADD COLUMN IF NOT EXISTS prix_supplementaire DECIMAL(15,2);
+ALTER TABLE option_assurance ADD COLUMN IF NOT EXISTS est_actif BOOLEAN DEFAULT TRUE;
+ALTER TABLE option_assurance ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS produit_assurance_id UUID;
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS montant_total DECIMAL(15,2);
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS numero_contrat VARCHAR(255);
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS document_url VARCHAR(500);
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS paiement_id UUID;
+ALTER TABLE souscription_assurance ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS souscription_options (
+    souscription_id UUID NOT NULL,
+    option_id UUID NOT NULL,
+    PRIMARY KEY (souscription_id, option_id)
+);
+
+-- Certification
+ALTER TABLE demande_certification ADD COLUMN IF NOT EXISTS utilisateur_id UUID;
+ALTER TABLE demande_certification ADD COLUMN IF NOT EXISTS montant_paiement DECIMAL(15,2);
+ALTER TABLE demande_certification ADD COLUMN IF NOT EXISTS paiement_id UUID;
+ALTER TABLE demande_certification ADD COLUMN IF NOT EXISTS motif_rejet TEXT;
+ALTER TABLE demande_certification ADD COLUMN IF NOT EXISTS badge_certifie_url VARCHAR(500);
+
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS demande_certification_id UUID;
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS resultat VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS commentaire TEXT;
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_moteur VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_generateur VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_freinage VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_suspension VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_transmission VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_pneus VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_carrosserie VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS etat_interieur VARCHAR(50);
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS score_total INTEGER;
+ALTER TABLE inspection ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS url_rapport_pdf VARCHAR(500);
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS date_generation TIMESTAMP;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS score_globale INTEGER;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS recommendations TEXT;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS conclusion TEXT;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS est_approuve BOOLEAN;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE rapport_inspection ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Annonce location
+CREATE TABLE IF NOT EXISTS historique_statut_reservation (
+    id UUID PRIMARY KEY,
+    reservation_id UUID REFERENCES reservation_location(id),
+    ancien_statut_id UUID,
+    nouveau_statut_id UUID,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

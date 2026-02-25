@@ -4,12 +4,13 @@ import com.sencarmarket.module.avis.dto.AvisResponse;
 import com.sencarmarket.module.avis.dto.CreateAvisRequest;
 import com.sencarmarket.module.avis.service.AvisService;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class AvisController {
 
     private final AvisService avisService;
+    private final AccessControlService accessControlService;
 
     /**
      * Creer un nouvel avis - Utilisateurs authentifies uniquement
@@ -31,7 +33,8 @@ public class AvisController {
     @PostMapping
     public ResponseEntity<AvisResponse> createAvis(
             @Valid @RequestBody CreateAvisRequest request,
-            @AuthenticationPrincipal UUID utilisateurId) {
+            Authentication authentication) {
+        UUID utilisateurId = accessControlService.getCurrentUserId(authentication);
         AvisResponse response = avisService.createAvis(request, utilisateurId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -114,7 +117,8 @@ public class AvisController {
     @PostMapping("/{avisId}/signaler")
     public ResponseEntity<Void> signalerAvis(
             @PathVariable UUID avisId,
-            @AuthenticationPrincipal UUID utilisateurId) {
+            Authentication authentication) {
+        UUID utilisateurId = accessControlService.getCurrentUserId(authentication);
         avisService.signalerAvis(avisId, utilisateurId);
         return ResponseEntity.ok().build();
     }
@@ -125,7 +129,8 @@ public class AvisController {
     @DeleteMapping("/{avisId}")
     public ResponseEntity<Void> deleteAvis(
             @PathVariable UUID avisId,
-            @AuthenticationPrincipal UUID utilisateurId) {
+            Authentication authentication) {
+        UUID utilisateurId = accessControlService.getCurrentUserId(authentication);
         avisService.deleteAvis(avisId, utilisateurId);
         return ResponseEntity.noContent().build();
     }
@@ -140,4 +145,5 @@ public class AvisController {
         boolean valide = avisService.isTransactionValide(transactionId, typeAvis);
         return ResponseEntity.ok(valide);
     }
+
 }

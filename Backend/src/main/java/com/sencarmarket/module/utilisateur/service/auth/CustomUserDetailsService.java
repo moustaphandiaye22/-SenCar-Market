@@ -1,5 +1,6 @@
 package com.sencarmarket.module.utilisateur.service.auth;
 
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.utilisateur.entity.Utilisateur;
 import com.sencarmarket.module.utilisateur.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(usernameOrEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve avec: " + usernameOrEmail));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND_WITH + usernameOrEmail));
 
         return new User(
                 utilisateur.getEmail(),
@@ -32,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve avec: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException(AppMessages.USER_NOT_FOUND_WITH + email));
 
         return new User(
                 utilisateur.getEmail(),

@@ -14,7 +14,7 @@ public interface ReservationLocationRepository extends JpaRepository<Reservation
 
     List<ReservationLocation> findByLocataireId(UUID locataireId);
 
-    List<ReservationLocation> findByVehiculeId(UUID vehiculeId);
+    List<ReservationLocation> findByAnnonceLocation_VehiculeId(UUID vehiculeId);
 
     List<ReservationLocation> findByAnnonceLocationId(UUID annonceLocationId);
 

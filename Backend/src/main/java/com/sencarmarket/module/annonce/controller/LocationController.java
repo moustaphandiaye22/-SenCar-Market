@@ -3,7 +3,10 @@ package com.sencarmarket.module.annonce.controller;
 import com.sencarmarket.module.annonce.dto.*;
 import com.sencarmarket.module.annonce.entity.DisponibiliteLocation;
 import com.sencarmarket.module.annonce.entity.HistoriqueStatutReservation;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.annonce.service.AnnonceService;
+import com.sencarmarket.module.commun.exception.UnauthorizedAccessException;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class LocationController {
 
     private final AnnonceService annonceService;
+    private final AccessControlService accessControlService;
 
     // ========== ANNONCES DE LOCATION ==========
 
@@ -39,12 +43,15 @@ public class LocationController {
     @PutMapping("/annonces/{id}")
     public ResponseEntity<AnnonceLocationResponse> updateAnnonceLocation(
             @PathVariable UUID id,
-            @RequestBody CreateAnnonceLocationRequest request) {
+            @RequestBody CreateAnnonceLocationRequest request,
+            Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.updateAnnonceLocation(id, request));
     }
 
     @DeleteMapping("/annonces/{id}")
-    public ResponseEntity<Void> deleteAnnonceLocation(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteAnnonceLocation(@PathVariable UUID id, Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         annonceService.deleteAnnonceLocation(id);
         return ResponseEntity.noContent().build();
     }
@@ -65,12 +72,14 @@ public class LocationController {
     }
 
     @PostMapping("/annonces/{id}/activer")
-    public ResponseEntity<AnnonceLocationResponse> activerAnnonce(@PathVariable UUID id) {
+    public ResponseEntity<AnnonceLocationResponse> activerAnnonce(@PathVariable UUID id, Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.activerDesactiverAnnonce(id, true));
     }
 
     @PostMapping("/annonces/{id}/desactiver")
-    public ResponseEntity<AnnonceLocationResponse> desactiverAnnonce(@PathVariable UUID id) {
+    public ResponseEntity<AnnonceLocationResponse> desactiverAnnonce(@PathVariable UUID id, Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.activerDesactiverAnnonce(id, false));
     }
 
@@ -86,21 +95,26 @@ public class LocationController {
     @PutMapping("/reservations/{id}/statut")
     public ResponseEntity<ReservationLocationResponse> updateStatutReservation(
             @PathVariable UUID id,
-            @RequestParam String statut) {
+            @RequestParam String statut,
+            Authentication authentication) {
+        checkReservationPartyOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.updateStatutReservation(id, statut));
     }
 
     @PostMapping("/reservations/{id}/annuler")
     public ResponseEntity<Void> cancelReservation(
             @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication) {
+        checkReservationPartyOrAdmin(id, authentication);
         String motif = body != null ? body.get("motif") : null;
         annonceService.cancelReservation(id, motif);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/reservations/{id}")
-    public ResponseEntity<ReservationLocationResponse> getReservationById(@PathVariable UUID id) {
+    public ResponseEntity<ReservationLocationResponse> getReservationById(@PathVariable UUID id, Authentication authentication) {
+        checkReservationPartyOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.getReservationById(id));
     }
 
@@ -110,7 +124,10 @@ public class LocationController {
     }
 
     @GetMapping("/annonces/{id}/reservations")
-    public ResponseEntity<List<ReservationLocationResponse>> getReservationsByAnnonce(@PathVariable UUID id) {
+    public ResponseEntity<List<ReservationLocationResponse>> getReservationsByAnnonce(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.getReservationsByAnnonce(id));
     }
     
@@ -119,7 +136,9 @@ public class LocationController {
     @PostMapping("/annonces/{id}/disponibilites")
     public ResponseEntity<List<DisponibiliteLocation>> ajouterDisponibilites(
             @PathVariable UUID id,
-            @Valid @RequestBody List<DisponibiliteRequest> request) {
+            @Valid @RequestBody List<DisponibiliteRequest> request,
+            Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.ajouterDisponibilites(id, request));
     }
     
@@ -129,7 +148,8 @@ public class LocationController {
     }
     
     @DeleteMapping("/annonces/{id}/disponibilites")
-    public ResponseEntity<Void> supprimerDisponibilites(@PathVariable UUID id) {
+    public ResponseEntity<Void> supprimerDisponibilites(@PathVariable UUID id, Authentication authentication) {
+        checkAnnonceOwnerOrAdmin(id, authentication);
         annonceService.supprimerDisponibilites(id);
         return ResponseEntity.noContent().build();
     }
@@ -137,14 +157,44 @@ public class LocationController {
     // ========== HISTORIQUE DES STATUTS ==========
     
     @GetMapping("/reservations/{id}/historique")
-    public ResponseEntity<List<HistoriqueStatutReservation>> getHistoriqueStatuts(@PathVariable UUID id) {
+    public ResponseEntity<List<HistoriqueStatutReservation>> getHistoriqueStatuts(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        checkReservationPartyOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.getHistoriqueStatuts(id));
     }
     
     @PutMapping("/reservations/{id}/statut-avec-historique")
     public ResponseEntity<ReservationLocationResponse> updateStatutReservationAvecHistorique(
             @PathVariable UUID id,
-            @RequestParam String statut) {
+            @RequestParam String statut,
+            Authentication authentication) {
+        checkReservationPartyOrAdmin(id, authentication);
         return ResponseEntity.ok(annonceService.updateStatutReservationAvecHistorique(id, statut));
+    }
+
+    private void checkAnnonceOwnerOrAdmin(UUID annonceId, Authentication authentication) {
+        if (accessControlService.isAdmin(authentication)) {
+            return;
+        }
+        UUID currentUserId = accessControlService.getCurrentUserId(authentication);
+        UUID ownerId = annonceService.getAnnonceLocationById(annonceId).getProprietaireId();
+        if (ownerId == null || !ownerId.equals(currentUserId)) {
+            throw new UnauthorizedAccessException(AppMessages.ACCESS_DENIED_ANNONCE);
+        }
+    }
+
+    private void checkReservationPartyOrAdmin(UUID reservationId, Authentication authentication) {
+        if (accessControlService.isAdmin(authentication)) {
+            return;
+        }
+        UUID currentUserId = accessControlService.getCurrentUserId(authentication);
+        ReservationLocationResponse reservation = annonceService.getReservationById(reservationId);
+        UUID locataireId = reservation.getLocataireId();
+        UUID ownerId = annonceService.getAnnonceLocationById(reservation.getAnnonceLocationId()).getProprietaireId();
+        if ((locataireId == null || !locataireId.equals(currentUserId))
+                && (ownerId == null || !ownerId.equals(currentUserId))) {
+            throw new UnauthorizedAccessException(AppMessages.ACCESS_DENIED_RESERVATION);
+        }
     }
 }

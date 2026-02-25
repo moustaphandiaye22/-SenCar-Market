@@ -3,12 +3,11 @@ package com.sencarmarket.module.admin.service;
 import com.sencarmarket.module.admin.dto.DashboardStatsResponse;
 import com.sencarmarket.module.admin.dto.ModifierRoleRequest;
 import com.sencarmarket.module.admin.mapper.AdminMapper;
-import com.sencarmarket.module.abonnement.repository.UtilisateurAbonnementRepository;
-import com.sencarmarket.module.annonce.repository.ReservationLocationRepository;
+import com.sencarmarket.module.commun.constants.AppMessages;
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
-import com.sencarmarket.module.commun.enums.StatutReservation;
+import com.sencarmarket.module.commun.exception.InvalidOperationException;
 import com.sencarmarket.module.commun.exception.ResourceNotFoundException;
-import com.sencarmarket.module.notification.service.INotificationService;
+import com.sencarmarket.module.commun.service.PaginationService;
 import com.sencarmarket.module.paiement.dto.TransactionResponse;
 import com.sencarmarket.module.paiement.entity.TransactionPortefeuille;
 import com.sencarmarket.module.paiement.enums.StatutTransaction;
@@ -46,10 +45,10 @@ public class AdminServiceImpl implements IAdminService {
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
     private final TransactionPortefeuilleRepository transactionRepository;
-    private final ReservationLocationRepository reservationRepository;
-    private final UtilisateurAbonnementRepository utilisateurAbonnementRepository;
-    private final INotificationService notificationService;
     private final AdminMapper adminMapper;
+    private final AdminMetricsService adminMetricsService;
+    private final AdminNotificationService adminNotificationService;
+    private final PaginationService paginationService;
 
     // ==================== DASHBOARD ====================
     // KISS: Une méthode = une responsabilité
@@ -57,64 +56,7 @@ public class AdminServiceImpl implements IAdminService {
     @Override
     public DashboardStatsResponse getDashboardStats() {
         log.info("Récupération des statistiques du dashboard");
-
-        // Utilisateurs
-        long totalUtilisateurs = utilisateurRepository.count();
-        
-        // Annonces
-        long totalAnnonces = vehiculeRepository.count();
-        long totalAnnoncesActives = vehiculeRepository.countByStatut(Statut.PUBLIE);
-        
-        // Réservations
-        long totalReservations = reservationRepository.count();
-        long reservationsEnAttente = reservationRepository.countByStatut(StatutReservation.EN_ATTENTE);
-        
-        // Paiements
-        long totalPaiements = transactionRepository.count();
-        long paiementsEnAttente = transactionRepository.countByStatut(StatutTransaction.EN_ATTENTE);
-        
-        // Abonnements
-        long abonnementsActifs = utilisateurAbonnementRepository.countActiveSubscriptions();
-        long totalAbonnements = utilisateurAbonnementRepository.count();
-        
-        // Revenus (seul endroit où on charge des entités)
-        double[] revenus = calculerRevenus();
-        double revenusTotaux = revenus[0];
-        double revenusCeMois = revenus[1];
-
-        return DashboardStatsResponse.builder()
-                .totalUtilisateurs(totalUtilisateurs)
-                .totalAnnonces(totalAnnonces)
-                .totalAnnoncesActives(totalAnnoncesActives)
-                .totalReservations(totalReservations)
-                .reservationsEnAttente(reservationsEnAttente)
-                .revenusTotaux(revenusTotaux)
-                .revenusCeMois(revenusCeMois)
-                .totalPaiements(totalPaiements)
-                .paiementsEnAttente(paiementsEnAttente)
-                .totalAbonnements(totalAbonnements)
-                .abonnementsActifs(abonnementsActifs)
-                .build();
-    }
-
-    /**
-     * Calcule les revenus - Méthode privée pour encapsulation (KISS)
-     */
-    private double[] calculerRevenus() {
-        List<TransactionPortefeuille> transactionsConfirmees = transactionRepository
-                .findByStatut(StatutTransaction.CONFIRMEE);
-        
-        double revenusTotaux = transactionsConfirmees.stream()
-                .mapToDouble(t -> t.getMontant() != null ? t.getMontant().doubleValue() : 0)
-                .sum();
-
-        LocalDateTime debutMois = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0);
-        double revenusCeMois = transactionsConfirmees.stream()
-                .filter(t -> t.getDateTransaction() != null && t.getDateTransaction().isAfter(debutMois))
-                .mapToDouble(t -> t.getMontant() != null ? t.getMontant().doubleValue() : 0)
-                .sum();
-        
-        return new double[]{revenusTotaux, revenusCeMois};
+        return adminMetricsService.getDashboardStats();
     }
 
     // ==================== GESTION UTILISATEURS ====================
@@ -127,13 +69,13 @@ public class AdminServiceImpl implements IAdminService {
                 .map(adminMapper::toUtilisateurResponse)  // DRY: Utilisation du mapper
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(utilisateursPage, content);
+        return paginationService.build(utilisateursPage, content);
     }
 
     @Override
     public UtilisateurResponse getUtilisateurById(UUID utilisateurId) {
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé: " + utilisateurId));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "id", utilisateurId));
         return adminMapper.toUtilisateurResponse(utilisateur);
     }
 
@@ -146,7 +88,7 @@ public class AdminServiceImpl implements IAdminService {
         utilisateur.setDeletedAt(LocalDateTime.now());
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        notificationService.notifierSubscription(utilisateurId, "SUSPENSION",
+        adminNotificationService.notifyUtilisateur(utilisateurId, "SUSPENSION",
                 "Votre compte a été suspendu. Raison: " + raison);
 
         log.info("Utilisateur {} suspendu", utilisateurId);
@@ -162,7 +104,7 @@ public class AdminServiceImpl implements IAdminService {
         utilisateur.setDeletedAt(null);
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        notificationService.notifierSubscription(utilisateurId, "REACTIVATION",
+        adminNotificationService.notifyUtilisateur(utilisateurId, "REACTIVATION",
                 "Votre compte a été réactivé.");
 
         log.info("Utilisateur {} réactivé", utilisateurId);
@@ -178,7 +120,7 @@ public class AdminServiceImpl implements IAdminService {
         utilisateur.setDeletedAt(LocalDateTime.now().plusYears(100));
         utilisateurRepository.save(utilisateur);
 
-        notificationService.notifierSubscription(utilisateurId, "BAN",
+        adminNotificationService.notifyUtilisateur(utilisateurId, "BAN",
                 "Votre compte a été banni. Raison: " + raison);
 
         log.info("Utilisateur {} banni", utilisateurId);
@@ -197,7 +139,7 @@ public class AdminServiceImpl implements IAdminService {
         utilisateur.setTypeUtilisateur(request.getNouveauRole());
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        notificationService.notifierSubscription(utilisateurId, "MODIFICATION_ROLE",
+        adminNotificationService.notifyUtilisateur(utilisateurId, "MODIFICATION_ROLE",
                 "Votre rôle a été modifié de " + ancienRole + " vers " + request.getNouveauRole().getNom());
 
         return adminMapper.toUtilisateurResponse(saved);
@@ -213,7 +155,7 @@ public class AdminServiceImpl implements IAdminService {
                 .map(adminMapper::toVehiculeResponse)  // DRY
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(vehiculesPage, content);
+        return paginationService.build(vehiculesPage, content);
     }
 
     @Override
@@ -238,7 +180,7 @@ public class AdminServiceImpl implements IAdminService {
         vehicule.setStatut(Statut.SUPPRIME);
         Vehicule saved = vehiculeRepository.save(vehicule);
 
-        notifierVendeur(vehicule, "ANNONCE_DESACTIVEE", 
+        notifierVendeur(vehicule, "ANNONCE_DESACTIVEE",
                 "Votre annonce a été désactivée. Raison: " + raison);
 
         return adminMapper.toVehiculeResponse(saved);
@@ -250,7 +192,7 @@ public class AdminServiceImpl implements IAdminService {
         log.info("Suppression de l'annonce: {}", annonceId);
 
         Vehicule vehicule = getVehiculeOrThrow(annonceId);
-        notifierVendeur(vehicule, "ANNONCE_SUPPRIMEE", 
+        notifierVendeur(vehicule, "ANNONCE_SUPPRIMEE",
                 "Votre annonce a été supprimée par l'administrateur.");
 
         vehiculeRepository.delete(vehicule);
@@ -267,17 +209,13 @@ public class AdminServiceImpl implements IAdminService {
                 .map(adminMapper::toTransactionResponse)  // DRY
                 .collect(Collectors.toList());
 
-        return buildPaginatedResponse(transactionsPage, content);
+        return paginationService.build(transactionsPage, content);
     }
 
     @Override
     public PaginatedResponse<TransactionResponse> getTransactionsByUtilisateur(UUID utilisateurId, Pageable pageable) {
-        List<TransactionPortefeuille> allTransactions = transactionRepository.findAll();
-        List<TransactionPortefeuille> userTransactions = allTransactions.stream()
-                .filter(t -> t.getPortefeuille() != null 
-                        && t.getPortefeuille().getUtilisateur() != null 
-                        && t.getPortefeuille().getUtilisateur().getId().equals(utilisateurId))
-                .collect(Collectors.toList());
+        List<TransactionPortefeuille> userTransactions =
+                transactionRepository.findByPortefeuilleUtilisateurIdOrderByDateTransactionDesc(utilisateurId);
         
         return paginerTransactions(userTransactions, pageable);
     }
@@ -285,13 +223,7 @@ public class AdminServiceImpl implements IAdminService {
     @Override
     public double getTotalCommissions() {
         log.info("Calcul des commissions totales");
-
-        return transactionRepository.findByStatut(StatutTransaction.CONFIRMEE).stream()
-                .mapToDouble(t -> {
-                    double montant = t.getMontant() != null ? t.getMontant().doubleValue() : 0;
-                    return montant * 0.05;
-                })
-                .sum();
+        return adminMetricsService.getTotalCommissions();
     }
 
     @Override
@@ -300,10 +232,10 @@ public class AdminServiceImpl implements IAdminService {
         log.info("Remboursement de la transaction: {}", transactionId);
 
         TransactionPortefeuille transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.TRANSACTION_NOT_FOUND));
 
-        if (transaction.getStatut() == StatutTransaction.CONFIRMEE) {
-            throw new IllegalStateException("Cette transaction ne peut pas être remboursée");
+        if (transaction.getStatut() != StatutTransaction.CONFIRMEE) {
+            throw new InvalidOperationException(AppMessages.PAIEMENT_REFUND_ONLY_CONFIRMED);
         }
 
         UUID portefeuilleId = transaction.getPortefeuille() != null 
@@ -311,6 +243,7 @@ public class AdminServiceImpl implements IAdminService {
                 : null;
 
         TransactionPortefeuille remboursement = TransactionPortefeuille.builder()
+                .portefeuille(transaction.getPortefeuille())
                 .montant(transaction.getMontant() != null ? transaction.getMontant().negate() : null)
                 .typeTransaction(transaction.getTypeTransaction())
                 .statut(StatutTransaction.CONFIRMEE)
@@ -320,7 +253,7 @@ public class AdminServiceImpl implements IAdminService {
         TransactionPortefeuille saved = transactionRepository.save(remboursement);
 
         if (portefeuilleId != null) {
-            notificationService.notifierPaiement(portefeuilleId,
+            adminNotificationService.notifyPaiement(portefeuilleId,
                     "Votre remboursement de " + transaction.getMontant() + " a été traité.");
         }
 
@@ -335,9 +268,7 @@ public class AdminServiceImpl implements IAdminService {
         log.info("Envoi de notification à tous les utilisateurs");
 
         List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
-        utilisateurs.forEach(u -> 
-                notificationService.notifierSubscription(u.getId(), "MESSAGE", message));
-
+        adminNotificationService.notifyAll(utilisateurs, message);
         log.info("Notification envoyée à {} utilisateurs", utilisateurs.size());
     }
 
@@ -346,8 +277,7 @@ public class AdminServiceImpl implements IAdminService {
     public void notifierGroupeUtilisateurs(List<UUID> utilisateurIds, String titre, String message) {
         log.info("Envoi de notification à {} utilisateurs", utilisateurIds.size());
 
-        utilisateurIds.forEach(id -> 
-                notificationService.notifierSubscription(id, "MESSAGE", message));
+        adminNotificationService.notifyGroup(utilisateurIds, message);
     }
 
     // ==================== MÉTHODES PRIVÉES - KISS ====================
@@ -357,7 +287,7 @@ public class AdminServiceImpl implements IAdminService {
      */
     private Utilisateur getUtilisateurOrThrow(UUID id) {
         return utilisateurRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.USER_NOT_FOUND));
     }
 
     /**
@@ -365,31 +295,13 @@ public class AdminServiceImpl implements IAdminService {
      */
     private Vehicule getVehiculeOrThrow(UUID id) {
         return vehiculeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException(AppMessages.ANNONCE_NOT_FOUND));
     }
 
-    /**
-     * Notifie le vendeur d'une annonce - DRY
-     */
     private void notifierVendeur(Vehicule vehicule, String type, String message) {
         if (vehicule.getProprietaire() != null) {
-            notificationService.notifierSubscription(vehicule.getProprietaire().getId(), type, message);
+            adminNotificationService.notifyVendeurIfPresent(vehicule.getProprietaire().getId(), type, message);
         }
-    }
-
-    /**
-     * Construit une réponse paginée - DRY
-     */
-    private <T> PaginatedResponse<T> buildPaginatedResponse(Page<?> page, List<T> content) {
-        return PaginatedResponse.<T>builder()
-                .content(content)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
     }
 
     /**
@@ -408,14 +320,8 @@ public class AdminServiceImpl implements IAdminService {
                 .map(adminMapper::toTransactionResponse)
                 .collect(Collectors.toList());
 
-        return PaginatedResponse.<TransactionResponse>builder()
-                .content(content)
-                .page(pageable.getPageNumber())
-                .size(pageable.getPageSize())
-                .totalElements(transactions.size())
-                .totalPages((int) Math.ceil((double) transactions.size() / pageable.getPageSize()))
-                .last(end >= transactions.size())
-                .first(start == 0)
-                .build();
+        Page<TransactionResponse> syntheticPage = new org.springframework.data.domain.PageImpl<>(
+                content, pageable, transactions.size());
+        return paginationService.build(syntheticPage, content);
     }
 }

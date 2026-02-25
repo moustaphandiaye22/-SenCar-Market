@@ -2,6 +2,7 @@ package com.sencarmarket.config;
 
 import com.sencarmarket.module.utilisateur.service.auth.CustomUserDetailsService;
 import com.sencarmarket.module.utilisateur.service.auth.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -57,9 +59,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
             // Token invalide ou expiré, continuer sans authentification
-            logger.error("Cannot set user authentication: " + e.getMessage());
+            logger.debug("Cannot set user authentication", e);
         }
 
         filterChain.doFilter(request, response);

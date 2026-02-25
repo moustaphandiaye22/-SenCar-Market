@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "SONAR_TOKEN",
+        "projectKey": "moustaphandiaye22_-SenCar-Market"
+    }
+}

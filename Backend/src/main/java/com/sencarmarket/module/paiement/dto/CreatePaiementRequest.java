@@ -18,7 +18,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreatePaiementRequest {
 
-    @NotNull(message = "L'ID de l'utilisateur est requis")
     private UUID utilisateurId;
 
     @NotNull(message = "L'ID de la réservation est requis")

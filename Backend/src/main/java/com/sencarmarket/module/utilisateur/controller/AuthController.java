@@ -5,6 +5,7 @@ import com.sencarmarket.module.utilisateur.service.auth.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<Map<String, String>> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        authenticationService.verifyEmail(request.getEmail());
+        authenticationService.verifyEmailWithOtp(request.getEmail(), request.getCodeOtp());
         return ResponseEntity.ok(Map.of("message", "Email vérifié avec succès"));
     }
 
@@ -46,11 +47,13 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UtilisateurResponse> getCurrentUser(Authentication authentication) {
         return ResponseEntity.ok(authenticationService.getCurrentUser(authentication.getName()));
     }
 
     @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UtilisateurResponse> updateProfile(
             Authentication authentication,
             @RequestBody UpdateProfileRequest request) {
@@ -58,6 +61,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {

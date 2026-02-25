@@ -15,7 +15,7 @@ import java.util.UUID;
  * Chaque garage peut proposer des services avec ses propres prix
  */
 @Entity
-@Table(name = "garage_service")
+@Table(name = "garage_service_association")
 @Getter
 @Setter
 @NoArgsConstructor

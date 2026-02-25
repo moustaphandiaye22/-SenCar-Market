@@ -1,6 +1,8 @@
 package com.sencarmarket.module.garage.controller;
 
 import com.sencarmarket.module.commun.dto.PaginatedResponse;
+import com.sencarmarket.module.commun.constants.AppMessages;
+import com.sencarmarket.module.commun.security.AccessControlService;
 import com.sencarmarket.module.garage.dto.*;
 import com.sencarmarket.module.garage.service.GarageService;
 import jakarta.validation.Valid;
@@ -9,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.UUID;
 public class GarageController {
 
     private final GarageService garageService;
+    private final AccessControlService accessControlService;
 
     // ========== GARAGE ==========
 
@@ -36,7 +40,8 @@ public class GarageController {
     @PreAuthorize("hasRole('GARAGE') or hasRole('ADMIN')")
     public ResponseEntity<GarageResponse> createGarage(
             @Valid @RequestBody CreateGarageRequest request,
-            @RequestHeader("X-User-Id") UUID proprietaireId) {
+            Authentication authentication) {
+        UUID proprietaireId = accessControlService.getCurrentUserId(authentication);
         log.info("POST /api/garages - Creating garage '{}' for user {}", request.getNom(), proprietaireId);
         GarageResponse response = garageService.createGarage(request, proprietaireId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -81,6 +86,7 @@ public class GarageController {
      * GET /api/garages/en-attente
      */
     @GetMapping("/en-attente")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<PaginatedResponse<GarageResponse>> getGaragesEnAttente(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -93,7 +99,8 @@ public class GarageController {
      * GET /api/garages/proprietaire/{proprietaireId}
      */
     @GetMapping("/proprietaire/{proprietaireId}")
-    public ResponseEntity<List<GarageResponse>> getGaragesByProprietaire(@PathVariable UUID proprietaireId) {
+    public ResponseEntity<List<GarageResponse>> getGaragesByProprietaire(@PathVariable UUID proprietaireId, Authentication authentication) {
+        accessControlService.checkOwnerOrAdmin(authentication, proprietaireId, AppMessages.ACCESS_DENIED_RESOURCE);
         log.debug("GET /api/garages/proprietaire/{}", proprietaireId);
         return ResponseEntity.ok(garageService.getGaragesByProprietaire(proprietaireId));
     }
@@ -138,7 +145,9 @@ public class GarageController {
     @PutMapping("/{id}")
     public ResponseEntity<GarageResponse> updateGarage(
             @PathVariable UUID id,
-            @Valid @RequestBody CreateGarageRequest request) {
+            @Valid @RequestBody CreateGarageRequest request,
+            Authentication authentication) {
+        checkGarageOwnerOrAdmin(authentication, id);
         log.info("PUT /api/garages/{}", id);
         return ResponseEntity.ok(garageService.updateGarage(id, request));
     }
@@ -148,7 +157,8 @@ public class GarageController {
      * DELETE /api/garages/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteGarage(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteGarage(@PathVariable UUID id, Authentication authentication) {
+        checkGarageOwnerOrAdmin(authentication, id);
         log.info("DELETE /api/garages/{}", id);
         garageService.deleteGarage(id);
         return ResponseEntity.noContent().build();
@@ -159,6 +169,7 @@ public class GarageController {
      * POST /api/garages/{id}/validate
      */
     @PostMapping("/{id}/validate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<GarageResponse> validerGarage(
             @PathVariable UUID id,
             @Valid @RequestBody ValidationGarageRequest request) {
@@ -173,7 +184,9 @@ public class GarageController {
     @PutMapping("/{id}/logo")
     public ResponseEntity<GarageResponse> updateLogo(
             @PathVariable UUID id,
-            @RequestBody String logoUrl) {
+            @RequestBody String logoUrl,
+            Authentication authentication) {
+        checkGarageOwnerOrAdmin(authentication, id);
         log.info("PUT /api/garages/{}/logo", id);
         return ResponseEntity.ok(garageService.updateLogo(id, logoUrl));
     }
@@ -185,6 +198,7 @@ public class GarageController {
      * POST /api/garages/services
      */
     @PostMapping("/services")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<ServiceGarageResponse> createService(@Valid @RequestBody CreateServiceGarageRequest request) {
         log.info("POST /api/garages/services - Creating service '{}'", request.getNom());
         return ResponseEntity.status(HttpStatus.CREATED).body(garageService.createService(request));
@@ -215,6 +229,7 @@ public class GarageController {
      * PUT /api/garages/services/{id}
      */
     @PutMapping("/services/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<ServiceGarageResponse> updateService(
             @PathVariable UUID id,
             @Valid @RequestBody CreateServiceGarageRequest request) {
@@ -227,6 +242,7 @@ public class GarageController {
      * DELETE /api/garages/services/{id}
      */
     @DeleteMapping("/services/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATEUR', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteService(@PathVariable UUID id) {
         log.info("DELETE /api/garages/services/{}", id);
         garageService.deleteService(id);
@@ -242,7 +258,9 @@ public class GarageController {
     @PostMapping("/{garageId}/services")
     public ResponseEntity<GarageServiceResponse> associateService(
             @PathVariable UUID garageId,
-            @Valid @RequestBody AssociateServiceRequest request) {
+            @Valid @RequestBody AssociateServiceRequest request,
+            Authentication authentication) {
+        checkGarageOwnerOrAdmin(authentication, garageId);
         log.info("POST /api/garages/{}/services - Associating service", garageId);
         request.setGarageId(garageId);
         return ResponseEntity.status(HttpStatus.CREATED).body(garageService.associateService(request));
@@ -265,9 +283,20 @@ public class GarageController {
     @DeleteMapping("/{garageId}/services/{serviceId}")
     public ResponseEntity<Void> disassociateService(
             @PathVariable UUID garageId,
-            @PathVariable UUID serviceId) {
+            @PathVariable UUID serviceId,
+            Authentication authentication) {
+        checkGarageOwnerOrAdmin(authentication, garageId);
         log.info("DELETE /api/garages/{}/services/{}", garageId, serviceId);
         garageService.disassociateService(garageId, serviceId);
         return ResponseEntity.noContent().build();
+    }
+
+    private void checkGarageOwnerOrAdmin(Authentication authentication, UUID garageId) {
+        if (accessControlService.isAdmin(authentication)) {
+            return;
+        }
+        GarageResponse garage = garageService.getGarageById(garageId);
+        accessControlService.checkOwnerOrAdmin(authentication, garage.getProprietaireId(),
+                AppMessages.ACCESS_DENIED_RESOURCE);
     }
 }

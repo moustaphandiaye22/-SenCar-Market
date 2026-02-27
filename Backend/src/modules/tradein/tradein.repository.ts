@@ -1,0 +1,159 @@
+import { randomUUID } from 'crypto';
+
+import { Injectable } from '@nestjs/common';
+
+import { PrismaService } from '../../prisma/prisma.service';
+
+import {
+  CreateDemandeInput,
+  CreateHistoriqueEstimationInput,
+  CreateNotificationInput,
+  DemandeRecord,
+  UpdateDemandeInput,
+  UserRecord,
+  VehiculeMini,
+} from './tradein.models';
+import { TradeInRepositoryPort } from './tradein.repository.port';
+
+@Injectable()
+export class TradeInRepository implements TradeInRepositoryPort {
+  constructor(private readonly prisma: PrismaService) {}
+
+  findUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.prisma.utilisateur.findUnique({
+      where: { email },
+      include: { typeUtilisateur: true },
+    });
+  }
+
+  findUserById(id: string): Promise<UserRecord | null> {
+    return this.prisma.utilisateur.findUnique({
+      where: { id },
+      include: { typeUtilisateur: true },
+    });
+  }
+
+  findVehiculeById(id: string): Promise<VehiculeMini | null> {
+    return this.prisma.vehicule.findUnique({
+      where: { id },
+      include: {
+        marque: { select: { nom: true } },
+        modele: { select: { nom: true } },
+      },
+    });
+  }
+
+  createDemande(data: CreateDemandeInput): Promise<DemandeRecord> {
+    return this.prisma.demandeTradeIn.create({
+      data,
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    });
+  }
+
+  findDemandeById(id: string): Promise<DemandeRecord | null> {
+    return this.prisma.demandeTradeIn.findUnique({
+      where: { id },
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    });
+  }
+
+  findDemandesPaged(page: number, size: number): Promise<{ items: DemandeRecord[]; total: number }> {
+    return Promise.all([
+      this.prisma.demandeTradeIn.findMany({
+        skip: page * size,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          utilisateur: { select: { id: true, nom: true } },
+          vehiculeActuel: {
+            include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          },
+          vehiculeSouhaite: {
+            include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          },
+        },
+      }),
+      this.prisma.demandeTradeIn.count(),
+    ]).then(([items, total]) => ({ items, total }));
+  }
+
+  findDemandesByUtilisateurId(utilisateurId: string): Promise<DemandeRecord[]> {
+    return this.prisma.demandeTradeIn.findMany({
+      where: { utilisateurId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    });
+  }
+
+  findDemandesByNotifie(estNotifie: boolean): Promise<DemandeRecord[]> {
+    return this.prisma.demandeTradeIn.findMany({
+      where: { estNotifie },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    });
+  }
+
+  updateDemande(id: string, data: UpdateDemandeInput): Promise<DemandeRecord> {
+    return this.prisma.demandeTradeIn.update({
+      where: { id },
+      data,
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    });
+  }
+
+  deleteDemande(id: string): Promise<DemandeRecord> {
+    return this.prisma.demandeTradeIn.delete({ where: { id } });
+  }
+
+  createHistoriqueEstimation(data: CreateHistoriqueEstimationInput): Promise<{ id: string }> {
+    return this.prisma.historiqueEstimation.create({ data, select: { id: true } });
+  }
+
+  createNotification(data: CreateNotificationInput): Promise<{ id: string }> {
+    return this.prisma.notification.create({ data, select: { id: true } });
+  }
+
+  newId(): string {
+    return randomUUID();
+  }
+}

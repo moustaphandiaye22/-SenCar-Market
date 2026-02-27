@@ -1,0 +1,18 @@
+export const APP_MESSAGES = {
+  invalidCredentials: 'Identifiants invalides',
+  userNotFound: 'Utilisateur non trouvé',
+  emailAlreadyExists: "L'email existe déjà. Veuillez utiliser un autre email.",
+  phoneAlreadyExists: 'Ce numéro de téléphone est déjà utilisé.',
+  userTypeRequired: "Le type d'utilisateur est obligatoire.",
+  restrictedUserType: "Ce type d'utilisateur est réservé et ne peut pas être auto-attribué.",
+  invalidUserTypePrefix: 'Type utilisateur invalide. Types autorisés: ',
+  invalidSystemUserType: 'Erreur système: type utilisateur invalide en base.',
+  otpInvalidOrExpired: 'Code OTP invalide ou expiré',
+  otpMaxAttemptsReached: 'Nombre maximal de tentatives atteint',
+  otpIncorrect: 'Code OTP incorrect',
+  refreshTokenInvalid: 'Refresh token invalide ou expiré',
+  currentPasswordInvalid: 'Mot de passe actuel incorrect',
+  newPasswordMustDiffer: "Le nouveau mot de passe doit être différent de l'ancien",
+  profileFieldCannotBeBlankPrefix: 'Le champ ne peut pas être vide: ',
+  unauthorized: 'Non authentifié',
+};

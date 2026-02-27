@@ -1,0 +1,1010 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OtpType {
+  INSCRIPTION
+  CONNEXION
+  MOT_DE_PASSE_OUBLIE
+  VERIFICATION_EMAIL
+  VERIFICATION_TELEPHONE
+}
+
+enum TypeAvis {
+  ACHAT_VEHICULE
+  LOCATION_VEHICULE
+  SERVICE_GARAGE
+  VENDEUR
+  ACHETEUR
+}
+
+enum StatutAvis {
+  EN_ATTENTE
+  PUBLIE
+  SIGNALEE
+  SUPPRIMEE
+}
+
+enum StatutValidationGarage {
+  EN_ATTENTE
+  ACTIF
+  SUSPENDU
+  REJET
+}
+
+enum CategorieServiceGarage {
+  ENTRETIEN
+  REPARATION
+  DIAGNOSTIC
+  CARROSSERIE
+  AUTRE
+}
+
+enum TypeAssurance {
+  RESPONSABILITE_CIVILE
+  TOUS_RISQUES
+  VOL
+  INCENDIE
+  BRIS_DE_GLACE
+  ASSISTANCE
+  PROTECTION_JURIDIQUE
+}
+
+enum StatutAssurance {
+  ACTIVE
+  EXPIREE
+  ANNULEE
+  EN_ATTENTE
+  SUSPENDUE
+  PAYEE
+}
+
+enum StatutTradeIn {
+  EN_ATTENTE
+  EN_COURS_EVALUATION
+  EVALUATION_TERMINEE
+  ACCEPTE
+  REJETEE
+  ANNULEE
+}
+
+enum EtatVehiculeTradeIn {
+  excellent
+  bon
+  moyen
+  mauvais
+}
+
+enum StatutDemandeCertification {
+  EN_ATTENTE
+  PAYEE
+  INSPECTION_PROGRAMMEE
+  INSPECTE
+  CERTIFIEE
+  REJETEE
+}
+
+enum ResultatInspection {
+  EN_COURS
+  REUSSI
+  ECHEC
+  A_REVISER
+}
+
+enum EtatVehiculeInspection {
+  BON
+  MOYEN
+  MAUVAIS
+  NON_VERIFIE
+}
+
+enum StatutReservation {
+  ACTIF
+  INACTIF
+  EN_ATTENTE
+  CONFIRME
+  ANNULE
+  TERMINE
+  EN_COURS
+}
+
+enum TypePaiement {
+  WAVE
+  ORANGE_MONEY
+  FREE_MONEY
+  CARTE_BANCAIRE
+  ESCROW
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  EN_COURS
+  CONFIRME
+  ECHOUE
+  REMBOURSE
+  ANNULE
+}
+
+enum TypeTransaction {
+  CREDIT
+  DEBIT
+  RETRAIT
+  REMBOURSEMENT
+  COMMISSION
+  ESCROW_DEPOSIT
+  ESCROW_RELEASE
+  ESCROW_REFUND
+}
+
+enum StatutTransaction {
+  EN_ATTENTE
+  EN_COURS
+  CONFIRMEE
+  ECHOUEE
+  ANNULEE
+}
+
+enum TypeAbonnement {
+  BASIC
+  PREMIUM
+  PROFESSIONNEL
+  ENTREPRISE
+}
+
+enum StatutAbonnement {
+  ACTIF
+  EXPIRE
+  ANNULE
+  EN_ATTENTE
+}
+
+enum TypeConversation {
+  DIRECT
+  GROUP
+}
+
+enum TypeMessage {
+  TEXTE
+  IMAGE
+  SYSTEM
+}
+
+enum TypeNotification {
+  RESERVATION
+  RESERVATION_CONFIRMEE
+  RESERVATION_ANNULEE
+  RESERVATION_TERMINEE
+  PAIEMENT
+  PAIEMENT_RECU
+  PAIEMENT_ECHEC
+  RETRAIT
+  MESSAGE
+  NOUVEAU_MESSAGE
+  ABONNEMENT
+  SOUSCRIPTION_ACCEPTEE
+  SOUSCRIPTION_EXPIRE
+  ABONNEMENT_ACTIF
+  BOOST
+  BOOST_TERMINEE
+  BOOST_DEBUT
+  TRADE_IN
+  TRADE_IN_ACCEPTE
+  TRADE_IN_REJETE
+  CERTIFICATION
+  CERTIFICATION_APPROUVEE
+  CERTIFICATION_REJETEE
+  ASSURANCE
+  ASSURANCE_SOUSCRITE
+  ASSURANCE_EXPIRE
+  SYSTEM
+  MARKETING
+}
+
+enum TypeEntiteSignalable {
+  ANNONCE
+  UTILISATEUR
+  MESSAGE
+  AVIS
+  VEHICULE
+  COMMENTAIRE
+}
+
+enum MotifSignalement {
+  CONTENU_INAPPROPRIE
+  FAKE_ANNONCE
+  PRIX_TROMPEUR
+  HARCELEMENT
+  FRAUDE
+  ARNAQUE
+  PHOTO_TROMPEUSE
+  DESCRIPTION_INCORRECTE
+  VEHICULE_ENDOMMAGE
+  SPAM
+  MULTI_POST
+  AUTRE
+}
+
+enum StatutTraitementSignalement {
+  EN_ATTENTE
+  EN_COURS
+  TRAITE
+  REJETE
+  RESOLU
+}
+
+model TypeUtilisateur {
+  id           String        @id @default(uuid()) @db.Uuid
+  nom          String        @unique @db.VarChar(50)
+  description  String?
+  utilisateurs Utilisateur[]
+
+  @@map("type_utilisateur")
+}
+
+model Utilisateur {
+  id                 String    @id @default(uuid()) @db.Uuid
+  email              String    @unique @db.VarChar(255)
+  telephone          String    @unique @db.VarChar(20)
+  motDePasseHash     String    @map("mot_de_passe_hash") @db.VarChar(255)
+  prenom             String?   @db.VarChar(100)
+  nom                String?   @db.VarChar(100)
+  photoProfilUrl     String?   @map("photo_profil_url") @db.VarChar(500)
+  emailVerifie       Boolean?  @default(false) @map("email_verifie")
+  telephoneVerifie   Boolean?  @default(false) @map("telephone_verifie")
+  noteMoyenne        Decimal?  @map("note_moyenne") @db.Decimal(3, 2)
+  nombreTotalAvis    Int?      @default(0) @map("nombre_total_avis")
+  doubleAuthActive   Boolean?  @default(false) @map("double_auth_active")
+  typeUtilisateurId  String?   @map("type_utilisateur_id") @db.Uuid
+  statutVerification String?   @map("statut_verification") @db.VarChar(50)
+  derniereConnexion  DateTime? @map("derniere_connexion")
+  createdAt          DateTime? @default(now()) @map("created_at")
+  updatedAt          DateTime? @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  typeUtilisateur           TypeUtilisateur?          @relation(fields: [typeUtilisateurId], references: [id])
+  otpCodes                  OtpCode[]
+  vehicules                 Vehicule[]
+  vehiculeFavoris           VehiculeFavori[]
+  annoncesLocation          AnnonceLocation[]
+  reservationsLocation      ReservationLocation[]
+  paiements                 Paiement[]
+  portefeuille              Portefeuille?
+  abonnementsUtilisateur    UtilisateurAbonnement[]
+  notifications             Notification[]
+  signalements              Signalement[]             @relation("SignalementAuteur")
+  signalementsTraites       Signalement[]             @relation("SignalementModerateur")
+  conversationsCreees       Conversation[]            @relation("ConversationCreateur")
+  conversationsParticipants ConversationParticipant[]
+  messagesEnvoyes           Message[]
+  avisEcrits                Avis[]                    @relation("AvisAuteur")
+  avisRecus                 Avis[]                    @relation("AvisCibleUtilisateur")
+  garages                   Garage[]
+  souscriptionsAssurance    SouscriptionAssurance[]
+  demandesTradeIn           DemandeTradeIn[]
+  demandesCertification     DemandeCertification[]    @relation("DemandeCertificationUtilisateur")
+  inspectionsAssignees      DemandeCertification[]    @relation("DemandeCertificationInspecteur")
+  inspectionsRealisees      Inspection[]              @relation("InspectionInspecteur")
+
+  @@map("utilisateur")
+}
+
+model OtpCode {
+  id            String   @id @default(uuid()) @db.Uuid
+  utilisateurId String   @map("utilisateur_id") @db.Uuid
+  code          String   @db.VarChar(6)
+  type          OtpType
+  expiration    DateTime
+  utilise       Boolean  @default(false)
+  tentatives    Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+
+  @@index([utilisateurId, type], map: "idx_otp_utilisateur")
+  @@map("otp_code")
+}
+
+model Marque {
+  id        String     @id @default(uuid()) @db.Uuid
+  nom       String?    @db.VarChar(100)
+  vehicules Vehicule[]
+  modeles   Modele[]
+
+  @@map("marque")
+}
+
+model Modele {
+  id        String     @id @default(uuid()) @db.Uuid
+  marqueId  String?    @map("marque_id") @db.Uuid
+  nom       String?    @db.VarChar(100)
+  vehicules Vehicule[]
+  marque    Marque?    @relation(fields: [marqueId], references: [id])
+
+  @@map("modele")
+}
+
+model Carburant {
+  id        String     @id @default(uuid()) @db.Uuid
+  nom       String?    @db.VarChar(50)
+  vehicules Vehicule[]
+
+  @@map("carburant")
+}
+
+model BoiteVitesse {
+  id        String     @id @default(uuid()) @db.Uuid
+  nom       String?    @db.VarChar(50)
+  vehicules Vehicule[]
+
+  @@map("boite_vitesse")
+}
+
+model Vehicule {
+  id               String    @id @default(uuid()) @db.Uuid
+  proprietaireId   String    @map("proprietaire_id") @db.Uuid
+  marqueId         String?   @map("marque_id") @db.Uuid
+  modeleId         String?   @map("modele_id") @db.Uuid
+  anneeFabrication Int?      @map("annee_fabrication")
+  kilometrage      Int?
+  carburantId      String?   @map("carburant_id") @db.Uuid
+  boiteVitesseId   String?   @map("boite_vitesse_id") @db.Uuid
+  couleur          String?   @db.VarChar(50)
+  prixVente        Decimal?  @map("prix_vente") @db.Decimal(12, 2)
+  description      String?
+  numeroVin        String?   @map("numero_vin")
+  immatriculation  String?
+  titre            String?
+  nombrePortes     Int?      @map("nombre_portes")
+  nombrePlaces     Int?      @map("nombre_places")
+  cylindree        String?
+  puissanceFiscale String?   @map("puissance_fiscale")
+  estGarantie      Boolean?  @map("est_garantie")
+  garantieMois     Int?      @map("garantie_mois")
+  publishedAt      DateTime? @map("published_at")
+  prixNegociable   Boolean?  @map("prix_negociable")
+  certifie         Boolean?
+  statut           String    @db.VarChar(50)
+  estBoost         Boolean?  @map("est_boost")
+  boostDebut       DateTime? @map("boost_debut")
+  boostFin         DateTime? @map("boost_fin")
+  vues             Int?
+  nombreFavoris    Int?      @map("nombre_favoris")
+  createdAt        DateTime? @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  proprietaire            Utilisateur             @relation(fields: [proprietaireId], references: [id])
+  marque                  Marque?                 @relation(fields: [marqueId], references: [id])
+  modele                  Modele?                 @relation(fields: [modeleId], references: [id])
+  carburant               Carburant?              @relation(fields: [carburantId], references: [id])
+  boiteVitesse            BoiteVitesse?           @relation(fields: [boiteVitesseId], references: [id])
+  photos                  PhotoVehicule[]
+  favoris                 VehiculeFavori[]
+  annoncesLocation        AnnonceLocation[]
+  avis                    Avis[]
+  souscriptionsAssurance  SouscriptionAssurance[]
+  demandesTradeInActuel   DemandeTradeIn[]        @relation("DemandeTradeInVehiculeActuel")
+  demandesTradeInSouhaite DemandeTradeIn[]        @relation("DemandeTradeInVehiculeSouhaite")
+  historiquesEstimation   HistoriqueEstimation[]
+  demandesCertification   DemandeCertification[]
+
+  @@index([statut, createdAt], map: "idx_vehicule_statut_created")
+  @@map("vehicule")
+}
+
+model PhotoVehicule {
+  id            String    @id @default(uuid()) @db.Uuid
+  vehiculeId    String    @map("vehicule_id") @db.Uuid
+  url           String    @db.VarChar(500)
+  estPrincipale Boolean?  @map("est_principale")
+  ordre         Int?
+  createdAt     DateTime? @default(now()) @map("created_at")
+
+  vehicule Vehicule @relation(fields: [vehiculeId], references: [id])
+
+  @@map("photo_vehicule")
+}
+
+model Avis {
+  id                 String      @id @default(uuid()) @db.Uuid
+  auteurId           String      @map("auteur_id") @db.Uuid
+  cibleUtilisateurId String?     @map("cible_utilisateur_id") @db.Uuid
+  vehiculeId         String?     @map("vehicule_id") @db.Uuid
+  garageId           String?     @map("garage_id") @db.Uuid
+  typeAvis           TypeAvis?   @map("type_avis")
+  transactionId      String      @map("transaction_id") @db.Uuid
+  note               Int
+  commentaire        String?
+  statut             StatutAvis?
+  createdAt          DateTime?   @default(now()) @map("created_at")
+
+  auteur           Utilisateur  @relation("AvisAuteur", fields: [auteurId], references: [id])
+  cibleUtilisateur Utilisateur? @relation("AvisCibleUtilisateur", fields: [cibleUtilisateurId], references: [id])
+  vehicule         Vehicule?    @relation(fields: [vehiculeId], references: [id])
+  garage           Garage?      @relation(fields: [garageId], references: [id])
+
+  @@index([cibleUtilisateurId, statut], map: "idx_avis_cible_utilisateur_statut")
+  @@index([vehiculeId, statut], map: "idx_avis_vehicule_statut")
+  @@index([garageId, statut], map: "idx_avis_garage_statut")
+  @@index([transactionId], map: "idx_avis_transaction")
+  @@map("avis")
+}
+
+model Garage {
+  id                String                  @id @default(uuid()) @db.Uuid
+  nom               String                  @db.VarChar(255)
+  adresse           String                  @db.VarChar(500)
+  telephone         String                  @db.VarChar(50)
+  email             String?                 @db.VarChar(255)
+  description       String?
+  horairesOuverture String?                 @map("horaires_ouverture")
+  latitude          Float?
+  longitude         Float?
+  ville             String?                 @db.VarChar(255)
+  pays              String?                 @db.VarChar(255)
+  logoUrl           String?                 @map("logo_url") @db.VarChar(500)
+  statutValidation  StatutValidationGarage? @map("statut_validation")
+  commentaireAdmin  String?                 @map("commentaire_admin")
+  dateValidation    DateTime?               @map("date_validation")
+  utilisateurId     String?                 @map("utilisateur_id") @db.Uuid
+  createdAt         DateTime?               @default(now()) @map("created_at")
+  updatedAt         DateTime?               @updatedAt @map("updated_at")
+
+  proprietaire Utilisateur?               @relation(fields: [utilisateurId], references: [id])
+  services     GarageServiceAssociation[]
+  avis         Avis[]
+
+  @@index([utilisateurId], map: "idx_garage_utilisateur")
+  @@index([statutValidation], map: "idx_garage_statut_validation")
+  @@index([ville, statutValidation], map: "idx_garage_ville_statut")
+  @@map("garage")
+}
+
+model ServiceGarage {
+  id           String                  @id @default(uuid()) @db.Uuid
+  nom          String                  @db.VarChar(255)
+  description  String?
+  prix         Decimal?                @db.Decimal(12, 2)
+  dureeEstimee Int?                    @map("duree_estimee")
+  categorie    CategorieServiceGarage?
+  actif        Boolean?                @default(true)
+  createdAt    DateTime?               @default(now()) @map("created_at")
+  updatedAt    DateTime?               @updatedAt @map("updated_at")
+
+  garages GarageServiceAssociation[]
+
+  @@index([actif], map: "idx_service_garage_actif")
+  @@index([categorie, actif], map: "idx_service_garage_categorie_actif")
+  @@map("service_garage")
+}
+
+model GarageServiceAssociation {
+  id           String    @id @default(uuid()) @db.Uuid
+  garageId     String    @map("garage_id") @db.Uuid
+  serviceId    String    @map("service_id") @db.Uuid
+  prix         Decimal?  @db.Decimal(12, 2)
+  dureeEstimee Int?      @map("duree_estimee")
+  actif        Boolean?  @default(true)
+  createdAt    DateTime? @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  garage  Garage        @relation(fields: [garageId], references: [id])
+  service ServiceGarage @relation(fields: [serviceId], references: [id])
+
+  @@unique([garageId, serviceId], map: "uk_garage_service")
+  @@index([garageId], map: "idx_garage_service_garage")
+  @@index([serviceId], map: "idx_garage_service_service")
+  @@map("garage_service_association")
+}
+
+model ProduitAssurance {
+  id            String        @id @default(uuid()) @db.Uuid
+  nom           String        @db.VarChar(255)
+  description   String?
+  prixBase      Decimal       @map("prix_base") @db.Decimal(12, 2)
+  typeAssurance TypeAssurance @map("type_assurance")
+  dureeMois     Int?          @map("duree_mois")
+  estActif      Boolean?      @default(true) @map("est_actif")
+  createdAt     DateTime?     @default(now()) @map("created_at")
+  updatedAt     DateTime?     @updatedAt @map("updated_at")
+
+  options       OptionAssurance[]
+  souscriptions SouscriptionAssurance[]
+
+  @@index([estActif], map: "idx_produit_assurance_actif")
+  @@map("produit_assurance")
+}
+
+model OptionAssurance {
+  id                 String    @id @default(uuid()) @db.Uuid
+  produitAssuranceId String    @map("produit_assurance_id") @db.Uuid
+  nom                String    @db.VarChar(255)
+  description        String?
+  prixSupplementaire Decimal?  @map("prix_supplementaire") @db.Decimal(12, 2)
+  estActif           Boolean?  @default(true) @map("est_actif")
+  createdAt          DateTime? @default(now()) @map("created_at")
+  updatedAt          DateTime? @updatedAt @map("updated_at")
+
+  produitAssurance ProduitAssurance     @relation(fields: [produitAssuranceId], references: [id])
+  souscriptions    SouscriptionOption[]
+
+  @@index([produitAssuranceId], map: "idx_option_assurance_produit")
+  @@index([estActif], map: "idx_option_assurance_actif")
+  @@map("option_assurance")
+}
+
+model SouscriptionAssurance {
+  id                 String          @id @default(uuid()) @db.Uuid
+  utilisateurId      String          @map("utilisateur_id") @db.Uuid
+  produitAssuranceId String          @map("produit_assurance_id") @db.Uuid
+  vehiculeId         String          @map("vehicule_id") @db.Uuid
+  statut             StatutAssurance
+  montantTotal       Decimal         @map("montant_total") @db.Decimal(12, 2)
+  dateDebut          DateTime?       @map("date_debut")
+  dateFin            DateTime?       @map("date_fin")
+  numeroContrat      String?         @map("numero_contrat") @db.VarChar(100)
+  documentUrl        String?         @map("document_url") @db.VarChar(500)
+  paiementId         String?         @map("paiement_id") @db.Uuid
+  createdAt          DateTime?       @default(now()) @map("created_at")
+  updatedAt          DateTime?       @updatedAt @map("updated_at")
+
+  utilisateur          Utilisateur          @relation(fields: [utilisateurId], references: [id])
+  produitAssurance     ProduitAssurance     @relation(fields: [produitAssuranceId], references: [id])
+  vehicule             Vehicule             @relation(fields: [vehiculeId], references: [id])
+  paiement             Paiement?            @relation("PaiementSouscriptionAssurance", fields: [paiementId], references: [id])
+  optionsSelectionnees SouscriptionOption[]
+
+  @@index([utilisateurId], map: "idx_souscription_assurance_utilisateur")
+  @@index([vehiculeId], map: "idx_souscription_assurance_vehicule")
+  @@index([statut], map: "idx_souscription_assurance_statut")
+  @@map("souscription_assurance")
+}
+
+model SouscriptionOption {
+  souscriptionId String @map("souscription_id") @db.Uuid
+  optionId       String @map("option_id") @db.Uuid
+
+  souscription SouscriptionAssurance @relation(fields: [souscriptionId], references: [id])
+  option       OptionAssurance       @relation(fields: [optionId], references: [id])
+
+  @@id([souscriptionId, optionId])
+  @@map("souscription_options")
+}
+
+model DemandeTradeIn {
+  id                 String               @id @default(uuid()) @db.Uuid
+  utilisateurId      String               @map("utilisateur_id") @db.Uuid
+  vehiculeActuelId   String               @map("vehicule_actuel_id") @db.Uuid
+  vehiculeSouhaiteId String?              @map("vehicule_souhaite_id") @db.Uuid
+  statut             StatutTradeIn
+  prixEstime         Decimal?             @map("prix_estime") @db.Decimal(12, 2)
+  prixPropose        Decimal?             @map("prix_propose") @db.Decimal(12, 2)
+  kilometrageActuel  Int?                 @map("kilometrage_actuel")
+  etatVehicule       EtatVehiculeTradeIn? @map("etat_vehicule")
+  dateSoumission     DateTime?            @map("date_soumission")
+  dateTraitement     DateTime?            @map("date_traitement")
+  dateEvaluation     DateTime?            @map("date_evaluation")
+  motifRejet         String?              @map("motif_rejet")
+  commentaireAdmin   String?              @map("commentaire_admin")
+  estNotifie         Boolean?             @default(false) @map("est_notifie")
+  createdAt          DateTime?            @default(now()) @map("created_at")
+  updatedAt          DateTime?            @updatedAt @map("updated_at")
+
+  utilisateur      Utilisateur @relation(fields: [utilisateurId], references: [id])
+  vehiculeActuel   Vehicule    @relation("DemandeTradeInVehiculeActuel", fields: [vehiculeActuelId], references: [id])
+  vehiculeSouhaite Vehicule?   @relation("DemandeTradeInVehiculeSouhaite", fields: [vehiculeSouhaiteId], references: [id])
+
+  @@index([utilisateurId], map: "idx_demande_trade_in_utilisateur")
+  @@index([statut], map: "idx_demande_trade_in_statut")
+  @@index([estNotifie], map: "idx_demande_trade_in_notifie")
+  @@map("demande_trade_in")
+}
+
+model HistoriqueEstimation {
+  id               String               @id @default(uuid()) @db.Uuid
+  vehiculeId       String               @map("vehicule_id") @db.Uuid
+  marque           String?              @db.VarChar(100)
+  modele           String?              @db.VarChar(100)
+  anneeFabrication Int?                 @map("annee_fabrication")
+  kilometrage      Int?
+  etatVehicule     EtatVehiculeTradeIn? @map("etat_vehicule")
+  prixEstime       Decimal?             @map("prix_estime") @db.Decimal(12, 2)
+  prixMinimum      Decimal?             @map("prix_minimum") @db.Decimal(12, 2)
+  prixMaximum      Decimal?             @map("prix_maximum") @db.Decimal(12, 2)
+  scoreCondition   Float?               @map("score_condition")
+  recommandation   String?
+  dateEstimation   DateTime?            @map("date_estimation")
+
+  vehicule Vehicule @relation(fields: [vehiculeId], references: [id])
+
+  @@index([vehiculeId, dateEstimation], map: "idx_historique_estimation_vehicule_date")
+  @@map("historique_estimation")
+}
+
+model DemandeCertification {
+  id               String                     @id @default(uuid()) @db.Uuid
+  utilisateurId    String                     @map("utilisateur_id") @db.Uuid
+  vehiculeId       String                     @map("vehicule_id") @db.Uuid
+  statut           StatutDemandeCertification
+  montantPaiement  Decimal?                   @map("montant_paiement") @db.Decimal(12, 2)
+  paiementId       String?                    @map("paiement_id") @db.Uuid
+  inspecteurId     String?                    @map("inspecteur_id") @db.Uuid
+  dateSoumission   DateTime?                  @map("date_soumission")
+  dateTraitement   DateTime?                  @map("date_traitement")
+  dateInspection   DateTime?                  @map("date_inspection")
+  motifRejet       String?                    @map("motif_rejet")
+  badgeCertifieUrl String?                    @map("badge_certifie_url") @db.VarChar(500)
+  createdAt        DateTime?                  @default(now()) @map("created_at")
+  updatedAt        DateTime?                  @updatedAt @map("updated_at")
+
+  utilisateur Utilisateur  @relation("DemandeCertificationUtilisateur", fields: [utilisateurId], references: [id])
+  vehicule    Vehicule     @relation(fields: [vehiculeId], references: [id])
+  paiement    Paiement?    @relation("PaiementDemandeCertification", fields: [paiementId], references: [id])
+  inspecteur  Utilisateur? @relation("DemandeCertificationInspecteur", fields: [inspecteurId], references: [id])
+  inspections Inspection[]
+
+  @@index([utilisateurId], map: "idx_demande_certification_utilisateur")
+  @@index([vehiculeId], map: "idx_demande_certification_vehicule")
+  @@index([statut], map: "idx_demande_certification_statut")
+  @@map("demande_certification")
+}
+
+model Inspection {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  demandeCertificationId String                  @map("demande_certification_id") @db.Uuid
+  inspecteurId           String                  @map("inspecteur_id") @db.Uuid
+  dateInspection         DateTime?               @map("date_inspection")
+  resultat               ResultatInspection?
+  commentaire            String?
+  kilometrage            Int?
+  etatMoteur             EtatVehiculeInspection? @map("etat_moteur")
+  etatGenerateur         EtatVehiculeInspection? @map("etat_generateur")
+  etatFreinage           EtatVehiculeInspection? @map("etat_freinage")
+  etatSuspension         EtatVehiculeInspection? @map("etat_suspension")
+  etatTransmission       EtatVehiculeInspection? @map("etat_transmission")
+  etatPneus              EtatVehiculeInspection? @map("etat_pneus")
+  etatCarrosserie        EtatVehiculeInspection? @map("etat_carrosserie")
+  etatInterieur          EtatVehiculeInspection? @map("etat_interieur")
+  scoreTotal             Int?                    @map("score_total")
+  createdAt              DateTime?               @default(now()) @map("created_at")
+  updatedAt              DateTime?               @updatedAt @map("updated_at")
+
+  demandeCertification DemandeCertification @relation(fields: [demandeCertificationId], references: [id])
+  inspecteur           Utilisateur          @relation("InspectionInspecteur", fields: [inspecteurId], references: [id])
+  rapport              RapportInspection?
+
+  @@index([demandeCertificationId], map: "idx_inspection_demande")
+  @@index([inspecteurId], map: "idx_inspection_inspecteur")
+  @@map("inspection")
+}
+
+model RapportInspection {
+  id              String    @id @default(uuid()) @db.Uuid
+  inspectionId    String    @unique @map("inspection_id") @db.Uuid
+  urlRapportPdf   String?   @map("url_rapport_pdf") @db.VarChar(500)
+  dateGeneration  DateTime? @map("date_generation")
+  scoreGlobale    Int?      @map("score_globale")
+  recommendations String?
+  conclusion      String?
+  estApprouve     Boolean?  @map("est_approuve")
+  createdAt       DateTime? @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id])
+
+  @@map("rapport_inspection")
+}
+
+model VehiculeFavori {
+  id            String    @id @default(uuid()) @db.Uuid
+  utilisateurId String    @map("utilisateur_id") @db.Uuid
+  vehiculeId    String    @map("vehicule_id") @db.Uuid
+  createdAt     DateTime? @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+  vehicule    Vehicule    @relation(fields: [vehiculeId], references: [id])
+
+  @@unique([utilisateurId, vehiculeId])
+  @@map("vehicule_favori")
+}
+
+model AnnonceLocation {
+  id                    String    @id @default(uuid()) @db.Uuid
+  proprietaireId        String    @map("proprietaire_id") @db.Uuid
+  vehiculeId            String?   @map("vehicule_id") @db.Uuid
+  tarifJournalier       Decimal?  @map("tarif_journalier") @db.Decimal(12, 2)
+  statut                String?   @db.VarChar(50)
+  description           String?
+  conditions            String?
+  caution               Decimal?  @db.Decimal(12, 2)
+  kilometrageInclus     Int?      @map("kilometrage_inclus")
+  tarifKmSupplementaire Decimal?  @map("tarif_km_supplementaire") @db.Decimal(12, 2)
+  actif                 Boolean?
+  createdAt             DateTime? @default(now()) @map("created_at")
+  updatedAt             DateTime? @updatedAt @map("updated_at")
+
+  proprietaire   Utilisateur             @relation(fields: [proprietaireId], references: [id])
+  vehicule       Vehicule?               @relation(fields: [vehiculeId], references: [id])
+  reservations   ReservationLocation[]
+  disponibilites DisponibiliteLocation[]
+  boosts         BoostAnnonce[]
+  conversations  Conversation[]
+
+  @@index([statut, actif], map: "idx_annonce_location_statut_actif")
+  @@map("annonce_location")
+}
+
+model ReservationLocation {
+  id                String             @id @default(uuid()) @db.Uuid
+  annonceLocationId String             @map("annonce_location_id") @db.Uuid
+  locataireId       String             @map("locataire_id") @db.Uuid
+  statut            StatutReservation?
+  coutTotal         Decimal?           @map("cout_total") @db.Decimal(12, 2)
+  paiementId        String?            @map("paiement_id") @db.Uuid
+  dateDebut         DateTime?          @map("date_debut")
+  dateFin           DateTime?          @map("date_fin")
+  dateCreation      DateTime?          @map("date_creation")
+  motifAnnulation   String?            @map("motif_annulation")
+
+  annonceLocation   AnnonceLocation               @relation(fields: [annonceLocationId], references: [id])
+  locataire         Utilisateur                   @relation(fields: [locataireId], references: [id])
+  paiementPrincipal Paiement?                     @relation("PaiementPrincipalReservation", fields: [paiementId], references: [id])
+  historiques       HistoriqueStatutReservation[]
+  paiements         Paiement[]                    @relation("PaiementsReservation")
+
+  @@map("reservation_location")
+}
+
+model DisponibiliteLocation {
+  id                String    @id @default(uuid()) @db.Uuid
+  annonceLocationId String    @map("annonce_location_id") @db.Uuid
+  date              DateTime?
+  estDisponible     Boolean?  @map("est_disponible")
+
+  annonceLocation AnnonceLocation @relation(fields: [annonceLocationId], references: [id])
+
+  @@map("disponibilite_location")
+}
+
+model HistoriqueStatutReservation {
+  id              String    @id @default(uuid()) @db.Uuid
+  reservationId   String    @map("reservation_id") @db.Uuid
+  ancienStatutId  String?   @map("ancien_statut_id") @db.Uuid
+  nouveauStatutId String?   @map("nouveau_statut_id") @db.Uuid
+  createdAt       DateTime? @default(now()) @map("created_at")
+
+  reservation ReservationLocation @relation(fields: [reservationId], references: [id])
+
+  @@map("historique_statut_reservation")
+}
+
+model Portefeuille {
+  id                   String    @id @default(uuid()) @db.Uuid
+  utilisateurId        String    @unique @map("utilisateur_id") @db.Uuid
+  solde                Decimal?  @default(0) @db.Decimal(15, 2)
+  soldeBloque          Decimal?  @default(0) @map("solde_bloque") @db.Decimal(15, 2)
+  isActif              Boolean?  @default(true) @map("is_actif")
+  dateDerniereRecharge DateTime? @map("date_derniere_recharge")
+  createdAt            DateTime? @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  utilisateur  Utilisateur               @relation(fields: [utilisateurId], references: [id])
+  transactions TransactionPortefeuille[]
+
+  @@map("portefeuille")
+}
+
+model TransactionPortefeuille {
+  id               String            @id @default(uuid()) @db.Uuid
+  portefeuilleId   String            @map("portefeuille_id") @db.Uuid
+  montant          Decimal           @db.Decimal(15, 2)
+  typeTransaction  TypeTransaction   @map("type_transaction")
+  statut           StatutTransaction
+  description      String?
+  referenceExterne String?           @map("reference_externe") @db.VarChar(100)
+  dateTransaction  DateTime?         @default(now()) @map("date_transaction")
+  createdAt        DateTime?         @default(now()) @map("created_at")
+
+  portefeuille Portefeuille @relation(fields: [portefeuilleId], references: [id])
+
+  @@index([portefeuilleId], map: "idx_transaction_portefeuille")
+  @@map("transaction_portefeuille")
+}
+
+model Paiement {
+  id                   String         @id @default(uuid()) @db.Uuid
+  utilisateurId        String?        @map("utilisateur_id") @db.Uuid
+  reservationId        String?        @map("reservation_id") @db.Uuid
+  montant              Decimal        @db.Decimal(15, 2)
+  montantEscrow        Decimal?       @map("montant_escrow") @db.Decimal(15, 2)
+  commission           Decimal?       @default(0) @db.Decimal(15, 2)
+  methodePaiement      TypePaiement?  @map("methode_paiement")
+  statut               StatutPaiement
+  isEscrow             Boolean?       @default(false) @map("is_escrow")
+  referenceTransaction String?        @map("reference_transaction") @db.VarChar(100)
+  referenceExterne     String?        @map("reference_externe") @db.VarChar(100)
+  urlPaiement          String?        @map("url_paiement") @db.VarChar(500)
+  datePaiement         DateTime?      @map("date_paiement")
+  dateExpiration       DateTime?      @map("date_expiration")
+  createdAt            DateTime?      @default(now()) @map("created_at")
+  updatedAt            DateTime?      @updatedAt @map("updated_at")
+
+  utilisateur             Utilisateur?            @relation(fields: [utilisateurId], references: [id])
+  reservation             ReservationLocation?    @relation("PaiementsReservation", fields: [reservationId], references: [id])
+  reservationsPrincipales ReservationLocation[]   @relation("PaiementPrincipalReservation")
+  souscriptionsAssurance  SouscriptionAssurance[] @relation("PaiementSouscriptionAssurance")
+  demandesCertification   DemandeCertification[]  @relation("PaiementDemandeCertification")
+  logs                    PaiementLog[]
+
+  @@index([utilisateurId], map: "idx_paiement_utilisateur")
+  @@index([statut], map: "idx_paiement_statut")
+  @@map("paiement")
+}
+
+model PaiementLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  paiementId String?   @map("paiement_id") @db.Uuid
+  action     String    @db.VarChar(50)
+  details    String?
+  dateAction DateTime? @default(now()) @map("date_action")
+
+  paiement Paiement? @relation(fields: [paiementId], references: [id])
+
+  @@map("paiement_log")
+}
+
+model Abonnement {
+  id                   String          @id @default(uuid()) @db.Uuid
+  nom                  String          @db.VarChar(100)
+  description          String?
+  prixMensuel          Decimal?        @map("prix_mensuel") @db.Decimal(12, 2)
+  dureeJours           Int?            @map("duree_jours")
+  nombreAnnonces       Int?            @map("nombre_annonces")
+  estVedette           Boolean?        @map("est_vedette")
+  estCertifie          Boolean?        @map("est_certifie")
+  type                 TypeAbonnement?
+  estActif             Boolean?        @default(true) @map("est_actif")
+  avantages            String?
+  prixAnnuel           Decimal?        @map("prix_annuel") @db.Decimal(12, 2)
+  nombreBoostsGratuits Int?            @map("nombre_boosts_gratuits")
+  accesPrioritaire     Boolean?        @map("acces_prioritaire")
+  supportPrioritaire   Boolean?        @map("support_prioritaire")
+
+  utilisateurs UtilisateurAbonnement[]
+
+  @@map("abonnement")
+}
+
+model UtilisateurAbonnement {
+  id                      String           @id @default(uuid()) @db.Uuid
+  utilisateurId           String           @map("utilisateur_id") @db.Uuid
+  abonnementId            String           @map("abonnement_id") @db.Uuid
+  dateDebut               DateTime?        @map("date_debut")
+  dateFin                 DateTime?        @map("date_fin")
+  statut                  StatutAbonnement
+  nombreAnnoncesUtilisees Int?             @map("nombre_annonces_utilisees")
+  estEssaiGratuit         Boolean?         @map("est_essai_gratuit")
+  dateFinEssai            DateTime?        @map("date_fin_essai")
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+  abonnement  Abonnement  @relation(fields: [abonnementId], references: [id])
+
+  @@index([utilisateurId], map: "idx_utilisateur_abonnement_utilisateur_id")
+  @@map("utilisateur_abonnement")
+}
+
+model BoostAnnonce {
+  id                String    @id @default(uuid()) @db.Uuid
+  annonceLocationId String    @map("annonce_location_id") @db.Uuid
+  dateDebut         DateTime? @map("date_debut")
+  dateFin           DateTime? @map("date_fin")
+  niveauBoost       String?   @map("niveau_boost") @db.VarChar(50)
+
+  annonceLocation AnnonceLocation @relation(fields: [annonceLocationId], references: [id])
+
+  @@index([annonceLocationId], map: "idx_boost_annonce_location")
+  @@map("boost_annonce")
+}
+
+model Notification {
+  id            String           @id @default(uuid()) @db.Uuid
+  utilisateurId String           @map("utilisateur_id") @db.Uuid
+  titre         String           @db.VarChar(255)
+  message       String
+  type          TypeNotification
+  estLu         Boolean?         @default(false) @map("est_lu")
+  referenceId   String?          @map("reference_id") @db.Uuid
+  referenceType String?          @map("reference_type") @db.VarChar(50)
+  dateLecture   DateTime?        @map("date_lecture")
+  dateCreation  DateTime?        @default(now()) @map("created_at")
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
+
+  @@index([utilisateurId], map: "idx_notification_utilisateur")
+  @@index([utilisateurId, estLu], map: "idx_notification_utilisateur_lu")
+  @@map("notification")
+}
+
+model Signalement {
+  id               String                      @id @default(uuid()) @db.Uuid
+  utilisateurId    String                      @map("utilisateur_id") @db.Uuid
+  typeEntite       TypeEntiteSignalable        @map("type_entite")
+  entiteId         String                      @map("entite_id") @db.Uuid
+  motif            MotifSignalement
+  description      String?
+  statutTraitement StatutTraitementSignalement @default(EN_ATTENTE) @map("statut_traitement")
+  adminId          String?                     @map("traite_par") @db.Uuid
+  dateTraitement   DateTime?                   @map("date_traitement")
+  dateSignalement  DateTime?                   @default(now()) @map("created_at")
+
+  utilisateur Utilisateur  @relation("SignalementAuteur", fields: [utilisateurId], references: [id])
+  admin       Utilisateur? @relation("SignalementModerateur", fields: [adminId], references: [id])
+
+  @@index([statutTraitement], map: "idx_signalement_statut")
+  @@map("signalement")
+}
+
+model Conversation {
+  id               String            @id @default(uuid()) @db.Uuid
+  titre            String?           @db.VarChar(255)
+  typeConversation TypeConversation? @map("type_conversation")
+  annonceId        String?           @map("annonce_id") @db.Uuid
+  messageEpingleId String?           @map("message_epingle_id") @db.Uuid
+  avatarUrl        String?           @map("avatar_url")
+  creeParId        String?           @map("cree_par") @db.Uuid
+  estGroupe        Boolean?          @map("est_groupe")
+  createdAt        DateTime?         @default(now()) @map("created_at")
+  updatedAt        DateTime?         @updatedAt @map("updated_at")
+
+  creePar         Utilisateur?              @relation("ConversationCreateur", fields: [creeParId], references: [id])
+  annonceLocation AnnonceLocation?          @relation(fields: [annonceId], references: [id])
+  messageEpingle  Message?                  @relation("MessageEpingleConversation", fields: [messageEpingleId], references: [id])
+  participants    ConversationParticipant[]
+  messages        Message[]
+
+  @@map("conversation")
+}
+
+model ConversationParticipant {
+  id                  String    @id @default(uuid()) @db.Uuid
+  conversationId      String    @map("conversation_id") @db.Uuid
+  utilisateurId       String    @map("utilisateur_id") @db.Uuid
+  dateJoin            DateTime? @map("date_join")
+  estAdmin            Boolean?  @map("est_admin")
+  estMute             Boolean?  @map("est_mute")
+  derniereLectureDate DateTime? @map("derniere_lecture_date")
+  nombreNonLus        Int?      @map("nombre_non_lus")
+  aRejointLe          DateTime? @map("a_rejoint_le")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  utilisateur  Utilisateur  @relation(fields: [utilisateurId], references: [id])
+
+  @@unique([conversationId, utilisateurId])
+  @@map("conversation_participant")
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @map("conversation_id") @db.Uuid
+  utilisateurId  String       @map("utilisateur_id") @db.Uuid
+  contenu        String
+  dateEnvoi      DateTime?    @map("date_envoi")
+  dateLecture    DateTime?    @map("date_lecture")
+  estLu          Boolean?     @map("est_lu")
+  estSupprime    Boolean?     @map("est_supprime")
+  estEpingle     Boolean?     @map("est_epingle")
+  typeMessage    TypeMessage? @map("type_message")
+  createdAt      DateTime?    @default(now()) @map("created_at")
+
+  conversation           Conversation   @relation(fields: [conversationId], references: [id])
+  utilisateur            Utilisateur    @relation(fields: [utilisateurId], references: [id])
+  conversationsEpinglees Conversation[] @relation("MessageEpingleConversation")
+
+  @@index([conversationId, dateEnvoi], map: "idx_message_conversation_date")
+  @@map("message")
+}

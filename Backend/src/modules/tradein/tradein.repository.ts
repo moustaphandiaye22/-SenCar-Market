@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -45,7 +46,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
 
   createDemande(data: CreateDemandeInput): Promise<DemandeRecord> {
     return this.prisma.demandeTradeIn.create({
-      data,
+      data: data as unknown as Prisma.DemandeTradeInCreateInput,
       include: {
         utilisateur: { select: { id: true, nom: true } },
         vehiculeActuel: {
@@ -55,7 +56,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    });
+    }) as Promise<DemandeRecord>;
   }
 
   findDemandeById(id: string): Promise<DemandeRecord | null> {
@@ -128,7 +129,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
   updateDemande(id: string, data: UpdateDemandeInput): Promise<DemandeRecord> {
     return this.prisma.demandeTradeIn.update({
       where: { id },
-      data,
+      data: data as unknown as Prisma.DemandeTradeInUpdateInput,
       include: {
         utilisateur: { select: { id: true, nom: true } },
         vehiculeActuel: {
@@ -138,19 +139,36 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    });
+    }) as Promise<DemandeRecord>;
   }
 
   deleteDemande(id: string): Promise<DemandeRecord> {
-    return this.prisma.demandeTradeIn.delete({ where: { id } });
+    return this.prisma.demandeTradeIn.delete({
+      where: { id },
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehiculeActuel: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+        vehiculeSouhaite: {
+          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+        },
+      },
+    }) as Promise<DemandeRecord>;
   }
 
   createHistoriqueEstimation(data: CreateHistoriqueEstimationInput): Promise<{ id: string }> {
-    return this.prisma.historiqueEstimation.create({ data, select: { id: true } });
+    return this.prisma.historiqueEstimation.create({
+      data: data as unknown as Prisma.HistoriqueEstimationCreateInput,
+      select: { id: true },
+    });
   }
 
   createNotification(data: CreateNotificationInput): Promise<{ id: string }> {
-    return this.prisma.notification.create({ data, select: { id: true } });
+    return this.prisma.notification.create({
+      data: data as unknown as Prisma.NotificationCreateInput,
+      select: { id: true },
+    });
   }
 
   newId(): string {

@@ -57,7 +57,17 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }
 
   createVehicule(data: CreateVehiculeInput): Promise<VehiculeRecord> {
-    return this.prisma.vehicule.create({ data });
+    return this.prisma.vehicule.create({
+      data,
+      include: {
+        marque: true,
+        modele: true,
+        carburant: true,
+        boiteVitesse: true,
+        proprietaire: true,
+        photos: true,
+      },
+    }) as Promise<VehiculeRecord>;
   }
 
   createPhoto(data: CreateVehiculePhotoInput): Promise<VehiculePhotoRecord> {
@@ -114,7 +124,18 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }
 
   updateVehicule(id: string, data: UpdateVehiculeInput): Promise<VehiculeRecord> {
-    return this.prisma.vehicule.update({ where: { id }, data });
+    return this.prisma.vehicule.update({
+      where: { id },
+      data,
+      include: {
+        marque: true,
+        modele: true,
+        carburant: true,
+        boiteVitesse: true,
+        proprietaire: true,
+        photos: true,
+      },
+    });
   }
 
   deleteVehicule(id: string): Promise<{ id: string }> {

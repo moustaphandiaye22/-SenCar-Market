@@ -36,18 +36,23 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   createGarage(data: CreateGarageInput): Promise<GarageRecord> {
-    return this.prisma.garage.create({
-      data,
-      include: { proprietaire: { select: { id: true, nom: true } } },
-    });
+    // Create the garage first, then fetch it with the proprietaire relation
+    return this.prisma.garage.create({ data }).then((garage) =>
+      this.prisma.garage.findUnique({
+        where: { id: garage.id },
+        include: { proprietaire: { select: { id: true, nom: true } } },
+      }) as Promise<GarageRecord>,
+    );
   }
 
   updateGarage(id: string, data: UpdateGarageInput): Promise<GarageRecord> {
-    return this.prisma.garage.update({
-      where: { id },
-      data,
-      include: { proprietaire: { select: { id: true, nom: true } } },
-    });
+    // Update the garage first, then fetch it with the proprietaire relation
+    return this.prisma.garage.update({ where: { id }, data }).then((garage) =>
+      this.prisma.garage.findUnique({
+        where: { id: garage.id },
+        include: { proprietaire: { select: { id: true, nom: true } } },
+      }) as Promise<GarageRecord>,
+    );
   }
 
   findGarageById(id: string): Promise<GarageRecord | null> {

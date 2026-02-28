@@ -5,10 +5,12 @@ import {
   ROLES_ADMIN_MODERATION,
   ROLES_ADMIN_SUPER_ADMIN,
 } from '../../common/constants/role-groups';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { DomainException } from '../../common/exceptions/domain.exception';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
 import { assertHasAnyRole } from '../../common/utils/authorization.util';
 import { toNullableString, toNumberOrZero } from '../../common/utils/number.util';
+import { buildPaginatedResponse, clampPage, clampSize } from '../../common/utils/pagination.util';
 import { hasAnyRole } from '../../common/utils/role.util';
 import { requireNonBlank } from '../../common/utils/text.util';
 
@@ -131,6 +133,22 @@ export class PaiementService {
     const paiement = await this.mustFindPaiement(id);
     this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
     return this.toPaiementResponse(paiement);
+  }
+
+  async getAllPaiements(page: number, size: number, user: AuthenticatedUser): Promise<PaginatedResponseDto<PaiementResponseDto>> {
+    const currentUser = await this.mustFindCurrentUser(user.email);
+    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+
+    const clampedPage = clampPage(page);
+    const clampedSize = clampSize(size, 20, 100);
+    const { items, total } = await this.repository.findAllPaiementsPaged(clampedPage, clampedSize);
+
+    return buildPaginatedResponse(
+      items.map((item) => this.toPaiementResponse(item)),
+      total,
+      clampedPage,
+      clampedSize,
+    );
   }
 
   async getPaiementsByUtilisateur(utilisateurId: string, user: AuthenticatedUser): Promise<PaiementResponseDto[]> {

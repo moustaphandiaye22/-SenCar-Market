@@ -13,10 +13,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
+import { ApiErrorResponseDto } from '../auth/dto/api-error-response.dto';
 
 import { CreatePaiementRequestDto } from './dto/create-paiement-request.dto';
 import { PaiementLogResponseDto } from './dto/paiement-log-response.dto';
@@ -29,6 +32,7 @@ import { PaiementService } from './paiement.service';
 
 @ApiTags('Paiements')
 @Controller('paiements')
+@UseGuards(ThrottlerGuard)
 export class PaiementController {
   constructor(private readonly service: PaiementService) {}
 
@@ -37,6 +41,10 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer un paiement' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement créé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   createPaiement(
     @Body() request: CreatePaiementRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -44,11 +52,33 @@ export class PaiementController {
     return this.service.createPaiement(request, user);
   }
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtenir tous les paiements (admin)' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Liste des paiements récupérée avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
+  getAllPaiements(
+    @Query('page') pageRaw: string | undefined,
+    @Query('size') sizeRaw: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<PaiementResponseDto>> {
+    const page = pageRaw ? parseInt(pageRaw, 10) : 1;
+    const size = sizeRaw ? parseInt(sizeRaw, 10) : 20;
+    return this.service.getAllPaiements(page, size, user);
+  }
+
   @Post('wave')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer un paiement Wave' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement Wave créé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   createPaiementWave(
     @Body() request: CreatePaiementRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -61,6 +91,10 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer un paiement Orange Money' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement Orange Money créé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   createPaiementOrangeMoney(
     @Body() request: CreatePaiementRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -73,6 +107,10 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer un paiement escrow' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement escrow créé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   createPaiementEscrow(
     @Body() request: CreatePaiementRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -84,6 +122,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements d\'un utilisateur' })
+  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPaiementsByUtilisateur(
     @Param('utilisateurId', new ParseUUIDPipe()) utilisateurId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -95,6 +137,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements par réservation' })
+  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPaiementsByReservation(
     @Param('reservationId', new ParseUUIDPipe()) reservationId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -106,6 +152,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements par statut' })
+  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPaiementsByStatut(
     @Param('statut') statut: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -117,6 +167,12 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Confirmer un paiement' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement confirmé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   confirmerPaiement(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query('referenceExterne') referenceExterne: string,
@@ -129,6 +185,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Annuler un paiement' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement annulé avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   annulerPaiement(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -140,6 +201,12 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rembourser un paiement' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement remboursé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Montant invalide' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   rembourserPaiement(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query('montant') montantRaw: string | undefined,
@@ -152,6 +219,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Confirmer réception et libérer fonds' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Fonds libérés avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   confirmerReceptionEtLiberer(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -161,7 +233,11 @@ export class PaiementController {
 
   @Post('webhook/wave')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ webhook: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook Wave' })
+  @ApiResponse({ status: 200, description: 'Webhook traité avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Signature invalide' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   async webhookWave(
     @Body() payload: unknown,
     @Headers('x-wave-signature') signature: string,
@@ -172,7 +248,11 @@ export class PaiementController {
 
   @Post('webhook/orange-money')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ webhook: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook Orange Money' })
+  @ApiResponse({ status: 200, description: 'Webhook traité avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Signature invalide' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   async webhookOrangeMoney(
     @Body() payload: unknown,
     @Headers('x-om-signature') signature: string,
@@ -185,6 +265,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir le portefeuille' })
+  @ApiResponse({ status: 200, type: PortefeuilleResponseDto, description: 'Portefeuille récupéré avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPortefeuille(
     @Param('utilisateurId', new ParseUUIDPipe()) utilisateurId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -197,6 +281,11 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créditer le portefeuille' })
+  @ApiResponse({ status: 200, type: PortefeuilleResponseDto, description: 'Portefeuille crédité avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Solde insuffisant' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   crediterPortefeuille(
     @Body() request: TransactionPortefeuilleRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -209,6 +298,11 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Débiter le portefeuille' })
+  @ApiResponse({ status: 200, type: PortefeuilleResponseDto, description: 'Portefeuille débité avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Solde insuffisant' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   debiterPortefeuille(
     @Body() request: TransactionPortefeuilleRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -221,6 +315,11 @@ export class PaiementController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Demander un retrait' })
+  @ApiResponse({ status: 200, type: TransactionResponseDto, description: 'Retrait demandé avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Solde insuffisant' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   demanderRetrait(
     @Body() request: RetraitRequestDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -232,6 +331,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Historique des transactions' })
+  @ApiResponse({ status: 200, description: 'Transactions récupérées avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getHistoriqueTransactions(
     @Param('utilisateurId', new ParseUUIDPipe()) utilisateurId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -243,6 +346,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir une transaction par ID' })
+  @ApiResponse({ status: 200, type: TransactionResponseDto, description: 'Transaction récupérée avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Transaction non trouvée' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getTransactionById(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -254,6 +362,10 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Calculer la commission' })
+  @ApiResponse({ status: 200, description: 'Commission calculée avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Montant invalide' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   calculateCommission(
     @Query('montant') montantRaw: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -265,7 +377,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logs d\'un paiement' })
-  @ApiResponse({ status: 200, type: PaiementLogResponseDto, isArray: true })
+  @ApiResponse({ status: 200, type: PaiementLogResponseDto, isArray: true, description: 'Logs récupérés avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getLogsByPaiement(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -277,6 +393,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir un paiement par ID' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement récupéré avec succès' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPaiementById(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,

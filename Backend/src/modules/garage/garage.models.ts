@@ -1,4 +1,4 @@
-import { StatutValidationGarage } from './types/garage.types';
+import type { StatutValidationGarage, CategorieServiceGarage } from './types/garage.types';
 
 type ConnectById = { connect: { id: string } };
 
@@ -71,8 +71,8 @@ export type CreateGarageInput = {
   ville: string;
   pays?: string;
   logoUrl?: string;
-  statutValidation: string;
-  proprietaire: ConnectById;
+  statutValidation: StatutValidationGarage;
+  utilisateurId: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -89,7 +89,7 @@ export type UpdateGarageInput = Partial<{
   ville: string;
   pays: string;
   logoUrl: string;
-  statutValidation: string;
+  statutValidation: StatutValidationGarage;
   commentaireAdmin: string;
   dateValidation: Date;
   updatedAt: Date;
@@ -101,7 +101,7 @@ export type CreateServiceInput = {
   description?: string;
   prix?: number;
   dureeEstimee?: number;
-  categorie?: string;
+  categorie?: CategorieServiceGarage;
   actif: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -27,6 +27,7 @@ export interface PaiementRepositoryPort {
   findPaiementsByUtilisateurId(utilisateurId: string): Promise<PaiementRecord[]>;
   findPaiementsByReservationId(reservationId: string): Promise<PaiementRecord[]>;
   findPaiementsByStatut(statut: StatutPaiement): Promise<PaiementRecord[]>;
+  findAllPaiementsPaged(page: number, size: number): Promise<{ items: PaiementRecord[]; total: number }>;
   findPaiementByReferenceExterne(referenceExterne: string): Promise<PaiementRecord | null>;
   findPaiementByReferenceTransaction(referenceTransaction: string): Promise<PaiementRecord | null>;
 

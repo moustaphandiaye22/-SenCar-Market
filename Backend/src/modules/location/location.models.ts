@@ -1,3 +1,5 @@
+import type { StatutReservation } from '@prisma/client';
+
 import type { HistoriqueStatutResponseDto } from './dto/historique-statut-response.dto';
 
 type ConnectById = { connect: { id: string } };
@@ -44,7 +46,7 @@ export type ReservationRecord = {
   id: string;
   annonceLocationId: string;
   locataireId: string;
-  statut: string | null;
+  statut: StatutReservation | null;
   coutTotal: unknown;
   paiementId: string | null;
   dateDebut: Date | null;
@@ -101,7 +103,7 @@ export type CreateReservationInput = {
   id: string;
   annonceLocation: ConnectById;
   locataire: ConnectById;
-  statut: string;
+  statut: StatutReservation;
   coutTotal: number;
   dateDebut: Date;
   dateFin: Date;
@@ -109,7 +111,7 @@ export type CreateReservationInput = {
 };
 
 export type UpdateReservationInput = Partial<{
-  statut: string;
+  statut: StatutReservation;
   motifAnnulation: string | null;
 }>;
 

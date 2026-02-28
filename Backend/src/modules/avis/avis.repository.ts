@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -29,10 +30,33 @@ export class AvisRepository implements AvisRepositoryPort {
   }
 
   createAvis(data: CreateAvisInput): Promise<AvisRecord> {
+    // Transform CreateAvisInput to Prisma's expected input format
+    const prismaData: Prisma.AvisCreateInput = {
+      id: data.id,
+      auteur: data.auteur,
+      cibleUtilisateur: data.cibleUtilisateur,
+      vehicule: data.vehicule,
+      garage: data.garageId ? { connect: { id: data.garageId } } : undefined,
+      typeAvis: data.typeAvis,
+      transactionId: data.transactionId,
+      note: data.note,
+      commentaire: data.commentaire,
+      statut: data.statut,
+      createdAt: data.createdAt,
+    };
+
     return this.prisma.avis.create({
-      data,
-      include: { auteur: { select: { id: true, nom: true, prenom: true } } },
-    });
+      data: prismaData,
+      include: {
+        auteur: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+    }) as unknown as Promise<AvisRecord>;
   }
 
   findAvisById(id: string): Promise<AvisRecord | null> {
@@ -40,6 +64,20 @@ export class AvisRepository implements AvisRepositoryPort {
       where: { id },
       include: { auteur: { select: { id: true, nom: true, prenom: true } } },
     });
+  }
+
+  findAllAvisPaged(statut: StatutAvis, page: number, size: number) {
+    const where = { statut };
+    return Promise.all([
+      this.prisma.avis.findMany({
+        where,
+        skip: page * size,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        include: { auteur: { select: { id: true, nom: true, prenom: true } } },
+      }),
+      this.prisma.avis.count({ where }),
+    ]).then(([items, total]) => ({ items, total }));
   }
 
   findAvisByUtilisateurPaged(utilisateurId: string, statut: StatutAvis, page: number, size: number) {

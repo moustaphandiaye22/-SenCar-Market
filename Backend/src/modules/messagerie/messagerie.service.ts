@@ -13,7 +13,6 @@ import { SendMessageRequestDto } from './dto/send-message-request.dto';
 import {
   ConversationRecord,
   MessageRecord,
-  ParticipantRecord,
   UserRecord,
 } from './messagerie.models';
 import { MESSAGERIE_REPOSITORY_PORT, MessagerieRepositoryPort } from './messagerie.repository.port';

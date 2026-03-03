@@ -18,7 +18,7 @@ export class AuthResponseDto {
   refreshToken!: string;
 
   @ApiProperty({
-    example: '3600',
+    example: 3600,
     description: 'Temps d\'expiration du token en secondes',
     type: Number,
   })

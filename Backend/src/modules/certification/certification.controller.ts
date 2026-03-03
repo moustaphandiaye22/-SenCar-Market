@@ -59,7 +59,7 @@ export class CertificationController {
 
   @Get('demandes')
   @ApiOperation({ summary: 'Liste des demandes de certification' })
-  @ApiResponse({ status: 200, description: 'Demandes récupérées avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Demandes récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -73,7 +73,7 @@ export class CertificationController {
 
   @Get('demandes/utilisateur/:utilisateurId')
   @ApiOperation({ summary: 'Demandes de certification d\'un utilisateur' })
-  @ApiResponse({ status: 200, description: 'Demandes récupérées avec succès' })
+  @ApiResponse({ status: 200, type: DemandeCertificationResponseDto, isArray: true, description: 'Demandes récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -211,7 +211,7 @@ export class CertificationController {
 
   @Get('inspections/inspecteur/:inspecteurId')
   @ApiOperation({ summary: 'Inspections d\'un inspecteur' })
-  @ApiResponse({ status: 200, description: 'Inspections récupérées avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Inspections récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Inspecteur non trouvé' })

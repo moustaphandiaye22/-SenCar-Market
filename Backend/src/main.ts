@@ -6,6 +6,8 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
 import { buildCorsOptions } from './common/security/cors.config';
 import { securityHeadersMiddleware, httpsRedirectMiddleware } from './common/security/security-headers.middleware';
+import { applySwaggerDbExamples, loadSwaggerDbExamples } from './common/swagger/swagger-db-examples';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -61,7 +63,6 @@ Bienvenue sur l'API Sen-Car Market - La plateforme de référence pour l'achat, 
         description: 'Entrer le token JWT',
         in: 'header',
       },
-      'JWT-auth',
     )
     .addTag(
       'Authentication',
@@ -85,6 +86,14 @@ Bienvenue sur l'API Sen-Car Market - La plateforme de référence pour l'achat, 
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  try {
+    const prisma = app.get(PrismaService);
+    const examples = await loadSwaggerDbExamples(prisma);
+    applySwaggerDbExamples(document, examples);
+  } catch {
+    // Keep Swagger available even when database-derived examples are not available.
+  }
   
   // Swagger documentation - schemas are kept for proper API documentation
   

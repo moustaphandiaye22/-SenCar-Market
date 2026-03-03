@@ -11,7 +11,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExtraModels,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -26,13 +35,26 @@ import { NotificationService } from './notification.service';
 @ApiTags('Notifications')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@ApiExtraModels(PaginatedResponseDto, NotificationResponseDto)
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
 
   @Get('utilisateur/:utilisateurId')
   @ApiOperation({ summary: 'Notifications d\'un utilisateur' })
-  @ApiResponse({ status: 200, description: 'Notifications récupérées avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Notifications récupérées avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(NotificationResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -48,7 +70,19 @@ export class NotificationController {
 
   @Get('utilisateur/:utilisateurId/unread')
   @ApiOperation({ summary: 'Notifications non lues' })
-  @ApiResponse({ status: 200, description: 'Notifications récupérées avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Notifications récupérées avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(NotificationResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -64,7 +98,20 @@ export class NotificationController {
 
   @Get('utilisateur/:utilisateurId/type/:type')
   @ApiOperation({ summary: 'Notifications par type' })
-  @ApiResponse({ status: 200, description: 'Notifications récupérées avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiParam({ name: 'type', type: String, example: 'SYSTEM' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Notifications récupérées avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(NotificationResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -81,6 +128,7 @@ export class NotificationController {
 
   @Put(':id/read')
   @ApiOperation({ summary: 'Marquer comme lue' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: NotificationResponseDto, description: 'Notification marquée comme lue' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -96,7 +144,12 @@ export class NotificationController {
   @Put('utilisateur/:utilisateurId/read-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marquer toutes comme lues' })
-  @ApiResponse({ status: 200, description: 'Toutes les notifications marquées comme lues' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Toutes les notifications marquées comme lues',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Toutes les notifications ont été marquées comme lues' } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -112,7 +165,12 @@ export class NotificationController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Supprimer une notification' })
-  @ApiResponse({ status: 200, description: 'Notification supprimée' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification supprimée',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Notification supprimée' } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Notification non trouvée' })
@@ -128,7 +186,12 @@ export class NotificationController {
   @Delete('utilisateur/:utilisateurId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Supprimer toutes les notifications' })
-  @ApiResponse({ status: 200, description: 'Toutes les notifications supprimées' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Toutes les notifications supprimées',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Toutes les notifications ont été supprimées' } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -143,7 +206,12 @@ export class NotificationController {
 
   @Get('utilisateur/:utilisateurId/count/unread')
   @ApiOperation({ summary: 'Compter les non lues' })
-  @ApiResponse({ status: 200, description: 'Nombre de notifications non lues' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Nombre de notifications non lues',
+    schema: { type: 'object', properties: { unreadCount: { type: 'number', example: 4 } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
@@ -158,6 +226,7 @@ export class NotificationController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtenir une notification par ID' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: NotificationResponseDto, description: 'Notification récupérée avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })

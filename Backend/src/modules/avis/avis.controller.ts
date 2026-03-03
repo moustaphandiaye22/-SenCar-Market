@@ -12,7 +12,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExtraModels,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
@@ -27,6 +36,7 @@ import { CreateAvisRequestDto } from './dto/create-avis-request.dto';
 @ApiTags('Avis et Notes')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@ApiExtraModels(PaginatedResponseDto, AvisResponseDto)
 @Controller('avis')
 export class AvisController {
   constructor(private readonly service: AvisService) {}
@@ -49,7 +59,18 @@ export class AvisController {
 
   @Get()
   @ApiOperation({ summary: 'Obtenir tous les avis' })
-  @ApiResponse({ status: 200, description: 'Avis récupérés avec succès' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Avis récupérés avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(AvisResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllAvis(
@@ -61,6 +82,7 @@ export class AvisController {
 
   @Get(':avisId')
   @ApiOperation({ summary: 'Obtenir un avis par ID' })
+  @ApiParam({ name: 'avisId', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: AvisResponseDto, description: 'Avis récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Avis non trouvé' })
@@ -71,7 +93,19 @@ export class AvisController {
 
   @Get('utilisateur/:utilisateurId')
   @ApiOperation({ summary: 'Avis sur un utilisateur' })
-  @ApiResponse({ status: 200, description: 'Avis récupérés avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Avis récupérés avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(AvisResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -85,7 +119,19 @@ export class AvisController {
 
   @Get('vehicule/:vehiculeId')
   @ApiOperation({ summary: 'Avis sur un véhicule' })
-  @ApiResponse({ status: 200, description: 'Avis récupérés avec succès' })
+  @ApiParam({ name: 'vehiculeId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Avis récupérés avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(AvisResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Véhicule non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -99,7 +145,19 @@ export class AvisController {
 
   @Get('garage/:garageId')
   @ApiOperation({ summary: 'Avis sur un garage' })
-  @ApiResponse({ status: 200, description: 'Avis récupérés avec succès' })
+  @ApiParam({ name: 'garageId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 0 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Avis récupérés avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        { properties: { content: { type: 'array', items: { $ref: getSchemaPath(AvisResponseDto) } } } },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Garage non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -113,7 +171,8 @@ export class AvisController {
 
   @Get('utilisateur/:utilisateurId/moyenne')
   @ApiOperation({ summary: 'Note moyenne utilisateur' })
-  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès', schema: { type: 'number', example: 4.6 } })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -125,7 +184,8 @@ export class AvisController {
 
   @Get('vehicule/:vehiculeId/moyenne')
   @ApiOperation({ summary: 'Note moyenne véhicule' })
-  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès' })
+  @ApiParam({ name: 'vehiculeId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès', schema: { type: 'number', example: 4.3 } })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Véhicule non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -135,7 +195,8 @@ export class AvisController {
 
   @Get('garage/:garageId/moyenne')
   @ApiOperation({ summary: 'Note moyenne garage' })
-  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès' })
+  @ApiParam({ name: 'garageId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Note moyenne récupérée avec succès', schema: { type: 'number', example: 4.1 } })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Garage non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -146,7 +207,12 @@ export class AvisController {
   @Post(':avisId/signaler')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Signaler un avis' })
-  @ApiResponse({ status: 200, description: 'Avis signalé avec succès' })
+  @ApiParam({ name: 'avisId', type: String, format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'Avis signalé avec succès',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Avis signalé avec succès' } } },
+  })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -155,13 +221,15 @@ export class AvisController {
   async signalerAvis(
     @Param('avisId', new ParseUUIDPipe()) avisId: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     await this.service.signalerAvis(avisId, user);
+    return { message: 'Avis signalé avec succès' };
   }
 
   @Delete(':avisId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un avis' })
+  @ApiParam({ name: 'avisId', type: String, format: 'uuid' })
   @ApiResponse({ status: 204, description: 'Avis supprimé avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -176,7 +244,9 @@ export class AvisController {
 
   @Get('transaction/:transactionId/validation')
   @ApiOperation({ summary: 'Valider transaction pour avis' })
-  @ApiResponse({ status: 200, description: 'Validation récupérée avec succès' })
+  @ApiParam({ name: 'transactionId', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'typeAvis', type: String, required: true, example: 'ACHETEUR' })
+  @ApiResponse({ status: 200, description: 'Validation récupérée avec succès', schema: { type: 'boolean', example: true } })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètres invalides' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Transaction non trouvée' })

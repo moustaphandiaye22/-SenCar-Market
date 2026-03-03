@@ -85,7 +85,7 @@ export class LocationController {
 
   @Get('annonces')
   @ApiOperation({ summary: 'Liste des annonces' })
-  @ApiResponse({ status: 200, description: 'Annonces récupérées avec succès' })
+  @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, isArray: true, description: 'Annonces récupérées avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllAnnoncesLocation(): Promise<AnnonceLocationResponseDto[]> {
     return this.service.getAllAnnoncesLocation();
@@ -93,7 +93,7 @@ export class LocationController {
 
   @Get('mes-annonces')
   @ApiOperation({ summary: 'Mes annonces' })
-  @ApiResponse({ status: 200, description: 'Mes annonces récupérées avec succès' })
+  @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, isArray: true, description: 'Mes annonces récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getMesAnnonces(@CurrentUser() user: AuthenticatedUser): Promise<AnnonceLocationResponseDto[]> {
@@ -173,7 +173,11 @@ export class LocationController {
   @Post('reservations/:id/annuler')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Annuler une réservation' })
-  @ApiResponse({ status: 200, description: 'Réservation annulée avec succès' })
+  @ApiResponse({
+    status: 200,
+    description: 'Réservation annulée avec succès',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Réservation annulée avec succès' } } },
+  })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Impossible d\'annuler la réservation' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -183,8 +187,9 @@ export class LocationController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() body?: CancelReservationRequestDto,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     await this.service.cancelReservation(id, body, user);
+    return { message: 'Réservation annulée avec succès' };
   }
 
   @Get('reservations/:id')
@@ -203,7 +208,7 @@ export class LocationController {
 
   @Get('mes-reservations')
   @ApiOperation({ summary: 'Mes réservations' })
-  @ApiResponse({ status: 200, description: 'Mes réservations récupérées avec succès' })
+  @ApiResponse({ status: 200, type: ReservationLocationResponseDto, isArray: true, description: 'Mes réservations récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getMesReservations(@CurrentUser() user: AuthenticatedUser): Promise<ReservationLocationResponseDto[]> {
@@ -212,7 +217,7 @@ export class LocationController {
 
   @Get('annonces/:id/reservations')
   @ApiOperation({ summary: 'Réservations d\'une annonce' })
-  @ApiResponse({ status: 200, description: 'Réservations récupérées avec succès' })
+  @ApiResponse({ status: 200, type: ReservationLocationResponseDto, isArray: true, description: 'Réservations récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Annonce non trouvée' })
@@ -227,7 +232,7 @@ export class LocationController {
   @Post('annonces/:id/disponibilites')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ajouter des disponibilités' })
-  @ApiResponse({ status: 200, description: 'Disponibilités ajoutées avec succès' })
+  @ApiResponse({ status: 200, type: DisponibiliteLocationResponseDto, isArray: true, description: 'Disponibilités ajoutées avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -243,7 +248,7 @@ export class LocationController {
 
   @Get('annonces/:id/disponibilites')
   @ApiOperation({ summary: 'Obtenir les disponibilités' })
-  @ApiResponse({ status: 200, description: 'Disponibilités récupérées avec succès' })
+  @ApiResponse({ status: 200, type: DisponibiliteLocationResponseDto, isArray: true, description: 'Disponibilités récupérées avec succès' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Annonce non trouvée' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getDisponibilites(@Param('id', new ParseUUIDPipe()) id: string): Promise<DisponibiliteLocationResponseDto[]> {
@@ -267,7 +272,7 @@ export class LocationController {
 
   @Get('reservations/:id/historique')
   @ApiOperation({ summary: 'Historique des statuts' })
-  @ApiResponse({ status: 200, description: 'Historique récupéré avec succès' })
+  @ApiResponse({ status: 200, type: HistoriqueStatutResponseDto, isArray: true, description: 'Historique récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Réservation non trouvée' })

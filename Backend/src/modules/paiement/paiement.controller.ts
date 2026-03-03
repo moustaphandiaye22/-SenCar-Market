@@ -12,7 +12,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExtraModels,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -29,8 +39,15 @@ import { RetraitRequestDto } from './dto/retrait-request.dto';
 import { TransactionPortefeuilleRequestDto } from './dto/transaction-portefeuille-request.dto';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
 import { PaiementService } from './paiement.service';
+import { STATUT_PAIEMENT_VALUES } from './types/paiement.types';
 
 @ApiTags('Paiements')
+@ApiExtraModels(PaginatedResponseDto, PaiementResponseDto)
+@ApiResponse({
+  status: 429,
+  type: ApiErrorResponseDto,
+  description: 'Trop de requêtes - Veuillez réessayer plus tard',
+})
 @Controller('paiements')
 @UseGuards(ThrottlerGuard)
 export class PaiementController {
@@ -56,7 +73,25 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir tous les paiements (admin)' })
-  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Liste des paiements récupérée avec succès' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Numéro de page (>= 1)' })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 20, description: 'Taille de page (max 100)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des paiements récupérée avec succès',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(PaginatedResponseDto) },
+        {
+          properties: {
+            content: {
+              type: 'array',
+              items: { $ref: getSchemaPath(PaiementResponseDto) },
+            },
+          },
+        },
+      ],
+    },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -122,9 +157,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements d\'un utilisateur' })
-  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, isArray: true, description: 'Paiements récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getPaiementsByUtilisateur(
     @Param('utilisateurId', new ParseUUIDPipe()) utilisateurId: string,
@@ -137,7 +174,8 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements par réservation' })
-  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiParam({ name: 'reservationId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, isArray: true, description: 'Paiements récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -152,7 +190,9 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Paiements par statut' })
-  @ApiResponse({ status: 200, description: 'Paiements récupérés avec succès' })
+  @ApiParam({ name: 'statut', enum: STATUT_PAIEMENT_VALUES, description: 'Statut du paiement' })
+  @ApiResponse({ status: 200, type: PaiementResponseDto, isArray: true, description: 'Paiements récupérés avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Statut de paiement invalide' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -167,6 +207,8 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Confirmer un paiement' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'referenceExterne', type: String, required: true, example: 'TXN_WAVE_20260228_001' })
   @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement confirmé avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -185,6 +227,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Annuler un paiement' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement annulé avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -201,6 +244,8 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rembourser un paiement' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiQuery({ name: 'montant', type: Number, required: true, example: 10000, description: 'Montant à rembourser' })
   @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement remboursé avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Montant invalide' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -219,6 +264,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Confirmer réception et libérer fonds' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Fonds libérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -235,7 +281,15 @@ export class PaiementController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ webhook: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook Wave' })
-  @ApiResponse({ status: 200, description: 'Webhook traité avec succès' })
+  @ApiHeader({ name: 'x-wave-signature', required: true, description: 'Signature HMAC Wave du payload brut' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook traité avec succès',
+    schema: {
+      type: 'object',
+      properties: { result: { type: 'string', example: 'PROCESSED' } },
+    },
+  })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Signature invalide' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   async webhookWave(
@@ -250,7 +304,15 @@ export class PaiementController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ webhook: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook Orange Money' })
-  @ApiResponse({ status: 200, description: 'Webhook traité avec succès' })
+  @ApiHeader({ name: 'x-om-signature', required: true, description: 'Signature HMAC Orange Money du payload brut' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook traité avec succès',
+    schema: {
+      type: 'object',
+      properties: { result: { type: 'string', example: 'PROCESSED' } },
+    },
+  })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Signature invalide' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   async webhookOrangeMoney(
@@ -265,6 +327,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir le portefeuille' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: PortefeuilleResponseDto, description: 'Portefeuille récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -331,9 +394,11 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Historique des transactions' })
-  @ApiResponse({ status: 200, description: 'Transactions récupérées avec succès' })
+  @ApiParam({ name: 'utilisateurId', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, type: TransactionResponseDto, isArray: true, description: 'Transactions récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getHistoriqueTransactions(
     @Param('utilisateurId', new ParseUUIDPipe()) utilisateurId: string,
@@ -346,6 +411,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir une transaction par ID' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: TransactionResponseDto, description: 'Transaction récupérée avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -362,7 +428,12 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Calculer la commission' })
-  @ApiResponse({ status: 200, description: 'Commission calculée avec succès' })
+  @ApiQuery({ name: 'montant', type: Number, required: true, example: 25000, description: 'Montant de base' })
+  @ApiResponse({
+    status: 200,
+    description: 'Commission calculée avec succès',
+    schema: { type: 'number', example: 1250 },
+  })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Montant invalide' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -377,6 +448,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logs d\'un paiement' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: PaiementLogResponseDto, isArray: true, description: 'Logs récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
@@ -393,6 +465,7 @@ export class PaiementController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir un paiement par ID' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: PaiementResponseDto, description: 'Paiement récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })

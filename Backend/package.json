@@ -11,6 +11,7 @@
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "test": "jest",
+    "test:swagger:db": "ts-node -r tsconfig-paths/register scripts/test-swagger-with-db.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "prisma:generate": "prisma generate",

@@ -53,7 +53,7 @@ export class AssuranceController {
 
   @Get('produits')
   @ApiOperation({ summary: 'Liste des produits assurance' })
-  @ApiResponse({ status: 200, description: 'Produits assurance récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Produits assurance récupérés avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllProduitAssurances(
     @Query('page', new ParseIntPipe({ optional: true })) page = 0,
@@ -64,7 +64,7 @@ export class AssuranceController {
 
   @Get('produits/actifs')
   @ApiOperation({ summary: 'Produits assurance actifs' })
-  @ApiResponse({ status: 200, description: 'Produits actifs récupérés avec succès' })
+  @ApiResponse({ status: 200, type: ProduitAssuranceResponseDto, isArray: true, description: 'Produits actifs récupérés avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getActiveProduitAssurances(): Promise<ProduitAssuranceResponseDto[]> {
     return this.service.getActiveProduitAssurances();
@@ -136,7 +136,7 @@ export class AssuranceController {
 
   @Get('produits/:produitId/options')
   @ApiOperation({ summary: 'Options d\'un produit assurance' })
-  @ApiResponse({ status: 200, description: 'Options du produit récupérées avec succès' })
+  @ApiResponse({ status: 200, type: OptionAssuranceResponseDto, isArray: true, description: 'Options du produit récupérées avec succès' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Produit assurance non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getOptionsByProduitAssurance(
@@ -206,7 +206,7 @@ export class AssuranceController {
 
   @Get('souscriptions/utilisateur/:utilisateurId')
   @ApiOperation({ summary: 'Souscriptions assurance d\'un utilisateur' })
-  @ApiResponse({ status: 200, description: 'Souscriptions de l\'utilisateur récupérées avec succès' })
+  @ApiResponse({ status: 200, type: SouscriptionAssuranceResponseDto, isArray: true, description: 'Souscriptions de l\'utilisateur récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -219,7 +219,7 @@ export class AssuranceController {
 
   @Get('calcul-prix')
   @ApiOperation({ summary: 'Calculer le prix assurance' })
-  @ApiResponse({ status: 200, description: 'Prix calculé avec succès' })
+  @ApiResponse({ status: 200, type: SouscriptionAssuranceResponseDto, description: 'Prix calculé avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètres invalides' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   calculatePrix(

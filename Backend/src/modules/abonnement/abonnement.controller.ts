@@ -94,7 +94,7 @@ export class AbonnementController {
 
   @Get('plans')
   @ApiOperation({ summary: 'Liste des plans actifs' })
-  @ApiResponse({ status: 200, description: 'Plans récupérés avec succès' })
+  @ApiResponse({ status: 200, type: AbonnementResponseDto, isArray: true, description: 'Plans récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllPlans(): Promise<AbonnementResponseDto[]> {
@@ -163,7 +163,7 @@ export class AbonnementController {
 
   @Get('utilisateurs/:utilisateurId')
   @ApiOperation({ summary: 'Historique des abonnements' })
-  @ApiResponse({ status: 200, description: 'Historique récupéré avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Historique récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -234,7 +234,7 @@ export class AbonnementController {
 
   @Get('vehicules/:vehiculeId/boosts')
   @ApiOperation({ summary: 'Boosts d\'un véhicule' })
-  @ApiResponse({ status: 200, description: 'Boosts récupérés avec succès' })
+  @ApiResponse({ status: 200, type: BoostAnnonceResponseDto, isArray: true, description: 'Boosts récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Véhicule non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })

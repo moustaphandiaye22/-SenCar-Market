@@ -55,7 +55,7 @@ export class GarageController {
 
   @Get()
   @ApiOperation({ summary: 'Liste des garages' })
-  @ApiResponse({ status: 200, description: 'Garages récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Garages récupérés avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllGarages(
     @Query('page', new ParseIntPipe({ optional: true })) page = 0,
@@ -66,7 +66,7 @@ export class GarageController {
 
   @Get('actifs')
   @ApiOperation({ summary: 'Garages actifs' })
-  @ApiResponse({ status: 200, description: 'Garages actifs récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Garages actifs récupérés avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getActiveGarages(
     @Query('page', new ParseIntPipe({ optional: true })) page = 0,
@@ -77,7 +77,7 @@ export class GarageController {
 
   @Get('en-attente')
   @ApiOperation({ summary: 'Garages en attente' })
-  @ApiResponse({ status: 200, description: 'Garages en attente récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Garages en attente récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès réservé aux administrateurs' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -91,7 +91,7 @@ export class GarageController {
 
   @Get('proprietaire/:proprietaireId')
   @ApiOperation({ summary: 'Garages d\'un propriétaire' })
-  @ApiResponse({ status: 200, description: 'Garages du propriétaire récupérés avec succès' })
+  @ApiResponse({ status: 200, type: GarageResponseDto, isArray: true, description: 'Garages du propriétaire récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Propriétaire non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
@@ -104,7 +104,7 @@ export class GarageController {
 
   @Get('search/ville')
   @ApiOperation({ summary: 'Rechercher par ville' })
-  @ApiResponse({ status: 200, description: 'Garages trouvés par ville' })
+  @ApiResponse({ status: 200, type: GarageResponseDto, isArray: true, description: 'Garages trouvés par ville' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètre ville requis' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   searchByVille(@Query('ville') ville: string): Promise<GarageResponseDto[]> {
@@ -113,7 +113,7 @@ export class GarageController {
 
   @Get('search/proximity')
   @ApiOperation({ summary: 'Rechercher par proximité' })
-  @ApiResponse({ status: 200, description: 'Garages trouvés par proximité' })
+  @ApiResponse({ status: 200, type: GarageResponseDto, isArray: true, description: 'Garages trouvés par proximité' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètres latitude et longitude requis' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   searchByProximity(
@@ -126,7 +126,7 @@ export class GarageController {
 
   @Get('search')
   @ApiOperation({ summary: 'Rechercher des garages' })
-  @ApiResponse({ status: 200, description: 'Garages trouvés' })
+  @ApiResponse({ status: 200, type: GarageResponseDto, isArray: true, description: 'Garages trouvés' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètre de recherche requis' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   searchGarages(@Query('q') q: string): Promise<GarageResponseDto[]> {
@@ -150,7 +150,7 @@ export class GarageController {
 
   @Get('services')
   @ApiOperation({ summary: 'Liste des services' })
-  @ApiResponse({ status: 200, description: 'Services récupérés avec succès' })
+  @ApiResponse({ status: 200, type: ServiceGarageResponseDto, isArray: true, description: 'Services récupérés avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getAllServices(): Promise<ServiceGarageResponseDto[]> {
     return this.service.getAllServices();
@@ -184,7 +184,7 @@ export class GarageController {
 
   @Get(':garageId/services')
   @ApiOperation({ summary: 'Services d\'un garage' })
-  @ApiResponse({ status: 200, description: 'Services du garage récupérés avec succès' })
+  @ApiResponse({ status: 200, type: GarageServiceResponseDto, isArray: true, description: 'Services du garage récupérés avec succès' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Garage non trouvé' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   getServicesByGarage(@Param('garageId', new ParseUUIDPipe()) garageId: string): Promise<GarageServiceResponseDto[]> {

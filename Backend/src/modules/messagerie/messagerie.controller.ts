@@ -67,7 +67,7 @@ export class MessagerieController {
 
   @Get('conversations')
   @ApiOperation({ summary: 'Liste des conversations' })
-  @ApiResponse({ status: 200, description: 'Conversations récupérées avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Conversations récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   getConversations(
@@ -80,7 +80,7 @@ export class MessagerieController {
 
   @Get('conversations/search')
   @ApiOperation({ summary: 'Rechercher des conversations' })
-  @ApiResponse({ status: 200, description: 'Résultats de recherche récupérés avec succès' })
+  @ApiResponse({ status: 200, type: ConversationResponseDto, isArray: true, description: 'Résultats de recherche récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   searchConversations(
@@ -120,7 +120,7 @@ export class MessagerieController {
 
   @Get('conversations/:conversationId/messages')
   @ApiOperation({ summary: 'Messages d\'une conversation' })
-  @ApiResponse({ status: 200, description: 'Messages récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Messages récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Conversation non trouvée' })
@@ -136,15 +136,20 @@ export class MessagerieController {
   @Put('conversations/:conversationId/read')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marquer comme lu' })
-  @ApiResponse({ status: 200, description: 'Messages marqués comme lus' })
+  @ApiResponse({
+    status: 200,
+    description: 'Messages marqués comme lus',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Messages marqués comme lus' } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Conversation non trouvée' })
   async markAsRead(
     @Param('conversationId', new ParseUUIDPipe()) conversationId: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     await this.service.markMessagesAsRead(conversationId, user);
+    return { message: 'Messages marqués comme lus' };
   }
 
   @Delete('messages/:messageId')
@@ -177,7 +182,11 @@ export class MessagerieController {
   @Post('conversations/:conversationId/typing')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Indicateur de frappe' })
-  @ApiResponse({ status: 200, description: 'Indicateur de frappe envoyé' })
+  @ApiResponse({
+    status: 200,
+    description: 'Indicateur de frappe envoyé',
+    schema: { type: 'object', properties: { message: { type: 'string', example: 'Indicateur de frappe envoyé' } } },
+  })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Conversation non trouvée' })
@@ -185,13 +194,14 @@ export class MessagerieController {
     @Param('conversationId', new ParseUUIDPipe()) conversationId: string,
     @Query('isTyping', new ParseBoolPipe()) isTyping: boolean,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     await this.service.sendTypingIndicator(conversationId, user, isTyping);
+    return { message: 'Indicateur de frappe envoyé' };
   }
 
   @Get('conversations/:conversationId/messages/search')
   @ApiOperation({ summary: 'Rechercher dans les messages' })
-  @ApiResponse({ status: 200, description: 'Résultats de recherche récupérés avec succès' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Résultats de recherche récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Conversation non trouvée' })

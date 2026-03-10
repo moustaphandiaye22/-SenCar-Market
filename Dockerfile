@@ -3,8 +3,10 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files from Backend (using uppercase B to match GitHub)
+# Copy all backend config files needed for build
 COPY Backend/package*.json ./Backend/
+COPY Backend/tsconfig*.json ./Backend/
+COPY Backend/nest-cli.json ./Backend/
 COPY Backend/prisma ./Backend/prisma/
 
 # Install dependencies
@@ -30,10 +32,10 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Copy only necessary files from builder
-COPY --from=builder /app/backend/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/backend/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/package*.json ./
+COPY --from=builder /app/Backend/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/Backend/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/Backend/dist ./dist
+COPY --from=builder /app/Backend/package*.json ./
 
 # Install production dependencies only
 RUN npm ci --omit=dev && \

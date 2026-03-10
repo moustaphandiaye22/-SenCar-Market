@@ -3,19 +3,19 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files from Backend
-COPY backend/package*.json ./backend/
-COPY backend/prisma ./backend/prisma/
+# Copy package files from Backend (using uppercase B to match GitHub)
+COPY Backend/package*.json ./Backend/
+COPY Backend/prisma ./Backend/prisma/
 
 # Install dependencies
-WORKDIR /app/backend
+WORKDIR /app/Backend
 RUN npm ci
 
 # Generate Prisma client
 RUN npx prisma generate
 
 # Copy source code
-COPY backend/src ./src
+COPY Backend/src ./src
 
 # Build the application
 RUN npm run build

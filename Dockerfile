@@ -31,15 +31,11 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy only necessary files from builder
-COPY --from=builder /app/Backend/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/Backend/node_modules/prisma ./node_modules/prisma
+# Copy ALL node_modules from builder (including .prisma)
+COPY --from=builder /app/Backend/node_modules ./node_modules
 COPY --from=builder /app/Backend/dist ./dist
 COPY --from=builder /app/Backend/package*.json ./
-
-# Install production dependencies only
-RUN npm ci --omit=dev && \
-    npm cache clean --force
+COPY --from=builder /app/Backend/prisma ./prisma
 
 # Change ownership to non-root user
 RUN chown -R nodejs:nodejs /app

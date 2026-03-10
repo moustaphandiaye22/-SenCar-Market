@@ -1,16 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { ROLES_ADMIN_MODERATION } from '../../../common/constants/role-groups';
 import { DomainException } from '../../../common/exceptions/domain.exception';
 import type { AuthenticatedUser } from '../../../common/types/authenticated-user.type';
-import { assertHasAnyRole } from '../../../common/utils/authorization.util';
-import { toNumberOrZero } from '../../../common/utils/number.util';
+import { hasAnyRole } from '../../../common/utils/role.util';
 import { CreatePaiementRequestDto } from '../dto/create-paiement-request.dto';
 import { PaiementResponseDto } from '../dto/paiement-response.dto';
-import { TransactionResponseDto } from '../dto/transaction-response.dto';
 import { UserRecord } from '../paiement.models';
 import { PAIEMENT_REPOSITORY_PORT, PaiementRepositoryPort } from '../paiement.repository.port';
-import { STATUT_TRANSACTION_VALUES, StatutTransaction } from '../types/paiement.types';
 
 import { PaiementCoreService } from './paiement-core.service';
 import { PaiementWebhookService } from './paiement-webhook.service';
@@ -175,6 +173,11 @@ export class PaiementProviderService {
   }
 
   private assertOwnerOrAdmin(currentUser: UserRecord, ownerId: string | null): void {
+    // Admin roles can perform this action
+    if (hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION)) {
+      return;
+    }
+    // Otherwise, check ownership
     if (!ownerId || currentUser.id !== ownerId) {
       throw new DomainException('Accès refusé', 403, 'ACCESS_DENIED_RESOURCE');
     }

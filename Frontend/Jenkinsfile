@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_NAME = 'moustaphafullstacker/sencar-market-frontend'
+        DOCKER_HUB_REPO = 'moustaphafullstacker/sencar-market-frontend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Install') {
+            steps {
+                echo 'Installing frontend dependencies...'
+                sh 'cd frontend && npm ci'
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo 'Running Angular linter...'
+                sh 'cd frontend && npx ng lint'
+            }
+        }
+
+        stage('Tests') {
+            steps {
+                echo 'Running Angular tests...'
+                sh 'cd frontend && npm run test -- --watch=false --browsers=ChromeHeadless'
+            }
+        }
+
+        stage('Build Production') {
+            steps {
+                echo 'Building frontend for production...'
+                sh 'cd frontend && npm run build -- --configuration production'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                echo 'Building Docker image...'
+                sh "docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} -t ${DOCKER_IMAGE_NAME}:latest frontend/"
+
+                echo 'Logging into Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                    echo 'Pushing Docker image to Docker Hub...'
+                    sh "docker push ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${DOCKER_IMAGE_NAME}:latest"
+
+                    echo 'Logging out from Docker Hub...'
+                    sh 'docker logout'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Archiving test reports...'
+            archiveArtifacts artifacts: 'frontend/coverage/**', allowEmptyArchive: true
+            junit 'frontend/coverage/jest-results.xml'
+        }
+        failure {
+            echo "FRONTEND BUILD FAILED - Build #${BUILD_NUMBER}"
+        }
+        success {
+            echo "FRONTEND DEPLOYED - Build #${BUILD_NUMBER}"
+        }
+    }
+}

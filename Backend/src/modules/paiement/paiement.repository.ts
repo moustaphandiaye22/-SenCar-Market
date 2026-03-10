@@ -114,6 +114,22 @@ export class PaiementRepository implements PaiementRepositoryPort {
     });
   }
 
+  async findAllPaiementsPaged(page: number, size: number): Promise<{ items: PaiementRecord[]; total: number }> {
+    const [items, total] = await Promise.all([
+      this.prisma.paiement.findMany({
+        skip: page * size,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          utilisateur: { select: { id: true } },
+          reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        },
+      }),
+      this.prisma.paiement.count(),
+    ]);
+    return { items, total };
+  }
+
   findPaiementByReferenceExterne(referenceExterne: string): Promise<PaiementRecord | null> {
     return this.prisma.paiement.findFirst({
       where: { referenceExterne },

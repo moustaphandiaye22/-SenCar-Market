@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_NAME = 'moustaphafullstacker/sencar-market-backend'
+        DOCKER_HUB_REPO = 'moustaphafullstacker/sencar-market-backend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Install') {
+            steps {
+                echo 'Installing backend dependencies...'
+                sh 'cd backend && npm ci'
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo 'Running ESLint...'
+                sh 'cd backend && npx eslint .'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                echo 'Running unit tests with coverage...'
+                sh 'cd backend && npm run test -- --coverage'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building backend application...'
+                sh 'cd backend && npm run build'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                echo 'Building Docker image...'
+                sh "docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} -t ${DOCKER_IMAGE_NAME}:latest backend/"
+
+                echo 'Logging into Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                    echo 'Pushing Docker image to Docker Hub...'
+                    sh "docker push ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${DOCKER_IMAGE_NAME}:latest"
+
+                    echo 'Logging out from Docker Hub...'
+                    sh 'docker logout'
+                }
+            }
+        }
+
+        stage('Deploy to Render') {
+            steps {
+                echo 'Deploying backend to Render...'
+                withCredentials([string(credentialsId: 'RENDER_DEPLOY_HOOK_BACKEND', variable: 'RENDER_HOOK_URL')]) {
+                    sh 'curl -s -X POST $RENDER_HOOK_URL'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Archiving test reports...'
+            archiveArtifacts artifacts: 'backend/coverage/**', allowEmptyArchive: true
+            junit 'backend/coverage/jest-results.xml'
+        }
+        failure {
+            echo "BACKEND BUILD FAILED - Build #${BUILD_NUMBER}"
+        }
+        success {
+            echo "BACKEND DEPLOYED - Build #${BUILD_NUMBER}"
+        }
+    }
+}

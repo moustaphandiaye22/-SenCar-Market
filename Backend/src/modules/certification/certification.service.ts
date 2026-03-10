@@ -12,8 +12,6 @@ import { buildPaginatedResponse, clampPage, clampSize } from '../../common/utils
 
 import {
   DemandeRecord,
-  InspectionRecord,
-  RapportRecord,
   UserRecord,
 } from './certification.models';
 import {

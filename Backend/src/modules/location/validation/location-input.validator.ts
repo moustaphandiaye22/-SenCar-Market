@@ -1,8 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { StatutReservation } from '@prisma/client';
 
 import { DomainException } from '../../../common/exceptions/domain.exception';
 
-const VALID_RESERVATION_STATUSES = ['ACTIF', 'INACTIF', 'EN_ATTENTE', 'CONFIRME', 'ANNULE', 'TERMINE', 'EN_COURS'];
+const VALID_RESERVATION_STATUSES: StatutReservation[] = [
+  'ACTIF',
+  'INACTIF',
+  'EN_ATTENTE',
+  'CONFIRME',
+  'ANNULE',
+  'TERMINE',
+  'EN_COURS',
+];
 
 @Injectable()
 export class LocationInputValidator {
@@ -23,8 +32,8 @@ export class LocationInputValidator {
     return { dateDebut, dateFin };
   }
 
-  parseReservationStatus(statut: string): string {
-    const normalized = statut?.toUpperCase().trim();
+  parseReservationStatus(statut: string): StatutReservation {
+    const normalized = statut?.toUpperCase().trim() as StatutReservation;
     if (!normalized || !VALID_RESERVATION_STATUSES.includes(normalized)) {
       throw new DomainException('Statut de réservation invalide', 400, 'INVALID_RESERVATION_STATUS');
     }

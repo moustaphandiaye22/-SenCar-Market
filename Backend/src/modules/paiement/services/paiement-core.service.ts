@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 
 import {
   ROLES_ADMIN_MODERATION,
-  ROLES_ADMIN_SUPER_ADMIN,
 } from '../../../common/constants/role-groups';
 import { DomainException } from '../../../common/exceptions/domain.exception';
 import type { AuthenticatedUser } from '../../../common/types/authenticated-user.type';

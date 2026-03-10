@@ -102,17 +102,24 @@ export class CertificationRepository implements CertificationRepositoryPort {
   updateDemande(id: string, data: UpdateDemandeInput): Promise<DemandeRecord> {
     return this.prisma.demandeCertification.update({
       where: { id },
-      data,
+      data: data as unknown as Record<string, unknown>,
+      include: {
+        utilisateur: { select: { id: true, nom: true } },
+        vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
+        inspecteur: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<DemandeRecord>;
+  }
+
+  deleteDemande(id: string): Promise<DemandeRecord> {
+    return this.prisma.demandeCertification.delete({
+      where: { id },
       include: {
         utilisateur: { select: { id: true, nom: true } },
         vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
         inspecteur: { select: { id: true, nom: true } },
       },
     });
-  }
-
-  deleteDemande(id: string): Promise<DemandeRecord> {
-    return this.prisma.demandeCertification.delete({ where: { id } });
   }
 
   createInspection(data: CreateInspectionInput): Promise<InspectionRecord> {
@@ -164,7 +171,13 @@ export class CertificationRepository implements CertificationRepositoryPort {
   }
 
   deleteInspection(id: string): Promise<InspectionRecord> {
-    return this.prisma.inspection.delete({ where: { id } });
+    return this.prisma.inspection.delete({
+      where: { id },
+      include: {
+        demandeCertification: { select: { id: true } },
+        inspecteur: { select: { id: true, nom: true } },
+      },
+    });
   }
 
   findRapportByInspectionId(inspectionId: string): Promise<RapportRecord | null> {

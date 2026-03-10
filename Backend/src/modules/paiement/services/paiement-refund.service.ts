@@ -2,13 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import {
-  ROLES_ADMIN_MODERATION,
   ROLES_ADMIN_SUPER_ADMIN,
 } from '../../../common/constants/role-groups';
 import { DomainException } from '../../../common/exceptions/domain.exception';
 import type { AuthenticatedUser } from '../../../common/types/authenticated-user.type';
 import { assertHasAnyRole } from '../../../common/utils/authorization.util';
-import { toNumberOrZero } from '../../../common/utils/number.util';
 import { PaiementResponseDto } from '../dto/paiement-response.dto';
 import { UserRecord } from '../paiement.models';
 import { PAIEMENT_REPOSITORY_PORT, PaiementRepositoryPort } from '../paiement.repository.port';

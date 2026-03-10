@@ -59,7 +59,7 @@ export class GarageService {
       ...(pays ? { pays } : {}),
       ...(logoUrl ? { logoUrl } : {}),
       statutValidation: 'EN_ATTENTE',
-      proprietaire: { connect: { id: current.id } },
+      utilisateurId: current.id,
       createdAt: now,
       updatedAt: now,
     });

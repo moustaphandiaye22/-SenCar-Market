@@ -95,7 +95,13 @@ export class LocationRepository implements LocationRepositoryPort {
   }
 
   deleteAnnonce(id: string): Promise<AnnonceRecord> {
-    return this.prisma.annonceLocation.delete({ where: { id } });
+    return this.prisma.annonceLocation.delete({
+      where: { id },
+      include: {
+        vehicule: { include: { marque: true, modele: true, photos: true } },
+        proprietaire: { include: { typeUtilisateur: true } },
+      },
+    });
   }
 
   createReservation(data: CreateReservationInput): Promise<ReservationRecord> {

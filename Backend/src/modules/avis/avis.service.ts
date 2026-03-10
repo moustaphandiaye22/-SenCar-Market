@@ -79,6 +79,21 @@ export class AvisService {
     return this.mapper.toAvisResponse(found);
   }
 
+  async getAllAvis(page: number, size: number): Promise<PaginatedResponseDto<AvisResponseDto>> {
+    const clampedPage = clampPage(page);
+    const clampedSize = clampSize(size, 10);
+    const statut: StatutAvis = 'PUBLIE';
+
+    const data = await this.repository.findAllAvisPaged(statut, clampedPage, clampedSize);
+
+    return buildPaginatedResponse(
+      data.items.map((a: AvisRecord) => this.mapper.toAvisResponse(a)),
+      clampedPage,
+      clampedSize,
+      data.total,
+    );
+  }
+
   async getAvisByUtilisateur(utilisateurId: string, page: number, size: number): Promise<PaginatedResponseDto<AvisResponseDto>> {
     return this.getPaged('utilisateur', utilisateurId, clampPage(page), clampSize(size, 10));
   }

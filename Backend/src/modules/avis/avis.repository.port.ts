@@ -11,6 +11,11 @@ export interface AvisRepositoryPort {
 
   createAvis(data: CreateAvisInput): Promise<AvisRecord>;
   findAvisById(id: string): Promise<AvisRecord | null>;
+  findAllAvisPaged(
+    statut: StatutAvis,
+    page: number,
+    size: number,
+  ): Promise<{ items: AvisRecord[]; total: number }>;
   findAvisByUtilisateurPaged(
     utilisateurId: string,
     statut: StatutAvis,

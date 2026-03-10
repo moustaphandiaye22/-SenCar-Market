@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 
 import { APP_MESSAGES } from '../../../common/constants/app-messages';
 import { DomainException } from '../../../common/exceptions/domain.exception';
+import { AUTH_CONFIG } from '../../../config/auth.config';
 import { AuthUserWithTypeRecord } from '../auth.models';
 import { AUTH_REPOSITORY_PORT, AuthRepositoryPort } from '../auth.repository.port';
 import { AuthResponseDto } from '../dto/auth-response.dto';
@@ -99,7 +100,7 @@ export class AuthLoginService {
       throw new DomainException(APP_MESSAGES.newPasswordMustDiffer, 400, 'AUTH_PASSWORD_REUSE_FORBIDDEN');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, AUTH_CONFIG.BCRYPT_ROUNDS);
     await this.repository.updateUser(currentUser.id, {
       motDePasseHash: hashedPassword,
     });

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
+import { StatutReservation, StatutTransaction, TypeNotification, TypeTransaction } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -135,8 +136,8 @@ export class AdminRepository implements AdminRepositoryPort {
     id: string;
     portefeuille: { connect: { id: string } };
     montant: number;
-    typeTransaction: string;
-    statut: string;
+    typeTransaction: TypeTransaction;
+    statut: StatutTransaction;
     description: string;
     dateTransaction: Date;
     createdAt: Date;
@@ -163,7 +164,7 @@ export class AdminRepository implements AdminRepositoryPort {
     return this.prisma.reservationLocation.count();
   }
 
-  countReservationsByStatut(statut: string): Promise<number> {
+  countReservationsByStatut(statut: StatutReservation): Promise<number> {
     return this.prisma.reservationLocation.count({ where: { statut } });
   }
 
@@ -171,7 +172,7 @@ export class AdminRepository implements AdminRepositoryPort {
     return this.prisma.transactionPortefeuille.count();
   }
 
-  countTransactionsByStatut(statut: string): Promise<number> {
+  countTransactionsByStatut(statut: StatutTransaction): Promise<number> {
     return this.prisma.transactionPortefeuille.count({ where: { statut } });
   }
 
@@ -188,7 +189,7 @@ export class AdminRepository implements AdminRepositoryPort {
     });
   }
 
-  findTransactionsByStatut(statut: string): Promise<TransactionRecord[]> {
+  findTransactionsByStatut(statut: StatutTransaction): Promise<TransactionRecord[]> {
     return this.prisma.transactionPortefeuille.findMany({
       where: { statut },
       include: { portefeuille: { select: { utilisateurId: true } } },
@@ -200,7 +201,7 @@ export class AdminRepository implements AdminRepositoryPort {
     utilisateur: { connect: { id: string } };
     titre: string;
     message: string;
-    type: string;
+    type: TypeNotification;
     estLu: boolean;
     dateCreation: Date;
     referenceType?: string;

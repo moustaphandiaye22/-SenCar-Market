@@ -60,6 +60,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Vercel') {
+            steps {
+                echo 'Deploying frontend to Vercel...'
+                withCredentials([string(credentialsId: 'VERCEL_DEPLOY_HOOK_FRONTEND', variable: 'VERCEL_HOOK_URL')]) {
+                    sh 'curl -s -X POST $VERCEL_HOOK_URL'
+                }
+            }
+        }
     }
 
     post {

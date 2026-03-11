@@ -81,8 +81,9 @@ Bienvenue sur l'API Sen-Car Market - La plateforme de référence pour l'achat, 
     .addTag('Trade-In', 'Échange de véhicules')
     .addTag('Avis et Notes', 'Avis et évaluations')
     .addTag('Certifications', 'Certifications véhicules')
-    .addServer('http://localhost:8082', 'Serveur local')
-    .addServer('https://api.sencarmarket.sn', 'Serveur production')
+    .addServer('http://localhost:3000', 'Serveur local')
+    .addServer('http://localhost:8082', 'Serveur local Docker')
+    .addServer('https://sencar-market.onrender.com', 'Serveur production')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -99,7 +100,7 @@ Bienvenue sur l'API Sen-Car Market - La plateforme de référence pour l'achat, 
   
   SwaggerModule.setup('swagger', app, document);
 
-  const port = Number(process.env.PORT ?? '8082');
+  const port = Number(process.env.PORT ?? '3000');
   await app.listen(port);
 }
 

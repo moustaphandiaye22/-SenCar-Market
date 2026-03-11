@@ -24,15 +24,18 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma compatibility with Render (linux-musl)
+RUN apk add --no-cache openssl
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Copy only necessary files from builder
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma/
 
 # Install production dependencies only
 RUN npm ci --omit=dev && \

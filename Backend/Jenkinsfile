@@ -79,7 +79,7 @@ pipeline {
         always {
             echo 'Archiving test reports...'
             archiveArtifacts artifacts: 'Backend/coverage/**', allowEmptyArchive: true
-            junit 'Backend/coverage/jest-results.xml'
+            junit testResults: 'Backend/coverage/jest-results.xml', allowEmptyResults: true
         }
         failure {
             echo "BACKEND BUILD FAILED - Build #${BUILD_NUMBER}"

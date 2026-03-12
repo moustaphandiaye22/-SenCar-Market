@@ -1,6 +1,6 @@
 import type { OpenAPIObject } from '@nestjs/swagger';
 
-import { PrismaService } from '../../prisma/prisma.service';
+import type { PrismaService } from '../../prisma/prisma.service';
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
 

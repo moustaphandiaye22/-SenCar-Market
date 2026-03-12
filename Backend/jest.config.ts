@@ -9,6 +9,7 @@ const config: Config = {
   },
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
+  coverageReporters: ['lcov', 'text', 'text-summary'],
   testEnvironment: 'node',
 };
 

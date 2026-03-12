@@ -57,7 +57,7 @@ describe('AssuranceService', () => {
       email: 'user@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -70,7 +70,7 @@ describe('AssuranceService', () => {
         {
           userId: 'user-1',
           email: 'user@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Accès refusé');

@@ -56,7 +56,7 @@ describe('NotificationService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     repository.findNotificationById.mockResolvedValue({
@@ -68,7 +68,7 @@ describe('NotificationService', () => {
       service.getNotificationById('notif-1', {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });
@@ -79,7 +79,7 @@ describe('NotificationService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -93,7 +93,7 @@ describe('NotificationService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Description requise');
@@ -207,7 +207,7 @@ describe('NotificationService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findNotificationsByUtilisateurPaged.mockResolvedValue({
       items: [],
@@ -221,7 +221,7 @@ describe('NotificationService', () => {
       {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       },
     );
 

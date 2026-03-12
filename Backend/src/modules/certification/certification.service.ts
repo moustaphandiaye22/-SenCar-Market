@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import {
-  ROLE_INSPECTEUR,
+  ROLE_EXPERT,
   ROLES_ADMIN_MODERATION,
   ROLES_INSPECTION,
 } from '../../common/constants/role-groups';
@@ -108,7 +108,7 @@ export class CertificationService {
     if (!inspecteur) {
       throw new DomainException('Inspecteur non trouvé', 404, 'INSPECTOR_NOT_FOUND');
     }
-    if (inspecteur.typeUtilisateur?.nom !== ROLE_INSPECTEUR) {
+    if (inspecteur.typeUtilisateur?.nom !== ROLE_EXPERT) {
       throw new DomainException('Utilisateur inspecteur invalide', 400, 'CERTIFICATION_INVALID_INSPECTOR_ROLE');
     }
     if (demande.statut !== 'PAYEE') {

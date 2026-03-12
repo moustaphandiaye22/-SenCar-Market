@@ -61,14 +61,14 @@ describe('AdminService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { id: 'role-1', nom: 'ACHETEUR' },
+      typeUtilisateur: { id: 'role-1', nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
       service.getDashboardStats({
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });

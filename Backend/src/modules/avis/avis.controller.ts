@@ -245,7 +245,7 @@ export class AvisController {
   @Get('transaction/:transactionId/validation')
   @ApiOperation({ summary: 'Valider transaction pour avis' })
   @ApiParam({ name: 'transactionId', type: String, format: 'uuid' })
-  @ApiQuery({ name: 'typeAvis', type: String, required: true, example: 'ACHETEUR' })
+  @ApiQuery({ name: 'typeAvis', type: String, required: true, example: 'UTILISATEUR' })
   @ApiResponse({ status: 200, description: 'Validation récupérée avec succès', schema: { type: 'boolean', example: true } })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paramètres invalides' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })

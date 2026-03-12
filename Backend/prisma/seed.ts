@@ -86,16 +86,16 @@ async function main(): Promise<void> {
 
   const roleEntries = [
     { id: IDS.roles.utilisateur, nom: 'UTILISATEUR', description: 'Utilisateur standard' },
-    { id: IDS.roles.acheteur, nom: 'ACHETEUR', description: 'Acheteur de vehicules' },
-    { id: IDS.roles.vendeur, nom: 'VENDEUR', description: 'Vendeur particulier' },
-    { id: IDS.roles.concessionnaire, nom: 'CONCESSIONNAIRE', description: 'Concessionnaire auto' },
-    { id: IDS.roles.proprioLoueur, nom: 'PROPRIETAIRE_LOUEUR', description: 'Proprietaire loueur' },
+    { id: IDS.roles.acheteur, nom: 'UTILISATEUR', description: 'Acheteur de vehicules' },
+    { id: IDS.roles.vendeur, nom: 'UTILISATEUR', description: 'Vendeur particulier' },
+    { id: IDS.roles.concessionnaire, nom: 'PROFESSIONNEL', description: 'Concessionnaire auto' },
+    { id: IDS.roles.proprioLoueur, nom: 'PROFESSIONNEL', description: 'Proprietaire loueur' },
     { id: IDS.roles.admin, nom: 'ADMIN', description: 'Administrateur' },
-    { id: IDS.roles.moderateur, nom: 'MODERATEUR', description: 'Moderateur' },
-    { id: IDS.roles.superAdmin, nom: 'SUPER_ADMIN', description: 'Super administrateur' },
-    { id: IDS.roles.inspecteur, nom: 'INSPECTEUR', description: 'Inspecteur certification' },
-    { id: IDS.roles.garage, nom: 'GARAGE', description: 'Gestionnaire garage' },
-    { id: IDS.roles.assurance, nom: 'COMPAGNIE_ASSURANCE', description: 'Compagnie assurance' },
+    { id: IDS.roles.moderateur, nom: 'ADMIN', description: 'Moderateur' },
+    { id: IDS.roles.superAdmin, nom: 'ADMIN', description: 'Super administrateur' },
+    { id: IDS.roles.inspecteur, nom: 'EXPERT', description: 'Inspecteur certification' },
+    { id: IDS.roles.garage, nom: 'PROFESSIONNEL', description: 'Gestionnaire garage' },
+    { id: IDS.roles.assurance, nom: 'PROFESSIONNEL', description: 'Compagnie assurance' },
   ];
 
   for (const role of roleEntries) {

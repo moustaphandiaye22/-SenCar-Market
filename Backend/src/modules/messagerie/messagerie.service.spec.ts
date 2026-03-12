@@ -61,7 +61,7 @@ describe('MessagerieService', () => {
       nom: 'A',
       prenom: 'B',
       photoProfilUrl: null,
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     repository.findMessageById.mockResolvedValue({
@@ -74,7 +74,7 @@ describe('MessagerieService', () => {
       service.deleteMessage('msg-1', {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Seul l\'auteur peut supprimer ce message');
   });
@@ -86,7 +86,7 @@ describe('MessagerieService', () => {
       nom: 'A',
       prenom: 'B',
       photoProfilUrl: null,
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -98,7 +98,7 @@ describe('MessagerieService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Impossible de créer une conversation directe avec soi-même');
@@ -111,7 +111,7 @@ describe('MessagerieService', () => {
       nom: 'A',
       prenom: 'B',
       photoProfilUrl: null,
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -123,7 +123,7 @@ describe('MessagerieService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Le titre est requis pour une conversation de groupe');
@@ -136,7 +136,7 @@ describe('MessagerieService', () => {
       nom: 'A',
       prenom: 'B',
       photoProfilUrl: null,
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     const result = await service.searchConversations(
@@ -144,7 +144,7 @@ describe('MessagerieService', () => {
       {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       },
     );
 
@@ -159,7 +159,7 @@ describe('MessagerieService', () => {
       nom: 'A',
       prenom: 'B',
       photoProfilUrl: null,
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findMessageById.mockResolvedValue({
       id: 'msg-1',
@@ -172,7 +172,7 @@ describe('MessagerieService', () => {
       service.pinMessage('msg-1', {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow("Impossible d'épingler un message supprimé");
   });

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import {
   ROLE_ADMIN,
-  ROLE_PROPRIETAIRE_LOUEUR,
+  ROLE_PROFESSIONNEL,
   ROLES_ADMIN_SUPER_ADMIN,
   ROLES_VEHICULE_CREATOR,
 } from '../../../common/constants/role-groups';
@@ -11,7 +11,7 @@ import { assertHasAnyRole } from '../../../common/utils/authorization.util';
 import { hasAnyRole, isOwnerOrHasAnyRole } from '../../../common/utils/role.util';
 import { AnnonceRecord, ReservationRecord } from '../location.models';
 
-const ROLES_CAN_CREATE_ANNONCE = [ROLE_PROPRIETAIRE_LOUEUR, ...ROLES_VEHICULE_CREATOR, ROLE_ADMIN] as const;
+const ROLES_CAN_CREATE_ANNONCE = [ROLE_PROFESSIONNEL, ...ROLES_VEHICULE_CREATOR, ROLE_ADMIN] as const;
 
 @Injectable()
 export class LocationAccessPolicy {

@@ -56,7 +56,7 @@ describe('LocationService', () => {
       email: 'a@test.com',
       prenom: 'A',
       nom: 'B',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'EXPERT' },
     } as never);
 
     await expect(
@@ -65,7 +65,7 @@ describe('LocationService', () => {
           vehiculeId: '11111111-1111-1111-1111-111111111111',
           tarifJournalier: 10000,
         },
-        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: null },
+        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'EXPERT' },
       ),
     ).rejects.toThrow('Accès refusé');
   });
@@ -76,7 +76,7 @@ describe('LocationService', () => {
       email: 'a@test.com',
       prenom: 'A',
       nom: 'B',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findAnnonceById.mockResolvedValue({
       id: 'ann-1',
@@ -84,7 +84,7 @@ describe('LocationService', () => {
       actif: false,
       tarifJournalier: 10000,
       annonceLocation: {},
-      proprietaire: { id: 'owner-1', email: 'owner@test.com', prenom: 'O', nom: 'W', typeUtilisateur: { nom: 'PROPRIETAIRE_LOUEUR' } },
+      proprietaire: { id: 'owner-1', email: 'owner@test.com', prenom: 'O', nom: 'W', typeUtilisateur: { nom: 'PROFESSIONNEL' } },
     } as never);
 
     const now = new Date();
@@ -98,7 +98,7 @@ describe('LocationService', () => {
           dateDebut: tomorrow.toISOString(),
           dateFin: afterTomorrow.toISOString(),
         },
-        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'ACHETEUR' },
+        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'UTILISATEUR' },
       ),
     ).rejects.toThrow('Annonce de location inactive');
   });

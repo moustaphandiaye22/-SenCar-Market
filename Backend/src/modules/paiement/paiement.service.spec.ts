@@ -68,7 +68,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     repository.findPaiementById.mockResolvedValue({
@@ -80,7 +80,7 @@ describe('PaiementService', () => {
       service.getPaiementById('pay-1', {
         userId: 'user-1',
         email: 'a@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });
@@ -89,7 +89,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
@@ -103,7 +103,7 @@ describe('PaiementService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Référence externe requise');
@@ -152,7 +152,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
@@ -169,7 +169,7 @@ describe('PaiementService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Libération possible uniquement pour un paiement escrow');
@@ -179,7 +179,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
@@ -198,7 +198,7 @@ describe('PaiementService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Fonds escrow déjà libérés');

@@ -67,7 +67,7 @@ describe('AvisService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Un avis existe déjà pour cette transaction');
@@ -95,7 +95,7 @@ describe('AvisService', () => {
         {
           userId: 'user-1',
           email: 'a@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Garage non trouvé');

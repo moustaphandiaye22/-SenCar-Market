@@ -32,7 +32,7 @@ export class GarageService {
 
   async createGarage(request: CreateGarageRequestDto, user: AuthenticatedUser): Promise<GarageResponseDto> {
     const current = await this.requireCurrentUser(user);
-    this.accessPolicy.assertHasAnyRole(current.typeUtilisateur?.nom, ['GARAGE', 'ADMIN']);
+    this.accessPolicy.assertHasAnyRole(current.typeUtilisateur?.nom, ['PROFESSIONNEL', 'ADMIN']);
 
     const nom = normalizeRequiredField(request.nom, 'nom', 'GARAGE_INVALID_FIELD');
     const adresse = normalizeRequiredField(request.adresse, 'adresse', 'GARAGE_INVALID_FIELD');

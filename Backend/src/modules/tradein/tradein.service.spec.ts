@@ -54,14 +54,14 @@ describe('TradeInService', () => {
       email: 'u@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
       service.getAllDemandes(0, 10, {
         userId: 'user-1',
         email: 'u@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });
@@ -72,7 +72,7 @@ describe('TradeInService', () => {
       email: 'u@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
@@ -93,7 +93,7 @@ describe('TradeInService', () => {
         {
           userId: 'user-1',
           email: 'u@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Le véhicule souhaité doit être différent du véhicule actuel');

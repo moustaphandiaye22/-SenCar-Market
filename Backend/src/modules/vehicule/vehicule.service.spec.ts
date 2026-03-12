@@ -52,7 +52,7 @@ describe('VehiculeService', () => {
   it('should forbid create for non vendeur/concessionnaire roles', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'EXPERT' },
     } as never);
 
     await expect(
@@ -76,7 +76,7 @@ describe('VehiculeService', () => {
   it('should reject vehicle creation with blank photo url', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'VENDEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -101,7 +101,7 @@ describe('VehiculeService', () => {
   it('should forbid reading non published vehicle for non owner non admin', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-2',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
@@ -113,7 +113,7 @@ describe('VehiculeService', () => {
       service.getVehiculeById('veh-1', {
         userId: 'user-2',
         email: 'buyer@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });
@@ -121,7 +121,7 @@ describe('VehiculeService', () => {
   it('should allow owner reading non published vehicle and increment views', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'VENDEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
@@ -155,7 +155,7 @@ describe('VehiculeService', () => {
     const result = await service.getVehiculeById('veh-1', {
       userId: 'user-1',
       email: 'seller@test.com',
-      typeUtilisateur: 'VENDEUR',
+      typeUtilisateur: 'UTILISATEUR',
     });
 
     expect(repository.updateVehicule).toHaveBeenCalledWith('veh-1', { vues: 11 });

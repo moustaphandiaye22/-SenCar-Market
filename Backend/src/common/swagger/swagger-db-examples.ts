@@ -71,7 +71,7 @@ export const loadSwaggerDbExamples = async (prisma: PrismaService): Promise<Swag
     pickFirstId(prisma.optionAssurance.findFirst({ select: { id: true } })),
     pickFirstId(
       prisma.utilisateur.findFirst({
-        where: { typeUtilisateur: { nom: { in: ['INSPECTEUR', 'ADMIN', 'MODERATEUR', 'SUPER_ADMIN'] } } },
+        where: { typeUtilisateur: { nom: { in: ['EXPERT', 'ADMIN', 'ADMIN', 'ADMIN'] } } },
         select: { id: true },
       }),
     ),
@@ -120,7 +120,7 @@ export const loadSwaggerDbExamples = async (prisma: PrismaService): Promise<Swag
     raison: 'Test Swagger',
     isTyping: true,
     type: 'SYSTEM',
-    typeAvis: 'ACHETEUR',
+    typeAvis: 'UTILISATEUR',
     typeEntite: 'AVIS',
     documentType: 'CARTE_GRISE',
     documentUrl: 'https://example.com/document.pdf',

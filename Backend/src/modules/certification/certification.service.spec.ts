@@ -63,14 +63,14 @@ describe('CertificationService', () => {
       email: 'u@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
       service.getAllDemandes(0, 10, {
         userId: 'user-1',
         email: 'u@test.com',
-        typeUtilisateur: 'ACHETEUR',
+        typeUtilisateur: 'UTILISATEUR',
       }),
     ).rejects.toThrow('Accès refusé');
   });
@@ -81,7 +81,7 @@ describe('CertificationService', () => {
       email: 'i@test.com',
       nom: 'Inspecteur',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'INSPECTEUR' },
+      typeUtilisateur: { nom: 'EXPERT' },
     } as never);
 
     await expect(
@@ -91,7 +91,7 @@ describe('CertificationService', () => {
         {
           userId: 'inspector-1',
           email: 'i@test.com',
-          typeUtilisateur: 'INSPECTEUR',
+          typeUtilisateur: 'EXPERT',
         },
       ),
     ).rejects.toThrow('Fichier PDF requis');
@@ -131,7 +131,7 @@ describe('CertificationService', () => {
       email: 'user2@test.com',
       nom: 'User 2',
       prenom: 'Other',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -149,7 +149,7 @@ describe('CertificationService', () => {
       email: 'i1@test.com',
       nom: 'Inspector 1',
       prenom: 'One',
-      typeUtilisateur: { nom: 'INSPECTEUR' },
+      typeUtilisateur: { nom: 'EXPERT' },
     } as never);
     repository.findInspectionById.mockResolvedValue({
       id: 'inspection-1',
@@ -178,7 +178,7 @@ describe('CertificationService', () => {
       service.getInspectionById('inspection-1', {
         userId: 'inspecteur-1',
         email: 'i1@test.com',
-        typeUtilisateur: 'INSPECTEUR',
+        typeUtilisateur: 'EXPERT',
       }),
     ).rejects.toThrow('Accès refusé');
   });

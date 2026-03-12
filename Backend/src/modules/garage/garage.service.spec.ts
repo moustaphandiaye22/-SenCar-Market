@@ -59,7 +59,7 @@ describe('GarageService', () => {
       email: 'user@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -73,7 +73,7 @@ describe('GarageService', () => {
         {
           userId: 'user-1',
           email: 'user@test.com',
-          typeUtilisateur: 'ACHETEUR',
+          typeUtilisateur: 'UTILISATEUR',
         },
       ),
     ).rejects.toThrow('Accès refusé');
@@ -89,7 +89,7 @@ describe('GarageService', () => {
       email: 'garage@test.com',
       nom: 'Garage',
       prenom: 'Owner',
-      typeUtilisateur: { nom: 'GARAGE' },
+      typeUtilisateur: { nom: 'PROFESSIONNEL' },
     } as never);
     repository.findGarageById.mockResolvedValue({
       id: 'garage-1',
@@ -128,7 +128,7 @@ describe('GarageService', () => {
       service.associateService(
         'garage-1',
         { serviceId: 'service-1' },
-        { userId: 'user-1', email: 'garage@test.com', typeUtilisateur: 'GARAGE' },
+        { userId: 'user-1', email: 'garage@test.com', typeUtilisateur: 'PROFESSIONNEL' },
       ),
     ).rejects.toThrow('Service inactif');
   });
@@ -139,7 +139,7 @@ describe('GarageService', () => {
       email: 'garage@test.com',
       nom: 'Garage',
       prenom: 'Owner',
-      typeUtilisateur: { nom: 'GARAGE' },
+      typeUtilisateur: { nom: 'PROFESSIONNEL' },
     } as never);
     repository.findGarageById.mockResolvedValue({
       id: 'garage-1',
@@ -167,7 +167,7 @@ describe('GarageService', () => {
       service.updateLogo(
         'garage-1',
         '   ',
-        { userId: 'user-1', email: 'garage@test.com', typeUtilisateur: 'GARAGE' },
+        { userId: 'user-1', email: 'garage@test.com', typeUtilisateur: 'PROFESSIONNEL' },
       ),
     ).rejects.toThrow('Champ requis invalide: logoUrl');
   });

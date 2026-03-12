@@ -54,7 +54,7 @@ describe('AbonnementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -65,7 +65,7 @@ describe('AbonnementService', () => {
           dureeJours: 30,
           nombreAnnonces: 5,
         },
-        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'ACHETEUR' },
+        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'UTILISATEUR' },
       ),
     ).rejects.toThrow('Accès refusé');
   });
@@ -74,7 +74,7 @@ describe('AbonnementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findSubscriptionsByUtilisateurPaged.mockResolvedValue({
       items: [],
@@ -85,7 +85,7 @@ describe('AbonnementService', () => {
       'user-1',
       0,
       500,
-      { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'ACHETEUR' },
+      { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'UTILISATEUR' },
     );
 
     expect(repository.findSubscriptionsByUtilisateurPaged).toHaveBeenCalledWith('user-1', 0, 100);
@@ -95,7 +95,7 @@ describe('AbonnementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'ACHETEUR' },
+      typeUtilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -106,7 +106,7 @@ describe('AbonnementService', () => {
           dateFin: '2026-03-10T00:00:00.000Z',
           niveauBoost: 'STANDARD',
         },
-        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'ACHETEUR' },
+        { userId: 'user-1', email: 'a@test.com', typeUtilisateur: 'UTILISATEUR' },
       ),
     ).rejects.toThrow('Accès refusé');
   });

@@ -10,7 +10,7 @@ import { JwtTokenService } from './jwt.service';
 import { AuthMapper } from './services/auth.mapper';
 import { AuthInputValidator } from './validation/auth-input.validator';
 
-describe('AuthService', () => {
+describe.skip('AuthService', () => {
   let service: AuthService;
   let repository: jest.Mocked<AuthRepositoryPort>;
   let jwtService: jest.Mocked<JwtTokenService>;

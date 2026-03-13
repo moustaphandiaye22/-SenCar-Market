@@ -11,7 +11,10 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiExtraModels,
@@ -30,19 +33,34 @@ import type { AuthenticatedUser } from '../../common/types/authenticated-user.ty
 import { ApiErrorResponseDto } from '../auth/dto/api-error-response.dto';
 
 import { CreateVehiculeRequestDto } from './dto/create-vehicule-request.dto';
+import { UpdateVehiculeRequestDto } from './dto/update-vehicule-request.dto';
 import { VehiculeFilterDto } from './dto/vehicule-filter.dto';
 import { VehiculeResponseDto } from './dto/vehicule-response.dto';
 import { VehiculeService } from './vehicule.service';
 
+type UploadedFileLike = { originalname?: string; buffer: Buffer };
+
 @ApiTags('Véhicules')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @ApiExtraModels(PaginatedResponseDto, VehiculeResponseDto)
 @Controller('vehicules')
 export class VehiculeController {
   constructor(private readonly vehiculeService: VehiculeService) {}
 
+  @Post('upload')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('photos'))
+  @ApiOperation({ summary: 'Uploader des photos pour un véhicule' })
+  @ApiResponse({ status: 200, description: 'Photos uploadees avec succès' })
+  async uploadPhotos(
+    @UploadedFiles() files: UploadedFileLike[],
+  ): Promise<string[]> {
+    return this.vehiculeService.uploadPhotos(files);
+  }
+
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer une annonce de véhicule' })
   @ApiResponse({ status: 200, type: VehiculeResponseDto, description: 'Véhicule créé avec succès' })
@@ -78,6 +96,8 @@ export class VehiculeController {
   }
 
   @Get('moi')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir mes véhicules' })
   @ApiResponse({ status: 200, type: VehiculeResponseDto, isArray: true, description: 'Mes véhicules récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -87,6 +107,8 @@ export class VehiculeController {
   }
 
   @Get('favoris/moi')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir mes favoris' })
   @ApiResponse({ status: 200, type: VehiculeResponseDto, isArray: true, description: 'Favoris récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -96,6 +118,8 @@ export class VehiculeController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtenir un véhicule par ID' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: VehiculeResponseDto, description: 'Véhicule trouvé' })
@@ -109,7 +133,28 @@ export class VehiculeController {
     return this.vehiculeService.getVehiculeById(id, user);
   }
 
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mettre à jour un véhicule' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, type: VehiculeResponseDto, description: 'Véhicule mis à jour avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Véhicule non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
+  updateVehicule(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() request: UpdateVehiculeRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<VehiculeResponseDto> {
+    return this.vehiculeService.updateVehicule(id, request, user);
+  }
+
   @Put(':id/publish')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Publier un véhicule' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
   @ApiResponse({ status: 200, type: VehiculeResponseDto, description: 'Véhicule publié avec succès' })
@@ -125,6 +170,8 @@ export class VehiculeController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un véhicule' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -141,6 +188,8 @@ export class VehiculeController {
   }
 
   @Post(':id/favoris')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ajouter aux favoris' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -161,6 +210,8 @@ export class VehiculeController {
   }
 
   @Delete(':id/favoris')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Retirer des favoris' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -175,7 +226,33 @@ export class VehiculeController {
     await this.vehiculeService.removeFromFavoris(id, user);
   }
 
+  @Get('references/marques')
+  @ApiOperation({ summary: 'Obtenir la liste des marques' })
+  getAllMarques(): Promise<{ id: string; nom: string }[]> {
+    return this.vehiculeService.getAllMarques();
+  }
+
+  @Get('references/marques/:id/modeles')
+  @ApiOperation({ summary: 'Obtenir les modèles d\'une marque' })
+  getModelesByMarque(@Param('id', new ParseUUIDPipe()) id: string): Promise<{ id: string; nom: string }[]> {
+    return this.vehiculeService.getModelesByMarque(id);
+  }
+
+  @Get('references/carburants')
+  @ApiOperation({ summary: 'Obtenir la liste des carburants' })
+  getAllCarburants(): Promise<{ id: string; nom: string }[]> {
+    return this.vehiculeService.getAllCarburants();
+  }
+
+  @Get('references/boite-vitesses')
+  @ApiOperation({ summary: 'Obtenir la liste des boîtes de vitesses' })
+  getAllBoiteVitesses(): Promise<{ id: string; nom: string }[]> {
+    return this.vehiculeService.getAllBoiteVitesses();
+  }
+
   @Post(':id/boost')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Booster un véhicule' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })

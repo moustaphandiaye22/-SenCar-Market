@@ -8,7 +8,13 @@ export class VehiculeResponseDto {
   marque!: string | null;
 
   @ApiProperty()
+  marqueId!: string | null;
+
+  @ApiProperty()
   modele!: string | null;
+
+  @ApiProperty()
+  modeleId!: string | null;
 
   @ApiProperty()
   anneeFabrication!: number | null;
@@ -20,7 +26,13 @@ export class VehiculeResponseDto {
   carburant!: string | null;
 
   @ApiProperty()
+  carburantId!: string | null;
+
+  @ApiProperty()
   boiteVitesse!: string | null;
+
+  @ApiProperty()
+  boiteVitesseId!: string | null;
 
   @ApiProperty()
   couleur!: string | null;

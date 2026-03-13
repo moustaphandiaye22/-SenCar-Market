@@ -73,6 +73,17 @@ export class AuthRepository implements AuthRepositoryPort {
     });
   }
 
+  findLatestOtpByEmail(email: string, type: OtpType): Promise<OtpCodeRecord | null> {
+    return this.prisma.otpCode.findFirst({
+      where: {
+        utilisateur: { email },
+        type,
+        utilise: false,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async deleteUnusedOtpByType(utilisateurId: string, type: OtpType): Promise<void> {
     await this.prisma.otpCode.deleteMany({
       where: {

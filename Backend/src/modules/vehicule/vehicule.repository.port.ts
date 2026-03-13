@@ -16,8 +16,15 @@ export interface VehiculeRepositoryPort {
 
   findMarqueById(id: string): Promise<{ id: string } | null>;
   findModeleById(id: string): Promise<{ id: string } | null>;
+  findOrCreateMarque(nom: string): Promise<{ id: string }>;
+  findOrCreateModele(marqueId: string, nom: string): Promise<{ id: string }>;
   findCarburantById(id: string): Promise<{ id: string } | null>;
   findBoiteVitesseById(id: string): Promise<{ id: string } | null>;
+
+  findAllMarques(): Promise<{ id: string; nom: string }[]>;
+  findModelesByMarque(marqueId: string): Promise<{ id: string; nom: string }[]>;
+  findAllCarburants(): Promise<{ id: string; nom: string }[]>;
+  findAllBoiteVitesses(): Promise<{ id: string; nom: string }[]>;
 
   createVehicule(data: CreateVehiculeInput): Promise<VehiculeRecord>;
   createPhoto(data: CreateVehiculePhotoInput): Promise<VehiculePhotoRecord>;
@@ -28,6 +35,7 @@ export interface VehiculeRepositoryPort {
     orderBy: Record<string, 'asc' | 'desc'>;
     marqueId?: string;
     modeleId?: string;
+    q?: string;
   }): Promise<{ total: number; items: VehiculeRecord[] }>;
 
   findByProprietaireId(proprietaireId: string): Promise<VehiculeRecord[]>;

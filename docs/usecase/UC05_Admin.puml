@@ -1,0 +1,178 @@
+@startuml UC05_Admin
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — ADMIN\nSen-Car-Market
+
+' ── ACTEURS ─────────────────────────────────────────────
+actor "ADMIN" as A
+actor "Systeme\n(Notification)" as SYS
+
+note top of A
+  L'ADMIN a acces complet a
+  toutes les fonctionnalites
+  de la plateforme, plus les
+  fonctions d'administration
+end note
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "S'authentifier\n(JWT)" as UC_AUTH
+    usecase "Voir son profil\nadmin" as UC_ME
+  }
+
+  package "Tableau de Bord" {
+    usecase "Consulter les\nstatistiques" as UC_STATS
+    usecase "Statistiques\nutilisateurs" as UC_STATU
+    usecase "Statistiques\nvehicules" as UC_STATV
+    usecase "Statistiques\nfinancieres" as UC_STATF
+    usecase "Statistiques\ncertifications" as UC_STATC
+  }
+
+  package "Gestion des Utilisateurs" {
+    usecase "Lister les\nutilisateurs" as UC_ALLUSERS
+    usecase "Voir un\nutilisateur" as UC_GETUSER
+    usecase "Suspendre\nun utilisateur" as UC_SUS
+    usecase "Saisir raison\nde suspension" as UC_RAISUS
+    usecase "Reactiver\nun utilisateur" as UC_REACT
+    usecase "Bannir\nun utilisateur" as UC_BAN
+    usecase "Saisir raison\nde bannissement" as UC_RAIBAN
+    usecase "Modifier le role\nd'un utilisateur" as UC_ROLE
+    usecase "Selectionner\nnouveau role" as UC_SELROL
+  }
+
+  package "Moderation des Annonces" {
+    usecase "Voir toutes\nles annonces" as UC_ANNALL
+    usecase "Valider\nune annonce" as UC_ANNVAL
+    usecase "Desactiver\nune annonce" as UC_ANNDES
+    usecase "Supprimer\nune annonce" as UC_ANNDEL
+  }
+
+  package "Validation Garages" {
+    usecase "Voir garages\nen attente" as UC_PENGAR
+    usecase "Valider\nun garage" as UC_VGAR
+    usecase "Rejeter\nun garage" as UC_REJGAR
+  }
+
+  package "Supervision Certification" {
+    usecase "Voir toutes\nles demandes" as UC_ALLDEM
+    usecase "Attribuer\nun inspecteur" as UC_ASINSP
+    usecase "Verifier disponibilite\ninspecteur" as UC_CHKINSP
+    usecase "Mettre a jour\nle statut demande" as UC_STATDEM
+    usecase "Supprimer\nune inspection" as UC_DINSP
+    usecase "Generer\nle badge certifie" as UC_BADGE
+    usecase "Verifier resultat\nd'inspection" as UC_VERRESU
+  }
+
+  package "Finance et Transactions" {
+    usecase "Voir toutes\nles transactions" as UC_TRANALL
+    usecase "Voir transactions\nd'un utilisateur" as UC_USTRAN
+    usecase "Effectuer\nun remboursement" as UC_REFUND
+    usecase "Saisir raison\ndu remboursement" as UC_RAIREF
+    usecase "Voir total\ndes commissions" as UC_COMMI
+  }
+
+  package "Plans d'Abonnement" {
+    usecase "Creer\nun plan" as UC_CPLAN
+    usecase "Definir tarifs\net durees" as UC_TARIFD
+    usecase "Modifier\nun plan" as UC_UPLAN
+    usecase "Desactiver\nun plan" as UC_DPLAN
+  }
+
+  package "Notifications" {
+    usecase "Notifier tous\nles utilisateurs" as UC_NOTIFALL
+    usecase "Notifier\nun groupe" as UC_NOTIFGRP
+    usecase "Saisir titre\net message" as UC_NOTIFCONT
+    usecase "Selectionner\ndestinataires" as UC_NOTIFDES
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+A --> UC_ME
+A --> UC_STATS
+A --> UC_ALLUSERS
+A --> UC_ANNALL
+A --> UC_PENGAR
+A --> UC_ALLDEM
+A --> UC_TRANALL
+A --> UC_COMMI
+A --> UC_CPLAN
+A --> UC_NOTIFALL
+
+SYS --> UC_NOTIFALL
+
+' ── RELATIONS include / extend ───────────────────────────
+' Authentification
+UC_ME       ..> UC_AUTH : <<include>>
+UC_STATS    ..> UC_AUTH : <<include>>
+UC_ALLUSERS ..> UC_AUTH : <<include>>
+UC_ANNALL   ..> UC_AUTH : <<include>>
+UC_PENGAR   ..> UC_AUTH : <<include>>
+UC_ALLDEM   ..> UC_AUTH : <<include>>
+UC_TRANALL  ..> UC_AUTH : <<include>>
+UC_COMMI    ..> UC_AUTH : <<include>>
+UC_CPLAN    ..> UC_AUTH : <<include>>
+UC_NOTIFALL ..> UC_AUTH : <<include>>
+
+' Tableau de bord
+UC_STATS ..> UC_STATU : <<include>>
+UC_STATS ..> UC_STATV : <<include>>
+UC_STATS ..> UC_STATF : <<include>>
+UC_STATS ..> UC_STATC : <<include>>
+
+' Gestion utilisateurs
+UC_GETUSER ..> UC_ALLUSERS : <<extend>>
+UC_SUS     ..> UC_ALLUSERS : <<extend>>
+UC_BAN     ..> UC_ALLUSERS : <<extend>>
+UC_ROLE    ..> UC_ALLUSERS : <<extend>>
+UC_SUS     ..> UC_RAISUS   : <<include>>
+UC_BAN     ..> UC_RAIBAN   : <<include>>
+UC_REACT   ..> UC_SUS      : <<extend>>
+UC_ROLE    ..> UC_SELROL   : <<include>>
+
+' Moderation annonces
+UC_ANNVAL  ..> UC_ANNALL : <<extend>>
+UC_ANNDES  ..> UC_ANNALL : <<extend>>
+UC_ANNDEL  ..> UC_ANNALL : <<extend>>
+
+' Garages
+UC_VGAR   ..> UC_PENGAR : <<extend>>
+UC_REJGAR ..> UC_PENGAR : <<extend>>
+
+' Certification
+UC_ASINSP  ..> UC_ALLDEM  : <<extend>>
+UC_STATDEM ..> UC_ALLDEM  : <<extend>>
+UC_BADGE   ..> UC_ALLDEM  : <<extend>>
+UC_ASINSP  ..> UC_CHKINSP : <<include>>
+UC_BADGE   ..> UC_VERRESU : <<include>>
+UC_DINSP   ..> UC_STATDEM : <<extend>>
+
+' Finance
+UC_USTRAN  ..> UC_TRANALL : <<extend>>
+UC_REFUND  ..> UC_TRANALL : <<extend>>
+UC_REFUND  ..> UC_RAIREF  : <<include>>
+
+' Abonnements
+UC_CPLAN   ..> UC_TARIFD : <<include>>
+UC_UPLAN   ..> UC_CPLAN  : <<extend>>
+UC_DPLAN   ..> UC_CPLAN  : <<extend>>
+
+' Notifications
+UC_NOTIFALL  ..> UC_NOTIFCONT : <<include>>
+UC_NOTIFGRP  ..> UC_NOTIFALL  : <<extend>>
+UC_NOTIFGRP  ..> UC_NOTIFDES  : <<include>>
+
+@enduml

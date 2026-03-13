@@ -15,6 +15,11 @@ export class VehiculeFilterDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @Type(() => Number)
   @Min(0)
   page?: number = 0;

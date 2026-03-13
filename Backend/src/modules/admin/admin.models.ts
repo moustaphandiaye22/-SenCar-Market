@@ -18,6 +18,10 @@ export type AdminUserRecord = {
 export type VehiculeRecord = {
   id: string;
   proprietaireId: string;
+  marqueId: string | null;
+  modeleId: string | null;
+  carburantId: string | null;
+  boiteVitesseId: string | null;
   statut: string;
   marque: { nom: string | null } | null;
   modele: { nom: string | null } | null;

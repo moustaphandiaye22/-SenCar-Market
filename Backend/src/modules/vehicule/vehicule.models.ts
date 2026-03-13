@@ -29,11 +29,24 @@ export type CreateVehiculePhotoInput = {
 };
 
 export type UpdateVehiculeInput = Partial<{
-  vues: number;
+  marque: { connect: { id: string } };
+  modele: { connect: { id: string } };
+  anneeFabrication: number;
+  kilometrage: number;
+  carburant: { connect: { id: string } };
+  boiteVitesse: { connect: { id: string } };
+  couleur: string;
+  prixVente: number;
+  description: string;
+  numeroVin: string;
+  immatriculation: string;
+  prixNegociable: boolean;
+  certifie: boolean;
   statut: string;
   estBoost: boolean;
   boostDebut: Date;
   boostFin: Date;
+  vues: number;
   nombreFavoris: number;
 }>;
 
@@ -44,6 +57,10 @@ export type VehiculePhotoRecord = { url: string };
 export type VehiculeRecord = {
   id: string;
   proprietaireId: string;
+  marqueId: string | null;
+  modeleId: string | null;
+  carburantId: string | null;
+  boiteVitesseId: string | null;
   anneeFabrication: number | null;
   kilometrage: number | null;
   couleur: string | null;

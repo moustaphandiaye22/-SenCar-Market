@@ -28,6 +28,7 @@ export type AuthUserWithTypeRecord = AuthUserRecord & {
 export type OtpCodeRecord = {
   id: string;
   code: string;
+  type: OtpType;
   tentatives: number;
 };
 

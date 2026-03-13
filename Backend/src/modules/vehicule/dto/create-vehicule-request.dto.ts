@@ -12,12 +12,14 @@ import {
 
 export class CreateVehiculeRequestDto {
   @ApiProperty()
-  @IsUUID()
-  marqueId!: string;
+  @IsString()
+  @IsNotEmpty()
+  marque!: string;
 
   @ApiProperty()
-  @IsUUID()
-  modeleId!: string;
+  @IsString()
+  @IsNotEmpty()
+  modele!: string;
 
   @ApiProperty()
   @Type(() => Number)

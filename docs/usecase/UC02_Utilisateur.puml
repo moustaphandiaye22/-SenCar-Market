@@ -1,0 +1,211 @@
+@startuml UC02_Utilisateur
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — UTILISATEUR\nSen-Car-Market
+
+' ── ACTEURS ─────────────────────────────────────────────
+actor "Visiteur"    as V
+actor "UTILISATEUR" as U
+
+' ── GENERALISATION ──────────────────────────────────────
+' UTILISATEUR specialise Visiteur (herite de tous ses UC)
+U --|> V
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "S'authentifier\n(JWT)" as UC_AUTH
+    usecase "Voir son profil" as UC_ME
+    usecase "Modifier\nle profil" as UC_UPROFIL
+    usecase "Changer le\nmot de passe" as UC_CHGPWD
+    usecase "Verifier ancien\nmot de passe" as UC_VERPWD
+    usecase "Rafraichir\nle token JWT" as UC_REFRESH
+  }
+
+  package "Annonces Vehicules" {
+    usecase "Creer une\nannonce vehicule" as UC_CVEH
+    usecase "Saisir infos\ndu vehicule" as UC_VEHINFOS
+    usecase "Publier\nl'annonce" as UC_PUBVEH
+    usecase "Booster\nl'annonce" as UC_BOOST
+    usecase "Selectionner\nperiode de boost" as UC_BOOSTPRD
+    usecase "Supprimer\nl'annonce" as UC_DELVEH
+    usecase "Voir mes\nannonces" as UC_MYVEH
+    usecase "Gerer\nles favoris" as UC_FAVS
+    usecase "Voir mes\nfavoris" as UC_MYFAVS
+  }
+
+  package "Location de Vehicules" {
+    usecase "Reserver\nun vehicule" as UC_CRES
+    usecase "Verifier\nles disponibilites" as UC_CHKDISPO
+    usecase "Confirmer\net payer" as UC_CONFPAY
+    usecase "Annuler\nune reservation" as UC_CANRES
+    usecase "Voir mes\nreservations" as UC_MESRES
+  }
+
+  package "Messagerie" {
+    usecase "Creer une\nconversation" as UC_CCONV
+    usecase "Envoyer\nun message" as UC_SMSG
+    usecase "Consulter\nles messages" as UC_GMSG
+    usecase "Marquer\ncomme lu" as UC_RMSG
+    usecase "Supprimer\nun message" as UC_DMSG
+    usecase "Epingler\nun message" as UC_PMSG
+    usecase "Quitter\nune conversation" as UC_LCONV
+  }
+
+  package "Avis et Notes" {
+    usecase "Deposer\nun avis" as UC_CAVIS
+    usecase "Verifier transaction\ncomme eligible" as UC_VERTRANS
+    usecase "Consulter\nles avis" as UC_GAVIS
+    usecase "Signaler\nun avis" as UC_SAVIS
+    usecase "Voir note\nmoyenne" as UC_MOYAV
+  }
+
+  package "Certification Vehicule" {
+    usecase "Creer demande\nde certification" as UC_CDEM
+    usecase "Payer la\ncertification" as UC_PAYCERT
+    usecase "Modifier\nla demande" as UC_UDEM
+    usecase "Annuler\nla demande" as UC_DDEM
+    usecase "Suivre ma\ndemande" as UC_SUIVDEM
+  }
+
+  package "Trade-In (Reprise)" {
+    usecase "Creer demande\ntrade-in" as UC_CTRADIN
+    usecase "Modifier\nla demande" as UC_UTRADIN
+    usecase "Supprimer\nla demande" as UC_DTRADIN
+    usecase "Suivre\nma demande" as UC_STRADIN
+  }
+
+  package "Assurance" {
+    usecase "Souscrire\none assurance" as UC_SOUSASS
+    usecase "Payer la\nsouscription" as UC_PAYASS
+    usecase "Generer\nun contrat" as UC_CONTRAT
+    usecase "Deposer\nun document" as UC_DOCASS
+  }
+
+  package "Abonnements et Boosts" {
+    usecase "Consulter\nles plans" as UC_GPLANS
+    usecase "Souscrire\na un plan" as UC_SUB
+    usecase "Payer\nl'abonnement" as UC_PAYSUB
+    usecase "Renouveler\nl'abonnement" as UC_RENEW
+    usecase "Annuler\nl'abonnement" as UC_CANCEL_SUB
+    usecase "Voir mon\nabonnement actif" as UC_MYSUB
+  }
+
+  package "Paiement" {
+    usecase "Initier\nun paiement" as UC_INITPAY
+    usecase "Choisir moyen\nde paiement" as UC_PAYMOD
+    usecase "Verifier statut\ndu paiement" as UC_CHKPAY
+    usecase "Voir historique\ntransactions" as UC_MYPAY
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+U --> UC_ME
+U --> UC_CVEH
+U --> UC_MYVEH
+U --> UC_MYFAVS
+U --> UC_CCONV
+U --> UC_SMSG
+U --> UC_CAVIS
+U --> UC_GAVIS
+U --> UC_CDEM
+U --> UC_CRES
+U --> UC_MESRES
+U --> UC_CTRADIN
+U --> UC_SOUSASS
+U --> UC_GPLANS
+U --> UC_SUB
+U --> UC_INITPAY
+U --> UC_MYPAY
+
+' ── RELATIONS include / extend ───────────────────────────
+' Authentification (include sur toutes actions protegees)
+UC_ME       ..> UC_AUTH : <<include>>
+UC_CVEH     ..> UC_AUTH : <<include>>
+UC_MYVEH    ..> UC_AUTH : <<include>>
+UC_MYFAVS   ..> UC_AUTH : <<include>>
+UC_CCONV    ..> UC_AUTH : <<include>>
+UC_CAVIS    ..> UC_AUTH : <<include>>
+UC_CDEM     ..> UC_AUTH : <<include>>
+UC_CRES     ..> UC_AUTH : <<include>>
+UC_CTRADIN  ..> UC_AUTH : <<include>>
+UC_SOUSASS  ..> UC_AUTH : <<include>>
+UC_SUB      ..> UC_AUTH : <<include>>
+
+' Profil
+UC_UPROFIL ..> UC_ME : <<extend>>
+UC_CHGPWD  ..> UC_ME : <<extend>>
+UC_REFRESH ..> UC_AUTH : <<extend>>
+UC_CHGPWD  ..> UC_VERPWD : <<include>>
+
+' Vehicules
+UC_CVEH   ..> UC_VEHINFOS : <<include>>
+UC_CVEH   ..> UC_PUBVEH   : <<include>>
+UC_BOOST  ..> UC_PUBVEH   : <<extend>>
+UC_BOOST  ..> UC_BOOSTPRD : <<include>>
+UC_BOOST  ..> UC_AUTH     : <<include>>
+UC_DELVEH ..> UC_AUTH     : <<include>>
+UC_FAVS   ..> UC_AUTH     : <<include>>
+UC_FAVS   ..> UC_MYFAVS   : <<extend>>
+
+' Messagerie
+UC_SMSG ..> UC_CCONV : <<include>>
+UC_GMSG ..> UC_CCONV : <<include>>
+UC_RMSG ..> UC_GMSG  : <<extend>>
+UC_DMSG ..> UC_SMSG  : <<extend>>
+UC_PMSG ..> UC_SMSG  : <<extend>>
+UC_LCONV ..> UC_AUTH : <<include>>
+
+' Avis
+UC_CAVIS ..> UC_VERTRANS : <<include>>
+UC_SAVIS ..> UC_GAVIS    : <<extend>>
+
+' Certification
+UC_PAYCERT ..> UC_CDEM    : <<include>>
+UC_PAYCERT ..> UC_INITPAY : <<include>>
+UC_UDEM    ..> UC_CDEM    : <<extend>>
+UC_DDEM    ..> UC_CDEM    : <<extend>>
+UC_SUIVDEM ..> UC_CDEM    : <<extend>>
+
+' Location
+UC_CRES   ..> UC_CHKDISPO : <<include>>
+UC_CRES   ..> UC_CONFPAY  : <<include>>
+UC_CONFPAY ..> UC_INITPAY : <<include>>
+UC_CANRES ..> UC_CRES     : <<extend>>
+
+' Trade-In
+UC_UTRADIN ..> UC_CTRADIN : <<extend>>
+UC_DTRADIN ..> UC_CTRADIN : <<extend>>
+UC_STRADIN ..> UC_CTRADIN : <<extend>>
+
+' Assurance
+UC_SOUSASS ..> UC_PAYASS  : <<include>>
+UC_PAYASS  ..> UC_INITPAY : <<include>>
+UC_CONTRAT ..> UC_SOUSASS : <<extend>>
+UC_DOCASS  ..> UC_SOUSASS : <<extend>>
+
+' Abonnements
+UC_SUB      ..> UC_PAYSUB   : <<include>>
+UC_PAYSUB   ..> UC_INITPAY  : <<include>>
+UC_RENEW    ..> UC_SUB      : <<extend>>
+UC_CANCEL_SUB ..> UC_SUB    : <<extend>>
+UC_MYSUB    ..> UC_AUTH     : <<include>>
+
+' Paiement
+UC_INITPAY ..> UC_PAYMOD : <<include>>
+UC_CHKPAY  ..> UC_INITPAY : <<extend>>
+
+@enduml

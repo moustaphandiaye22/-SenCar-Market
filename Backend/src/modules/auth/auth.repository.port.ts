@@ -24,6 +24,7 @@ export interface AuthRepositoryPort {
   updateUser(id: string, data: UpdateUserInput): Promise<AuthUserRecord>;
 
   findLatestValidOtp(utilisateurId: string, type: OtpType, now: Date): Promise<OtpCodeRecord | null>;
+  findLatestOtpByEmail(email: string, type: OtpType): Promise<OtpCodeRecord | null>;
   deleteUnusedOtpByType(utilisateurId: string, type: OtpType): Promise<void>;
   createOtp(data: CreateOtpInput): Promise<OtpCodeRecord>;
   updateOtp(id: string, data: UpdateOtpInput): Promise<OtpCodeRecord>;

@@ -1,0 +1,93 @@
+@startuml UC01_Visiteur
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — VISITEUR\nSen-Car-Market
+
+' ── ACTEUR ──────────────────────────────────────────────
+actor "Visiteur" as V
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "S'inscrire" as UC_REG
+    usecase "Verifier email\n(code OTP)" as UC_VOTP
+    usecase "Renvoyer\nle code OTP" as UC_ROTP
+    usecase "Se connecter" as UC_LOGIN
+    usecase "Saisir identifiants\n(email + mot de passe)" as UC_CRED
+    usecase "Mot de passe\noublie" as UC_FORGOT
+    usecase "Recevoir OTP\npar email" as UC_SENOTP
+    usecase "Reinitialiser\nle mot de passe" as UC_RESET
+    usecase "Saisir nouveau\nmot de passe" as UC_NEWPWD
+  }
+
+  package "Catalogue Vehicules" {
+    usecase "Rechercher\ndes vehicules" as UC_SVEH
+    usecase "Appliquer\ndes filtres" as UC_FILTER
+    usecase "Consulter\nun vehicule" as UC_GVEH
+  }
+
+  package "Trade-In (Reprise vehicule)" {
+    usecase "Estimer\nun vehicule" as UC_ESTIM
+    usecase "Saisir les\ncaracteristiques" as UC_CARACT
+  }
+
+  package "Assurance" {
+    usecase "Consulter les\nproduits assurance" as UC_GPROD
+    usecase "Calculer prix\nd'assurance" as UC_CALCPRIX
+    usecase "Selectionner\ndes options" as UC_SELOPT
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+V --> UC_REG
+V --> UC_LOGIN
+V --> UC_FORGOT
+V --> UC_SVEH
+V --> UC_GVEH
+V --> UC_ESTIM
+V --> UC_GPROD
+V --> UC_CALCPRIX
+
+' ── RELATIONS include / extend ───────────────────────────
+' Inscription
+UC_REG    ..> UC_VOTP   : <<include>>
+UC_ROTP  ..> UC_VOTP   : <<extend>>
+
+' Connexion
+UC_LOGIN   ..> UC_CRED  : <<include>>
+
+' Mot de passe oublie
+UC_FORGOT  ..> UC_SENOTP : <<include>>
+UC_FORGOT  ..> UC_RESET  : <<include>>
+UC_RESET   ..> UC_NEWPWD : <<include>>
+
+' Recherche
+UC_SVEH    ..> UC_FILTER : <<extend>>
+
+' Estimation
+UC_ESTIM   ..> UC_CARACT : <<include>>
+
+' Assurance
+UC_CALCPRIX ..> UC_GPROD  : <<include>>
+UC_CALCPRIX ..> UC_SELOPT : <<extend>>
+
+note bottom of UC_LOGIN
+  La connexion reussie genere
+  un token JWT utilise par
+  tous les acteurs authentifies
+end note
+
+@enduml

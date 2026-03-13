@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -15,6 +18,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
 
+import { AUTH_REPOSITORY_PORT, AuthRepositoryPort } from './auth.repository.port';
 import { AuthService } from './auth.service';
 import { ApiErrorResponseDto } from './dto/api-error-response.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -33,7 +37,28 @@ import { UtilisateurResponseDto } from './dto/utilisateur-response.dto';
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject(AUTH_REPOSITORY_PORT) private readonly repository: AuthRepositoryPort,
+  ) {}
+
+  /**
+   * TEST - Retrieve OTP code directly from the database.
+   * Useful for testing the full auth flow without a real email.
+   */
+  @Get('dev/otp')
+  @HttpCode(HttpStatus.OK)
+  async devGetOtp(@Query('email') email: string): Promise<{ code: string; type: string; email: string }> {
+    const user = await this.repository.findUserByEmail(email);
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+    const otp = await this.repository.findLatestOtpByEmail(email, 'VERIFICATION_EMAIL');
+    if (!otp) {
+      throw new ForbiddenException('No pending OTP found for this email');
+    }
+    return { code: otp.code, type: otp.type, email };
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.OK)

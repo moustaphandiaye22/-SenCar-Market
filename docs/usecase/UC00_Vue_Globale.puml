@@ -1,0 +1,111 @@
+@startuml UC00_Vue_Globale
+top to bottom direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — Vue Globale\nSen-Car-Market (Tous Acteurs)
+
+' ── ACTEURS ──────────────────────────────────────────────
+actor "Visiteur"       as V
+actor "UTILISATEUR"    as U
+actor "PROFESSIONNEL"  as P
+actor "EXPERT"         as E
+actor "ADMIN"          as A
+
+' ── GENERALISATION / SPECIALISATION ─────────────────────
+' UTILISATEUR specialise Visiteur (hérite de ses UC)
+U --|> V
+' PROFESSIONNEL specialise UTILISATEUR (hérite de ses UC)
+P --|> U
+' EXPERT et ADMIN : roles specialises independants
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "Gestion\nauthentification" as AUTH
+  }
+
+  package "Vehicules" {
+    usecase "Annonces\nvehicules" as VEH
+  }
+
+  package "Location" {
+    usecase "Location\nvehicules" as LOC
+  }
+
+  package "Messagerie" {
+    usecase "Messagerie" as MSG
+  }
+
+  package "Avis et Notes" {
+    usecase "Avis et Notes" as AVI
+  }
+
+  package "Trade-In" {
+    usecase "Reprise\nvehicule" as TI
+  }
+
+  package "Certification" {
+    usecase "Certification\nvehicule" as CERT
+  }
+
+  package "Assurance" {
+    usecase "Assurance" as ASS
+  }
+
+  package "Abonnements" {
+    usecase "Plans et Boosts" as ABO
+  }
+
+  package "Paiement" {
+    usecase "Paiement" as PAY
+  }
+
+  package "Administration" {
+    usecase "Administration\nplateforme" as ADM
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+V --> AUTH
+V --> VEH
+V --> TI
+V --> ASS
+
+U --> MSG
+U --> AVI
+U --> CERT
+U --> ABO
+U --> PAY
+U --> LOC
+
+P --> LOC
+P --> ASS
+P --> TI
+
+E --> CERT
+
+A --> ADM
+A --> CERT
+A --> ABO
+A --> PAY
+A --> VEH
+
+note bottom of E
+  Roles EXPERT et ADMIN :
+  acteurs specialises independants,
+  sans generalisation avec UTILISATEUR
+end note
+
+@enduml

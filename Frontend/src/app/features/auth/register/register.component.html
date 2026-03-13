@@ -1,0 +1,150 @@
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="flex justify-center">
+      <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+        <lucide-angular [img]="icons.UserPlus" class="text-primary-600 block" size="24"></lucide-angular>
+      </div>
+    </div>
+    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      Créer un compte
+    </h2>
+    <p class="mt-2 text-center text-sm text-gray-600">
+      Ou
+      <a routerLink="/login" class="font-medium text-primary-600 hover:text-primary-500">
+        connectez-vous si vous avez déjà un compte
+      </a>
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
+    <div class="bg-white py-8 px-4 shadow-sm sm:rounded-xl border border-gray-100 sm:px-10">
+      
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="mb-6 rounded-md bg-red-50 p-4 border border-red-100">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <lucide-angular [img]="icons.AlertCircle" size="20" class="text-red-400 block"></lucide-angular>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">{{ errorMessage }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <form class="space-y-6 flex flex-col pt-4" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        
+        <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+          <div>
+            <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-angular [img]="icons.User" size="18" class="text-gray-400 block"></lucide-angular>
+              </div>
+              <input id="prenom" type="text" formControlName="prenom" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors" [ngClass]="{'border-red-300': registerForm.get('prenom')?.invalid && registerForm.get('prenom')?.touched}">
+            </div>
+          </div>
+
+          <div>
+            <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-angular [img]="icons.User" size="18" class="text-gray-400 block"></lucide-angular>
+              </div>
+              <input id="nom" type="text" formControlName="nom" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors" [ngClass]="{'border-red-300': registerForm.get('nom')?.invalid && registerForm.get('nom')?.touched}">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Adresse email</label>
+          <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-angular [img]="icons.Mail" size="18" class="text-gray-400 block"></lucide-angular>
+            </div>
+            <input id="email" type="email" formControlName="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors" [ngClass]="{'border-red-300': registerForm.get('email')?.invalid && registerForm.get('email')?.touched}">
+          </div>
+        </div>
+
+        <div>
+          <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone (+221...)</label>
+          <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-angular [img]="icons.Phone" size="18" class="text-gray-400 block"></lucide-angular>
+            </div>
+            <input id="telephone" type="tel" formControlName="telephone" placeholder="+221770000000" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors" [ngClass]="{'border-red-300': registerForm.get('telephone')?.invalid && registerForm.get('telephone')?.touched}">
+          </div>
+          <p *ngIf="registerForm.get('telephone')?.invalid && registerForm.get('telephone')?.touched" class="mt-1 text-xs text-red-500">
+            Format attendu: +221 suivi de 9 chiffres (ex: +221771234567)
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+          <div>
+            <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse (Optionnel)</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-angular [img]="icons.MapPin" size="18" class="text-gray-400 block"></lucide-angular>
+              </div>
+              <input id="adresse" type="text" formControlName="adresse" placeholder="Dakar, Sénégal" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors">
+            </div>
+          </div>
+          <div>
+            <label for="dateDeNaissance" class="block text-sm font-medium text-gray-700">Date de naissance (Optionnel)</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-angular [img]="icons.Calendar" size="18" class="text-gray-400 block"></lucide-angular>
+              </div>
+              <input id="dateDeNaissance" type="date" formControlName="dateDeNaissance" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors">
+            </div>
+          </div>
+        </div>
+        <div>
+           <label for="typeUtilisateur" class="block text-sm font-medium text-gray-700">Type de compte</label>
+           <div class="mt-1 relative rounded-md shadow-sm flex gap-4 mt-2">
+              <label class="flex items-center gap-2 cursor-pointer p-3 border border-gray-200 rounded-lg flex-1 hover:bg-gray-50 transition-colors" [ngClass]="{'border-primary-500 ring-1 ring-primary-500 bg-primary-50': registerForm.get('typeUtilisateur')?.value === 'UTILISATEUR'}">
+                <input type="radio" formControlName="typeUtilisateur" value="UTILISATEUR" class="text-primary-600 focus:ring-primary-500 border-gray-300 hidden">
+                <lucide-angular [img]="icons.User" size="20" [ngClass]="registerForm.get('typeUtilisateur')?.value === 'UTILISATEUR' ? 'text-primary-600' : 'text-gray-500'"></lucide-angular>
+                <span class="font-medium text-sm text-gray-900">Particulier</span>
+              </label>
+
+              <label class="flex items-center gap-2 cursor-pointer p-3 border border-gray-200 rounded-lg flex-1 hover:bg-gray-50 transition-colors" [ngClass]="{'border-primary-500 ring-1 ring-primary-500 bg-primary-50': registerForm.get('typeUtilisateur')?.value === 'PROFESSIONNEL'}">
+                <input type="radio" formControlName="typeUtilisateur" value="PROFESSIONNEL" class="text-primary-600 focus:ring-primary-500 border-gray-300 hidden">
+                <lucide-angular [img]="icons.Briefcase" size="20" [ngClass]="registerForm.get('typeUtilisateur')?.value === 'PROFESSIONNEL' ? 'text-primary-600' : 'text-gray-500'"></lucide-angular>
+                <span class="font-medium text-sm text-gray-900">Professionnel</span>
+              </label>
+           </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+          <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-angular [img]="icons.Lock" size="18" class="text-gray-400 block"></lucide-angular>
+            </div>
+            <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="motDePasse" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md py-2.5 px-3 border outline-none transition-colors" [ngClass]="{'border-red-300': registerForm.get('motDePasse')?.invalid && registerForm.get('motDePasse')?.touched}">
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <button type="button" (click)="togglePassword()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <lucide-angular [img]="showPassword ? icons.EyeOff : icons.Eye" size="18" class="block"></lucide-angular>
+              </button>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-500">
+            Le mot de passe doit faire au moins 8 caractères.
+          </p>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" [disabled]="isLoading" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all">
+            <span *ngIf="isLoading">Inscription en cours...</span>
+            <span *ngIf="!isLoading">Créer mon compte</span>
+          </button>
+        </div>
+        
+        <p class="text-xs text-center text-gray-500 mt-4">
+          En vous inscrivant, vous acceptez nos <a href="#" class="text-primary-600">Conditions d'utilisation</a> et notre <a href="#" class="text-primary-600">Politique de confidentialité</a>.
+        </p>
+      </form>
+      
+    </div>
+  </div>
+</div>

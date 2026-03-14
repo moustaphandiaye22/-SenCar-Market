@@ -48,4 +48,5 @@ export interface VehiculeRepositoryPort {
   findFavorisByUtilisateur(utilisateurId: string): Promise<VehiculeFavoriRecord[]>;
   isFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null>;
   countFavoris(vehiculeId: string): Promise<number>;
+  updateVehiculePhotos(vehiculeId: string, photosUrls: string[]): Promise<void>;
 }

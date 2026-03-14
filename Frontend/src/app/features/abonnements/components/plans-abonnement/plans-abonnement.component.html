@@ -1,0 +1,77 @@
+<div class="max-w-7xl mx-auto px-4 py-16">
+  <div class="text-center mb-16">
+    <h1 class="text-4xl font-extrabold text-gray-900 mb-4">Boostez votre visibilité</h1>
+    <p class="text-xl text-gray-500 max-w-2xl mx-auto">Choisissez le plan qui correspond à vos besoins et vendez vos véhicules plus rapidement.</p>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center p-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+  </div>
+
+  <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div *ngFor="let plan of plans" 
+         [class.border-primary-500]="plan.estVedette"
+         [class.shadow-2xl]="plan.estVedette"
+         [class.scale-105]="plan.estVedette"
+         class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm relative flex flex-col transition-all hover:shadow-xl">
+      
+      <div *ngIf="plan.estVedette" class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+        Le plus populaire
+      </div>
+
+      <div class="mb-8">
+        <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-6">
+          <lucide-angular [img]="plan.nom.includes('Pro') ? icons.Crown : icons.Zap" size="24"></lucide-angular>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ plan.nom }}</h3>
+        <p class="text-gray-500 text-sm h-12">{{ plan.description }}</p>
+      </div>
+
+      <div class="mb-8">
+        <div class="flex items-baseline gap-1">
+          <span class="text-4xl font-extrabold text-gray-900">{{ plan.prixMensuel | number }}</span>
+          <span class="text-gray-500">FCFA / mois</span>
+        </div>
+      </div>
+
+      <ul class="space-y-4 mb-10 flex-1">
+        <li class="flex items-center gap-3 text-sm text-gray-600">
+          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
+          <span>{{ plan.nombreAnnonces }} annonces incluses</span>
+        </li>
+        <li *ngIf="plan.nombreBoostsGratuits > 0" class="flex items-center gap-3 text-sm text-gray-600">
+          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
+          <span>{{ plan.nombreBoostsGratuits }} boosts gratuits / mois</span>
+        </li>
+        <li *ngIf="plan.estCertifie" class="flex items-center gap-3 text-sm text-gray-600">
+          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
+          <span>Badge "Vendeur Certifié"</span>
+        </li>
+        <li *ngFor="let item of plan.avantages?.split(',')" class="flex items-center gap-3 text-sm text-gray-600">
+          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
+          <span>{{ item }}</span>
+        </li>
+      </ul>
+
+      <button 
+        (click)="subscribe(plan)"
+        [class.bg-primary-600]="plan.estVedette"
+        [class.text-white]="plan.estVedette"
+        [class.bg-gray-100]="!plan.estVedette"
+        [class.text-gray-900]="!plan.estVedette"
+        [class.hover:bg-primary-700]="plan.estVedette"
+        [class.hover:bg-gray-200]="!plan.estVedette"
+        class="w-full py-4 rounded-xl font-bold transition-all shadow-lg shadow-gray-100 flex items-center justify-center gap-2">
+        {{ currentSub?.abonnementId === plan.id ? 'Plan actuel' : 'Choisir ce plan' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-20 text-center bg-gray-50 rounded-3xl p-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Besoin d'une solution sur mesure ?</h2>
+    <p class="text-gray-500 mb-8 max-w-xl mx-auto">Vous êtes un grand garage ou une agence ? Contactez notre équipe commerciale pour des tarifs adaptés.</p>
+    <button class="text-primary-600 font-bold border-2 border-primary-600 px-8 py-3 rounded-xl hover:bg-primary-600 hover:text-white transition-all">
+      Contacter le service commercial
+    </button>
+  </div>
+</div>

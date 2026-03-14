@@ -30,6 +30,38 @@ export const routes: Routes = [
     loadChildren: () => import('./features/vehicles/vehicles.routes').then(m => m.VEHICLE_ROUTES)
   },
   {
+    path: 'garages',
+    loadChildren: () => import('./features/garages/garages.routes').then(m => m.GARAGE_ROUTES)
+  },
+  {
+    path: 'reprise',
+    loadChildren: () => import('./features/trade-in/trade-in.routes').then(m => m.TRADE_IN_ROUTES)
+  },
+  {
+    path: 'locations',
+    loadChildren: () => import('./features/rentals/rentals.routes').then(m => m.RENTAL_ROUTES)
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./features/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
+  {
+    path: 'messages',
+    loadChildren: () => import('./features/messagerie/messagerie.routes').then(m => m.MESSAGERIE_ROUTES)
+  },
+  {
+    path: 'abonnements',
+    loadChildren: () => import('./features/abonnements/abonnements.routes').then(m => m.ABONNEMENT_ROUTES)
+  },
+  {
+    path: 'assurance',
+    loadChildren: () => import('./features/assurance/assurance.routes').then(m => m.ASSURANCE_ROUTES)
+  },
+  {
+    path: 'paiement',
+    loadChildren: () => import('./features/paiement/paiement.routes').then(m => m.PAIEMENT_ROUTES)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

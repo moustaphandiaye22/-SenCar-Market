@@ -171,6 +171,46 @@ export class TradeInRepository implements TradeInRepositoryPort {
     });
   }
 
+  async findOrCreateVehicule(
+    proprietaireId: string,
+    marqueNom: string,
+    modeleNom: string,
+    annee: number,
+    kilometrage: number,
+  ): Promise<string> {
+    const existingMarque = await this.prisma.marque.findFirst({
+      where: { nom: marqueNom },
+    });
+    const marque =
+      existingMarque ??
+      (await this.prisma.marque.create({
+        data: { nom: marqueNom },
+      }));
+
+    const existingModele = await this.prisma.modele.findFirst({
+      where: { nom: modeleNom, marqueId: marque.id },
+    });
+    const modele =
+      existingModele ??
+      (await this.prisma.modele.create({
+        data: { nom: modeleNom, marqueId: marque.id },
+      }));
+
+    const vehicule = await this.prisma.vehicule.create({
+      data: {
+        id: randomUUID(),
+        proprietaireId,
+        marqueId: marque.id,
+        modeleId: modele.id,
+        anneeFabrication: annee,
+        kilometrage,
+        statut: 'TRADE_IN_DRAFT',
+      },
+    });
+
+    return vehicule.id;
+  }
+
   newId(): string {
     return randomUUID();
   }

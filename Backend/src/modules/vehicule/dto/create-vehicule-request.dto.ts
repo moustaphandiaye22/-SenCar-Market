@@ -32,11 +32,11 @@ export class CreateVehiculeRequestDto {
   kilometrage!: number;
 
   @ApiProperty()
-  @IsUUID()
+  @IsUUID('all')
   carburantId!: string;
 
   @ApiProperty()
-  @IsUUID()
+  @IsUUID('all')
   boiteVitesseId!: string;
 
   @ApiProperty()
@@ -75,6 +75,45 @@ export class CreateVehiculeRequestDto {
   @Type(() => Boolean)
   @IsBoolean()
   certifie?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  titre?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @Min(1)
+  nombrePortes?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @Min(1)
+  nombrePlaces?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cylindree?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  puissanceFiscale?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  estGarantie?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  garantieMois?: number;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()

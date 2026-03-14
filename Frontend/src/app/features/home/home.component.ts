@@ -4,6 +4,7 @@ import { LucideAngularModule, Search, Tag, MapPin, Gauge, ShieldCheck, Heart } f
 import { RouterLink } from '@angular/router';
 import { VehiculeService } from '../../core/services/vehicule.service';
 import { VehiculeResponse } from '../../core/models/vehicule.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -34,5 +35,11 @@ export class HomeComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  getImageUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${environment.apiUrl.replace('/api', '')}${url}`;
   }
 }

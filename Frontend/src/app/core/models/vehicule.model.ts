@@ -18,6 +18,13 @@ export interface VehiculeResponse {
   statut: string;
   prixNegociable: boolean | null;
   certifie: boolean | null;
+  titre: string | null;
+  nombrePortes: number | null;
+  nombrePlaces: number | null;
+  cylindree: string | null;
+  puissanceFiscale: string | null;
+  estGarantie: boolean | null;
+  garantieMois: number | null;
   photosUrls: string[];
   estBoost: boolean | null;
   boostDebut: Date | null;

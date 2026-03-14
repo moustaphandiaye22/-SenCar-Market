@@ -73,6 +73,13 @@ export class VehiculeService {
       ...(immatriculation !== undefined ? { immatriculation } : {}),
       prixNegociable: request.prixNegociable ?? false,
       certifie: request.certifie ?? false,
+      titre: request.titre,
+      nombrePortes: request.nombrePortes,
+      nombrePlaces: request.nombrePlaces,
+      cylindree: request.cylindree,
+      puissanceFiscale: request.puissanceFiscale,
+      estGarantie: request.estGarantie ?? false,
+      garantieMois: request.garantieMois,
       statut,
       estBoost: false,
       vues: 0,
@@ -211,12 +218,25 @@ export class VehiculeService {
       updateData.immatriculation = normalizeOptionalField(request.immatriculation);
     if (request.prixNegociable !== undefined) updateData.prixNegociable = request.prixNegociable;
     if (request.certifie !== undefined) updateData.certifie = request.certifie;
+    if (request.titre !== undefined) updateData.titre = request.titre;
+    if (request.nombrePortes !== undefined) updateData.nombrePortes = request.nombrePortes;
+    if (request.nombrePlaces !== undefined) updateData.nombrePlaces = request.nombrePlaces;
+    if (request.cylindree !== undefined) updateData.cylindree = request.cylindree;
+    if (request.puissanceFiscale !== undefined) updateData.puissanceFiscale = request.puissanceFiscale;
+    if (request.estGarantie !== undefined) updateData.estGarantie = request.estGarantie;
+    if (request.garantieMois !== undefined) updateData.garantieMois = request.garantieMois;
 
     if (request.enregistrerEnBrouillon !== undefined) {
       updateData.statut = request.enregistrerEnBrouillon ? 'BROUILLON' : 'PUBLIE';
     }
 
     await this.repository.updateVehicule(id, updateData);
+
+    // Gérer les photos si fournies
+    if (request.photosUrls !== undefined) {
+      const photosUrls = this.inputValidator.normalizePhotosUrls(request.photosUrls);
+      await this.repository.updateVehiculePhotos(id, photosUrls);
+    }
 
     const updated = await this.mustFindVehicule(id);
     const isFavori = Boolean(await this.repository.isFavori(currentUser.id, id));

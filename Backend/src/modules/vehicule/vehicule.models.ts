@@ -18,6 +18,13 @@ export type CreateVehiculeInput = {
   estBoost: boolean;
   vues: number;
   nombreFavoris: number;
+  titre?: string;
+  nombrePortes?: number;
+  nombrePlaces?: number;
+  cylindree?: string;
+  puissanceFiscale?: string;
+  estGarantie?: boolean;
+  garantieMois?: number;
 };
 
 export type CreateVehiculePhotoInput = {
@@ -48,6 +55,13 @@ export type UpdateVehiculeInput = Partial<{
   boostFin: Date;
   vues: number;
   nombreFavoris: number;
+  titre: string;
+  nombrePortes: number;
+  nombrePlaces: number;
+  cylindree: string;
+  puissanceFiscale: string;
+  estGarantie: boolean;
+  garantieMois: number;
 }>;
 
 export type VehiculeOwnerRecord = { id: string; nom: string | null };
@@ -76,6 +90,13 @@ export type VehiculeRecord = {
   boostFin: Date | null;
   vues: number | null;
   nombreFavoris: number | null;
+  titre: string | null;
+  nombrePortes: number | null;
+  nombrePlaces: number | null;
+  cylindree: string | null;
+  puissanceFiscale: string | null;
+  estGarantie: boolean | null;
+  garantieMois: number | null;
   createdAt: Date | null;
   marque: SimpleNamedRecord | null;
   modele: SimpleNamedRecord | null;

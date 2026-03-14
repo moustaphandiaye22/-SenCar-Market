@@ -57,7 +57,26 @@ export class VehiculeResponseDto {
 
   @ApiProperty()
   certifie!: boolean | null;
+  @ApiProperty()
+  titre!: string | null;
 
+  @ApiProperty()
+  nombrePortes!: number | null;
+
+  @ApiProperty()
+  nombrePlaces!: number | null;
+
+  @ApiProperty()
+  cylindree!: string | null;
+
+  @ApiProperty()
+  puissanceFiscale!: string | null;
+
+  @ApiProperty()
+  estGarantie!: boolean | null;
+
+  @ApiProperty()
+  garantieMois!: number | null;
   @ApiProperty({ type: [String] })
   photosUrls!: string[];
 

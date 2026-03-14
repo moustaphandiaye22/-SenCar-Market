@@ -1,0 +1,110 @@
+<div class="max-w-4xl mx-auto p-6">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Mon Portefeuille</h1>
+    <p class="text-gray-500">Gérez votre solde et vos transactions en toute sécurité.</p>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center p-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+  </div>
+
+  <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Balance Card -->
+    <div class="md:col-span-2 bg-primary-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-primary-200">
+      <div class="relative z-10">
+        <div class="flex items-center gap-3 mb-8 opacity-80">
+          <lucide-angular [img]="icons.Wallet" size="20"></lucide-angular>
+          <span class="font-medium">Solde disponible</span>
+        </div>
+        <div class="text-5xl font-bold mb-8">
+          {{ portefeuille?.solde || '0' | number }} <span class="text-2xl font-normal opacity-80">FCFA</span>
+        </div>
+        <div class="flex gap-4">
+          <button class="bg-white text-primary-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-100 transition-all">
+            <lucide-angular [img]="icons.Plus" size="18"></lucide-angular>
+            Recharger
+          </button>
+          <button class="bg-primary-500 text-white border border-primary-400 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-400 transition-all">
+            Retirer
+          </button>
+        </div>
+      </div>
+      <!-- Decorative circle -->
+      <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-500 rounded-full opacity-50"></div>
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary-400 rounded-full opacity-30"></div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
+      <div>
+        <div class="text-gray-500 text-sm mb-1">Solde bloqué (Escrow)</div>
+        <div class="text-2xl font-bold text-orange-600 mb-4">{{ portefeuille?.soldeBloque || '0' | number }} FCFA</div>
+        <div class="text-gray-400 text-xs">Ces fonds sont sécurisés jusqu'à la validation de vos transactions.</div>
+      </div>
+      <div class="pt-4 border-t border-gray-50 mt-4">
+        <a href="#" class="text-primary-600 text-sm font-semibold flex items-center gap-2">
+          En savoir plus
+          <lucide-angular [img]="icons.Plus" size="14"></lucide-angular>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div *ngIf="!isLoading" class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="p-6 border-b border-gray-50 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <lucide-angular [img]="icons.History" class="text-primary-600"></lucide-angular>
+        Dernières transactions
+      </h2>
+      <button class="text-sm text-primary-600 font-semibold hover:underline">Voir tout</button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gray-50 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+            <th class="px-6 py-4">Transaction</th>
+            <th class="px-6 py-4">Date</th>
+            <th class="px-6 py-4">Statut</th>
+            <th class="px-6 py-4 text-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let tx of transactions" class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div [class]="tx.type === 'DEBIT' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'" 
+                     class="w-10 h-10 rounded-full flex items-center justify-center">
+                  <lucide-angular [img]="tx.type === 'DEBIT' ? icons.ArrowUpRight : icons.ArrowDownLeft" size="18"></lucide-angular>
+                </div>
+                <div>
+                  <div class="font-bold text-gray-900 text-sm">{{ tx.libelle || 'Rechargement' }}</div>
+                  <div class="text-xs text-gray-400">{{ tx.methode || 'Wave' }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ tx.dateCreation | date:'dd MMM yyyy, HH:mm' }}
+            </td>
+            <td class="px-6 py-4">
+              <span [class]="tx.statut === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'"
+                    class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                {{ tx.statut }}
+              </span>
+            </td>
+            <td [class]="tx.type === 'DEBIT' ? 'text-red-600' : 'text-green-600'" 
+                class="px-6 py-4 text-right font-bold text-sm">
+              {{ tx.type === 'DEBIT' ? '-' : '+' }} {{ tx.montant | number }} FCFA
+            </td>
+          </tr>
+          <tr *ngIf="transactions.length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic">
+              Aucune transaction récente.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

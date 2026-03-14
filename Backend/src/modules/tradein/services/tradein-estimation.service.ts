@@ -36,11 +36,11 @@ export class TradeInEstimationService {
     const anneeVehicule = vehicule.anneeFabrication ?? currentYear;
 
     const coeffEtat = this.getCoefficientEtat(etatVehicule);
-    const depreciationKm = km * 0.0001;
-    const ageVehicule = currentYear - anneeVehicule;
-    const depreciationAge = Math.min(ageVehicule * 0.1, 0.7);
+    const depreciationKm = Math.min(km * 0.000002, 0.4);
+    const ageVehicule = Math.max(0, currentYear - anneeVehicule);
+    const depreciationAge = Math.min(ageVehicule * 0.05, 0.6);
 
-    const coeffTotal = coeffEtat * (1 - depreciationKm) * (1 - depreciationAge);
+    const coeffTotal = Math.max(0.1, coeffEtat * (1 - depreciationKm) * (1 - depreciationAge));
     const prixEstime = this.round2(prixBase * coeffTotal);
     const prixMinimum = this.round2(prixEstime * 0.85);
     const prixMaximum = this.round2(prixEstime * 1.15);

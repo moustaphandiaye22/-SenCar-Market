@@ -37,7 +37,7 @@ export const securityHeadersMiddleware = (
       'Permissions-Policy',
       'camera=(), microphone=(), geolocation=(), payment=()',
     );
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
 
     // HSTS only in production

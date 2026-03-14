@@ -1,0 +1,101 @@
+<div *ngIf="authService.currentUser$ | async as user">
+  <div class="flex items-center gap-3 mb-6">
+    <lucide-angular [img]="icons.RefreshCcw" class="text-primary-600" size="32"></lucide-angular>
+    <div>
+      <h2 class="text-2xl font-black text-neutral-900">Dossiers de Reprise (Trade-In)</h2>
+      <p class="text-neutral-500 text-sm">
+        {{ (user.role === 'ADMIN' || user.role === 'EXPERT') ? 'Analysez, estimez et répondez aux demandes de reprise des clients.' : 'Suivez l\'avancement de vos demandes de reprise.' }}
+      </p>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center p-8">
+    <div class="w-8 h-8 rounded-full border-4 border-primary-500 border-t-transparent animate-spin"></div>
+  </div>
+
+  <div *ngIf="!isLoading && demandes.length === 0" class="text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col items-center">
+    <lucide-angular [img]="icons.Info" size="48" class="text-neutral-300 mb-4"></lucide-angular>
+    <p class="text-neutral-500 font-medium">Aucun dossier de reprise pour l'instant.</p>
+  </div>
+
+  <div class="grid gap-6">
+    <div *ngFor="let demande of demandes" class="bg-white border flex flex-col lg:flex-row justify-between border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+
+      <div class="mb-4 lg:mb-0 lg:w-3/5">
+        <div class="flex flex-wrap items-center gap-3 mb-3">
+          <h3 class="text-xl font-bold text-neutral-900">{{ demande.vehiculeActuelDescription || 'Véhicule non renseigné' }}</h3>
+
+          <span *ngIf="demande.statut === 'EN_ATTENTE'" class="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-lg uppercase">Soumise</span>
+          <span *ngIf="demande.statut === 'EN_ANALYSE'" class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-lg uppercase">Analyse Expert</span>
+          <span *ngIf="demande.statut === 'OFFRE_PROPOSEE'" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">Offre Faite</span>
+          <span *ngIf="demande.statut === 'ACCEPTE'" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-lg uppercase">Rendez-vous Conclu</span>
+          <span *ngIf="demande.statut === 'REFUSE'" class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg uppercase">Refusé</span>
+
+          <span *ngIf="demande.estNotifie" class="text-green-500" title="Client Notifié">
+            <lucide-angular [img]="icons.Bell" size="16"></lucide-angular>
+          </span>
+        </div>
+
+        <p *ngIf="demande.etatVehicule" class="text-neutral-600 font-medium text-sm mb-2 uppercase tracking-wide">
+          État: {{ demande.etatVehicule }} | Km: {{ demande.kilometrageActuel ?? 'N/A' }} km
+        </p>
+
+        <div class="bg-neutral-50 px-4 py-3 rounded-xl border border-neutral-100 mb-3">
+          <p class="text-xs text-neutral-500 font-bold uppercase tracking-wide mb-1">Estimation Algorithmique</p>
+          <p class="font-black text-lg text-neutral-900">{{ demande.prixEstime ? (demande.prixEstime + ' CFA') : 'Non calculée' }}</p>
+        </div>
+
+        <div *ngIf="demande.statut === 'OFFRE_PROPOSEE' || demande.statut === 'ACCEPTE'" class="bg-primary-50 px-4 py-3 rounded-xl border border-primary-100">
+          <p class="text-xs text-primary-600 font-bold uppercase tracking-wide mb-1">Offre Finale Proposée</p>
+          <p class="font-black text-xl text-primary-900">{{ demande.prixPropose }} CFA</p>
+        </div>
+
+        <p *ngIf="demande.commentaireAdmin" class="mt-3 text-sm text-neutral-500 italic border-l-2 border-neutral-200 pl-3">
+          Note Admin: {{ demande.commentaireAdmin }}
+        </p>
+      </div>
+
+      <!-- Expert/Admin Actions -->
+      <div *ngIf="user.role === 'ADMIN' || user.role === 'EXPERT'" class="flex flex-col items-start lg:items-end gap-2 lg:w-2/5 justify-center">
+
+        <button *ngIf="demande.statut === 'EN_ATTENTE'" (click)="updateStatut(demande.id, 'EN_ANALYSE')"
+          class="w-full sm:w-auto px-4 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.Eye" size="18"></lucide-angular>
+          Prendre en Analyse
+        </button>
+
+        <button *ngIf="demande.statut === 'EN_ANALYSE'" (click)="validerDemande(demande.id)"
+          class="w-full sm:w-auto px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.Check" size="18"></lucide-angular>
+          Soumettre Offre Finale
+        </button>
+
+        <button *ngIf="demande.statut === 'OFFRE_PROPOSEE' && !demande.estNotifie" (click)="notifierClient(demande.id)"
+          class="w-full sm:w-auto px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.Bell" size="18"></lucide-angular>
+          Notifier le client
+        </button>
+
+        <button *ngIf="demande.statut !== 'REFUSE' && demande.statut !== 'ACCEPTE'" (click)="updateStatut(demande.id, 'REFUSE')"
+          class="w-full sm:w-auto px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.X" size="18"></lucide-angular>
+          Refuser le dossier
+        </button>
+      </div>
+
+      <!-- Client/User Actions -->
+      <div *ngIf="user.role !== 'ADMIN' && user.role !== 'EXPERT'" class="flex flex-col items-start lg:items-end gap-2 lg:w-2/5 justify-center">
+        <button *ngIf="demande.statut === 'OFFRE_PROPOSEE'" (click)="updateStatut(demande.id, 'ACCEPTE')"
+          class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-600/20">
+          <lucide-angular [img]="icons.Check" size="18"></lucide-angular>
+          J'accepte cette offre
+        </button>
+        <button *ngIf="demande.statut === 'OFFRE_PROPOSEE'" (click)="updateStatut(demande.id, 'REFUSE')"
+          class="w-full sm:w-auto px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.X" size="18"></lucide-angular>
+          Je refuse (Annuler)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

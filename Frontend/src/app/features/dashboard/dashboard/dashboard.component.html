@@ -1,0 +1,86 @@
+<div class="min-h-screen bg-neutral-50 py-12 px-4" *ngIf="user$ | async as user">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-10 text-center">
+      <h1 class="text-4xl font-black text-neutral-900 mb-2">Mon Tableau de Bord</h1>
+      <p class="text-neutral-500 font-medium">Bienvenue sur votre espace personnel. <span class="bg-primary-100 text-primary-700 font-bold px-2 py-1 rounded-md ml-2">{{ user.role }}</span></p>
+    </div>
+
+    <!-- Tabs/Navigation -->
+    <div class="bg-white rounded-2xl p-2 mb-8 shadow-sm border border-neutral-100 flex flex-wrap gap-2 overflow-x-auto">
+      
+      <!-- Admin Only Tabs -->
+      <button *ngIf="user.role === 'ADMIN'"
+              (click)="setTab('garages')"
+              [class.bg-primary-50]="activeTab === 'garages'"
+              [class.text-primary-600]="activeTab === 'garages'"
+              [class.text-neutral-500]="activeTab !== 'garages'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.ShieldCheck" size="18"></lucide-angular>
+        Garages à Valider
+      </button>
+
+      <!-- Pro Only Tabs -->
+      <button *ngIf="user.role === 'PROFESSIONNEL' || user.role === 'ADMIN'"
+              (click)="setTab('services')"
+              [class.bg-primary-50]="activeTab === 'services'"
+              [class.text-primary-600]="activeTab === 'services'"
+              [class.text-neutral-500]="activeTab !== 'services'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.Settings" size="18"></lucide-angular>
+        Mes Garages & Services
+      </button>
+
+      <!-- Reservations -->
+      <button (click)="setTab('reservations')"
+              [class.bg-primary-50]="activeTab === 'reservations'"
+              [class.text-primary-600]="activeTab === 'reservations'"
+              [class.text-neutral-500]="activeTab !== 'reservations'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.Key" size="18"></lucide-angular>
+        Locations & Réservations
+      </button>
+
+      <!-- Trade-In Requests (Admin or Expert or User) -->
+      <button (click)="setTab('tradein')"
+              [class.bg-primary-50]="activeTab === 'tradein'"
+              [class.text-primary-600]="activeTab === 'tradein'"
+              [class.text-neutral-500]="activeTab !== 'tradein'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.RefreshCcw" size="18"></lucide-angular>
+        Dossiers de Reprise
+      </button>
+
+      <!-- Profile -->
+      <button (click)="setTab('profile')"
+              [class.bg-primary-50]="activeTab === 'profile'"
+              [class.text-primary-600]="activeTab === 'profile'"
+              [class.text-neutral-500]="activeTab !== 'profile'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.User" size="18"></lucide-angular>
+        Mon Profil
+      </button>
+
+      <!-- Notifications -->
+      <button (click)="setTab('notifications')"
+              [class.bg-primary-50]="activeTab === 'notifications'"
+              [class.text-primary-600]="activeTab === 'notifications'"
+              [class.text-neutral-500]="activeTab !== 'notifications'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50 relative">
+        <lucide-angular [img]="icons.Bell" size="18"></lucide-angular>
+        Notifications
+      </button>
+    </div>
+
+    <!-- Active Tab Content -->
+    <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-neutral-200/50 border border-neutral-100">
+      
+      <app-admin-garages *ngIf="activeTab === 'garages'"></app-admin-garages>
+      <app-pro-services *ngIf="activeTab === 'services'"></app-pro-services>
+      <app-pro-reservations *ngIf="activeTab === 'reservations'"></app-pro-reservations>
+      <app-trade-in-requests *ngIf="activeTab === 'tradein'"></app-trade-in-requests>
+      <app-profile *ngIf="activeTab === 'profile'"></app-profile>
+      <app-notification-list *ngIf="activeTab === 'notifications'"></app-notification-list>
+
+    </div>
+  </div>
+</div>

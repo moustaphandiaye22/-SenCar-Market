@@ -262,4 +262,16 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   async countFavoris(vehiculeId: string): Promise<number> {
     return this.prisma.vehiculeFavori.count({ where: { vehiculeId } });
   }
+
+  async updateVehiculePhotos(vehiculeId: string, photosUrls: string[]): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.photoVehicule.deleteMany({ where: { vehiculeId } }),
+      this.prisma.photoVehicule.createMany({
+        data: photosUrls.map((url) => ({
+          vehiculeId,
+          url,
+        })),
+      }),
+    ]);
+  }
 }

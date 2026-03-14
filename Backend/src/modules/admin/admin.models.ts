@@ -43,6 +43,13 @@ export type VehiculeRecord = {
   boostFin: Date | null;
   vues: number | null;
   nombreFavoris: number | null;
+  titre: string | null;
+  nombrePortes: number | null;
+  nombrePlaces: number | null;
+  cylindree: string | null;
+  puissanceFiscale: string | null;
+  estGarantie: boolean | null;
+  garantieMois: number | null;
   createdAt: Date | null;
 };
 

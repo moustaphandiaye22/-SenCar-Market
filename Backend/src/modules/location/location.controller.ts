@@ -32,12 +32,12 @@ import { LocationService } from './location.service';
 
 @ApiTags('Locations')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('locations')
 export class LocationController {
   constructor(private readonly service: LocationService) {}
 
   @Post('annonces')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer une annonce de location' })
   @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, description: 'Annonce de location créée avec succès' })
@@ -53,6 +53,7 @@ export class LocationController {
   }
 
   @Put('annonces/:id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mettre à jour une annonce' })
   @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, description: 'Annonce mise à jour avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
@@ -69,6 +70,7 @@ export class LocationController {
   }
 
   @Delete('annonces/:id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer une annonce' })
   @ApiResponse({ status: 204, description: 'Annonce supprimée avec succès' })
@@ -92,6 +94,7 @@ export class LocationController {
   }
 
   @Get('mes-annonces')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mes annonces' })
   @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, isArray: true, description: 'Mes annonces récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -110,6 +113,7 @@ export class LocationController {
   }
 
   @Post('annonces/:id/activer')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activer une annonce' })
   @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, description: 'Annonce activée avec succès' })
@@ -125,6 +129,7 @@ export class LocationController {
   }
 
   @Post('annonces/:id/desactiver')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Désactiver une annonce' })
   @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, description: 'Annonce désactivée avec succès' })
@@ -140,6 +145,7 @@ export class LocationController {
   }
 
   @Post('reservations')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Créer une réservation' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, description: 'Réservation créée avec succès' })
@@ -155,6 +161,7 @@ export class LocationController {
   }
 
   @Put('reservations/:id/statut')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mettre à jour le statut d\'une réservation' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, description: 'Statut mis à jour avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Statut invalide' })
@@ -171,6 +178,7 @@ export class LocationController {
   }
 
   @Post('reservations/:id/annuler')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Annuler une réservation' })
   @ApiResponse({
@@ -193,6 +201,7 @@ export class LocationController {
   }
 
   @Get('reservations/:id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtenir une réservation par ID' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, description: 'Réservation trouvée' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -207,6 +216,7 @@ export class LocationController {
   }
 
   @Get('mes-reservations')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mes réservations' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, isArray: true, description: 'Mes réservations récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -216,6 +226,7 @@ export class LocationController {
   }
 
   @Get('annonces/:id/reservations')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Réservations d\'une annonce' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, isArray: true, description: 'Réservations récupérées avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -230,6 +241,7 @@ export class LocationController {
   }
 
   @Post('annonces/:id/disponibilites')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ajouter des disponibilités' })
   @ApiResponse({ status: 200, type: DisponibiliteLocationResponseDto, isArray: true, description: 'Disponibilités ajoutées avec succès' })
@@ -256,6 +268,7 @@ export class LocationController {
   }
 
   @Delete('annonces/:id/disponibilites')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer les disponibilités' })
   @ApiResponse({ status: 204, description: 'Disponibilités supprimées avec succès' })
@@ -271,6 +284,7 @@ export class LocationController {
   }
 
   @Get('reservations/:id/historique')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Historique des statuts' })
   @ApiResponse({ status: 200, type: HistoriqueStatutResponseDto, isArray: true, description: 'Historique récupéré avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -285,6 +299,7 @@ export class LocationController {
   }
 
   @Put('reservations/:id/statut-avec-historique')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mettre à jour le statut avec historique' })
   @ApiResponse({ status: 200, type: ReservationLocationResponseDto, description: 'Statut mis à jour avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Statut invalide' })

@@ -1,10 +1,26 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, IsUUID, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class EstimationRequestDto {
-  @ApiProperty({ format: 'uuid' })
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
   @IsUUID()
-  vehiculeId!: string;
+  vehiculeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  marque?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  modele?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  anneeFabrication?: number;
 
   @ApiProperty()
   @IsNumber()
@@ -15,4 +31,9 @@ export class EstimationRequestDto {
   @IsString()
   @IsNotEmpty()
   etatVehicule!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

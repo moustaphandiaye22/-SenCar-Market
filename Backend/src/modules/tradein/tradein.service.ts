@@ -34,20 +34,22 @@ export class TradeInService {
     const current = await this.requireCurrentUser(user.email);
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
 
-    const vehiculeActuel = await this.repository.findVehiculeById(request.vehiculeActuelId);
-    if (!vehiculeActuel) {
-      throw new DomainException('Véhicule actuel non trouvé', 404, 'VEHICULE_NOT_FOUND');
-    }
-
-    this.estimationService.assertEtatVehiculeValid(etatVehicule);
-
-    if (request.vehiculeSouhaiteId) {
-      if (request.vehiculeSouhaiteId === request.vehiculeActuelId) {
-        throw new DomainException('Le véhicule souhaité doit être différent du véhicule actuel', 400, 'TRADEIN_DESIRED_SAME_AS_CURRENT');
+    let vehiculeId = request.vehiculeActuelId;
+    if (!vehiculeId) {
+      if (!request.marque || !request.modele) {
+        throw new DomainException('Marque et modèle requis si le véhicule n\'est pas spécifié', 400, 'TRADEIN_VEHICLE_INFO_REQUIRED');
       }
-      const vehiculeSouhaite = await this.repository.findVehiculeById(request.vehiculeSouhaiteId);
-      if (!vehiculeSouhaite) {
-        throw new DomainException('Véhicule souhaité non trouvé', 404, 'VEHICULE_DESIRED_NOT_FOUND');
+      vehiculeId = await this.repository.findOrCreateVehicule(
+        current.id,
+        request.marque || '',
+        request.modele || '',
+        request.anneeFabrication || new Date().getFullYear(),
+        request.kilometrageActuel || request.kilometrage || 0,
+      );
+    } else {
+      const vehiculeActuel = await this.repository.findVehiculeById(vehiculeId);
+      if (!vehiculeActuel) {
+        throw new DomainException('Véhicule actuel non trouvé', 404, 'VEHICULE_NOT_FOUND');
       }
     }
 
@@ -55,10 +57,10 @@ export class TradeInService {
     const created = await this.repository.createDemande({
       id: this.repository.newId(),
       utilisateur: { connect: { id: current.id } },
-      vehiculeActuel: { connect: { id: request.vehiculeActuelId } },
+      vehiculeActuel: { connect: { id: vehiculeId } },
       ...(request.vehiculeSouhaiteId ? { vehiculeSouhaite: { connect: { id: request.vehiculeSouhaiteId } } } : {}),
       statut: 'EN_ATTENTE',
-      kilometrageActuel: request.kilometrageActuel,
+      kilometrageActuel: request.kilometrageActuel || request.kilometrage || 0,
       etatVehicule,
       dateSoumission: now,
       estNotifie: false,
@@ -140,13 +142,25 @@ export class TradeInService {
 
   async estimerVehicule(request: EstimationRequestDto): Promise<EstimationResponseDto> {
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
-    const vehicule = await this.repository.findVehiculeById(request.vehiculeId);
-    if (!vehicule) {
-      throw new DomainException('Véhicule non trouvé', 404, 'VEHICULE_NOT_FOUND');
-    }
-
     this.estimationService.assertEtatVehiculeValid(etatVehicule);
-    return this.estimationService.calculateEstimation(vehicule, request.kilometrage, etatVehicule);
+
+    if (request.vehiculeId) {
+      const vehicule = await this.repository.findVehiculeById(request.vehiculeId);
+      if (!vehicule) {
+        throw new DomainException('Véhicule non trouvé', 404, 'VEHICULE_NOT_FOUND');
+      }
+      return this.estimationService.calculateEstimation(vehicule, request.kilometrage, etatVehicule);
+    } else {
+      // Logic for estimation without existing vehicle
+      const mockVehicule = {
+        id: 'external',
+        anneeFabrication: request.anneeFabrication ?? new Date().getFullYear(),
+        prixVente: 10000000, // Consider a default market value or add it to request
+        marque: { nom: request.marque ?? 'Inconnu' },
+        modele: { nom: request.modele ?? 'Inconnu' },
+      };
+      return this.estimationService.calculateEstimation(mockVehicule, request.kilometrage, etatVehicule);
+    }
   }
 
   async calculerEstimationAuto(demandeId: string, user: AuthenticatedUser): Promise<DemandeTradeInResponseDto> {

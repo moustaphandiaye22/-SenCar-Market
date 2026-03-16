@@ -69,6 +69,27 @@
         <lucide-angular [img]="icons.Bell" size="18"></lucide-angular>
         Notifications
       </button>
+
+      <!-- Certification -->
+      <button (click)="setTab('certification')"
+              [class.bg-primary-50]="activeTab === 'certification'"
+              [class.text-primary-600]="activeTab === 'certification'"
+              [class.text-neutral-500]="activeTab !== 'certification'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.ShieldCheck" size="18"></lucide-angular>
+        Certifications
+      </button>
+
+      <!-- Admin Stats (Admin only) -->
+      <button *ngIf="user.role === 'ADMIN'"
+              (click)="setTab('admin')"
+              [class.bg-primary-50]="activeTab === 'admin'"
+              [class.text-primary-600]="activeTab === 'admin'"
+              [class.text-neutral-500]="activeTab !== 'admin'"
+              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
+        <lucide-angular [img]="icons.Settings" size="18"></lucide-angular>
+        Statistiques Admin
+      </button>
     </div>
 
     <!-- Active Tab Content -->
@@ -80,6 +101,8 @@
       <app-trade-in-requests *ngIf="activeTab === 'tradein'"></app-trade-in-requests>
       <app-profile *ngIf="activeTab === 'profile'"></app-profile>
       <app-notification-list *ngIf="activeTab === 'notifications'"></app-notification-list>
+      <app-certification-list *ngIf="activeTab === 'certification'"></app-certification-list>
+      <app-admin-dashboard *ngIf="activeTab === 'admin'"></app-admin-dashboard>
 
     </div>
   </div>

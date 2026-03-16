@@ -20,11 +20,16 @@ export class AbonnementMapper {
       nom: item.nom,
       description: item.description,
       prixMensuel: item.prixMensuel != null ? String(item.prixMensuel) : null,
+      prixAnnuel: item.prixAnnuel != null ? String(item.prixAnnuel) : null,
       dureeJours: item.dureeJours,
       nombreAnnonces: item.nombreAnnonces,
       estVedette: item.estVedette,
       estCertifie: item.estCertifie,
       type: item.type,
+      avantages: item.avantages,
+      nombreBoostsGratuits: item.nombreBoostsGratuits,
+      accesPrioritaire: item.accesPrioritaire,
+      supportPrioritaire: item.supportPrioritaire,
     };
   }
 

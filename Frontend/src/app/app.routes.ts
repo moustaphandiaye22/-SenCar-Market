@@ -51,15 +51,23 @@ export const routes: Routes = [
   },
   {
     path: 'abonnements',
-    loadChildren: () => import('./features/abonnements/abonnements.routes').then(m => m.ABONNEMENT_ROUTES)
+    loadChildren: () => import('./features/abonnements/abonnements-routing')
   },
   {
     path: 'assurance',
-    loadChildren: () => import('./features/assurance/assurance.routes').then(m => m.ASSURANCE_ROUTES)
+    loadChildren: () => import('./features/assurance/assurance-routing')
   },
   {
     path: 'paiement',
-    loadChildren: () => import('./features/paiement/paiement.routes').then(m => m.PAIEMENT_ROUTES)
+    loadChildren: () => import('./features/paiement/paiement-routing')
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
+  },
+  {
+    path: 'certification',
+    loadChildren: () => import('./features/certification/certification.routes').then(m => m.CERTIFICATION_ROUTES)
   },
   {
     path: '**',

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
-import { LucideAngularModule, Car, Home, Search, LogIn, Menu, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare } from 'lucide-angular';
+import { LucideAngularModule, Car, Home, Search, LogIn, Menu, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck } from 'lucide-angular';
 
 @Component({
   selector: 'app-root',
@@ -26,7 +26,7 @@ export class AppComponent implements OnInit {
   icons = { 
     Car, Home, Search, LogIn, Menu, Contact, Briefcase, User, LogOut, 
     ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, 
-    LayoutDashboard, Bell, MessageSquare 
+    LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck 
   };
 
   isUserDropdownOpen = false;

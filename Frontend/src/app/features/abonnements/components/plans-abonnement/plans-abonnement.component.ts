@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AbonnementService, PlanAbonnement, UtilisateurAbonnement } from '../../services/abonnement.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LucideAngularModule, Check, Star, Zap, Shield, Crown } from 'lucide-angular';
@@ -38,8 +39,30 @@ export class PlansAbonnementComponent implements OnInit {
     });
   }
 
+  private router = inject(Router);
+
   subscribe(plan: PlanAbonnement) {
-    // Logic to open payment modal or redirect
-    console.log('Subscribing to', plan.nom);
+    if (this.currentSub?.abonnementId === plan.id) return;
+
+    const user = this.authService.getUser();
+    if (!user) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.isLoading = true;
+    this.abonnementService.subscribe({ 
+      utilisateurId: user.id,
+      abonnementId: plan.id 
+    }).subscribe({
+      next: () => {
+        alert('Souscription réussie !');
+        this.router.navigate(['/abonnements/historique']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        alert('Erreur lors de la souscription. Vérifiez votre solde.');
+      }
+    });
   }
 }

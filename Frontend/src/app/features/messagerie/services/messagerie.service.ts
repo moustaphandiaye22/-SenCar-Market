@@ -6,32 +6,27 @@ import { HttpParams } from '@angular/common/http';
 export interface Message {
   id: string;
   contenu: string;
-  expediteurId: string;
+  utilisateurId: string;
+  utilisateurNom?: string;
   conversationId: string;
   dateEnvoi: string;
   estLu: boolean;
   estEpingle: boolean;
-  expediteur?: {
-    prenom: string;
-    nom: string;
-  };
+  typeMessage?: string;
 }
 
 export interface Conversation {
   id: string;
   titre?: string;
   dernierMessage?: Message;
-  dateCreation: string;
-  dateDerniereActivite: string;
-  unreadCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  nombreNonLus?: number;
   participants: Array<{
     id: string;
-    utilisateur: {
-      id: string;
-      prenom: string;
-      nom: string;
-      email: string;
-    };
+    utilisateurId: string;
+    utilisateurNom: string;
+    utilisateurPhotoUrl?: string;
   }>;
 }
 

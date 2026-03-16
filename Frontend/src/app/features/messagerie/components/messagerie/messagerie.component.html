@@ -43,15 +43,15 @@
             <h3 class="font-bold text-gray-900 truncate text-sm" [class.text-primary-600]="selectedConversation?.id === conv.id">
               {{ getParticipantName(conv) }}
             </h3>
-            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ conv.dateDerniereActivite | date:'HH:mm' }}</span>
+            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ conv.updatedAt | date:'HH:mm' }}</span>
           </div>
-          <p class="text-xs text-gray-500 truncate" [class.font-bold]="conv.unreadCount! > 0 && conv.id !== selectedConversation?.id">
+          <p class="text-xs text-gray-500 truncate" [class.font-bold]="conv.nombreNonLus! > 0 && conv.id !== selectedConversation?.id">
             {{ conv.dernierMessage?.contenu || 'Nouvelle conversation' }}
           </p>
         </div>
-        <div *ngIf="conv.unreadCount && conv.unreadCount > 0 && conv.id !== selectedConversation?.id" 
+        <div *ngIf="conv.nombreNonLus && conv.nombreNonLus > 0 && conv.id !== selectedConversation?.id" 
              class="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-          {{ conv.unreadCount }}
+          {{ conv.nombreNonLus }}
         </div>
       </button>
     </div>
@@ -96,21 +96,21 @@
         <div class="flex-1 flex flex-col min-w-0">
           <div class="flex-1 overflow-y-auto p-6 messages-container space-y-6 scroll-smooth">
             <div *ngFor="let msg of messages; let i = index" 
-                 [class.justify-end]="msg.expediteurId === (currentUser$ | async)?.id"
+                 [class.justify-end]="msg.utilisateurId === (currentUser$ | async)?.id"
                  class="flex group">
               
               <div class="flex flex-col gap-1 max-w-[75%]">
-                <div [class.bg-primary-600]="msg.expediteurId === (currentUser$ | async)?.id"
-                     [class.text-white]="msg.expediteurId === (currentUser$ | async)?.id"
-                     [class.bg-gray-100]="msg.expediteurId !== (currentUser$ | async)?.id"
-                     [class.text-gray-800]="msg.expediteurId !== (currentUser$ | async)?.id"
-                     [class.rounded-tr-none]="msg.expediteurId === (currentUser$ | async)?.id"
-                     [class.rounded-tl-none]="msg.expediteurId !== (currentUser$ | async)?.id"
+                <div [class.bg-primary-600]="msg.utilisateurId === (currentUser$ | async)?.id"
+                     [class.text-white]="msg.utilisateurId === (currentUser$ | async)?.id"
+                     [class.bg-gray-100]="msg.utilisateurId !== (currentUser$ | async)?.id"
+                     [class.text-gray-800]="msg.utilisateurId !== (currentUser$ | async)?.id"
+                     [class.rounded-tr-none]="msg.utilisateurId === (currentUser$ | async)?.id"
+                     [class.rounded-tl-none]="msg.utilisateurId !== (currentUser$ | async)?.id"
                      class="relative p-3.5 rounded-2xl shadow-sm group-hover:shadow-md transition-shadow">
                   
                   <!-- Message Actions (visible on hover) -->
                   <div class="absolute -top-8 left-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-100 rounded-lg p-1 shadow-sm z-20"
-                       *ngIf="msg.expediteurId === (currentUser$ | async)?.id">
+                       *ngIf="msg.utilisateurId === (currentUser$ | async)?.id">
                     <button (click)="pinMessage(msg)" class="p-1 hover:bg-primary-50 text-gray-400 hover:text-primary-600 rounded">
                       <lucide-angular [img]="icons.Pin" size="14"></lucide-angular>
                     </button>
@@ -124,7 +124,7 @@
                   <div class="flex items-center justify-end gap-1.5 mt-1.5">
                     <lucide-angular *ngIf="msg.estEpingle" [img]="icons.Pin" size="10" class="opacity-70"></lucide-angular>
                     <span class="text-[9px] opacity-70 font-bold uppercase tracking-tight">{{ msg.dateEnvoi | date:'HH:mm' }}</span>
-                    <lucide-angular *ngIf="msg.expediteurId === (currentUser$ | async)?.id" 
+                    <lucide-angular *ngIf="msg.utilisateurId === (currentUser$ | async)?.id" 
                                     [img]="icons.CheckCircle2" 
                                     size="12" 
                                     class="opacity-70"></lucide-angular>
@@ -183,11 +183,11 @@
                 <div class="space-y-3">
                   <div *ngFor="let p of participants" class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-                      {{ p.utilisateur.prenom[0] }}{{ p.utilisateur.nom[0] }}
+                      {{ p.utilisateurNom[0] }}
                     </div>
                     <div>
-                      <p class="text-xs font-bold text-gray-900">{{ p.utilisateur.prenom }} {{ p.utilisateur.nom }}</p>
-                      <p class="text-[10px] text-gray-500">{{ p.role }}</p>
+                      <p class="text-xs font-bold text-gray-900">{{ p.utilisateurNom }}</p>
+                      <p class="text-[10px] text-gray-500">{{ p.estAdmin ? 'Admin' : 'Participant' }}</p>
                     </div>
                   </div>
                 </div>

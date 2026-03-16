@@ -4,10 +4,12 @@ import { PaiementService, Portefeuille } from '../../services/paiement.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LucideAngularModule, Wallet, ArrowUpRight, ArrowDownLeft, Plus, History, CreditCard } from 'lucide-angular';
 
+import { FormsModule } from '@angular/forms';
+
 @Component({
   selector: 'app-portefeuille',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, FormsModule],
   templateUrl: './portefeuille.component.html'
 })
 export class PortefeuilleComponent implements OnInit {
@@ -18,6 +20,11 @@ export class PortefeuilleComponent implements OnInit {
   portefeuille?: Portefeuille;
   transactions: any[] = [];
   isLoading = true;
+  
+  // Modal state
+  showRechargeModal = false;
+  rechargeAmount = 0;
+  isRecharging = false;
   
   icons = { Wallet, ArrowUpRight, ArrowDownLeft, Plus, History, CreditCard };
 
@@ -44,6 +51,38 @@ export class PortefeuilleComponent implements OnInit {
     this.paiementService.getTransactions(userId).subscribe({
       next: (res) => {
         this.transactions = res;
+      }
+    });
+  }
+
+  recharge() {
+    if (this.rechargeAmount <= 0) return;
+    
+    this.isRecharging = true;
+    const user = this.authService.getUser();
+    if (!user) return;
+
+    // Simulate a successful recharge via Wave/OM
+    // In real scenario, we'd call paiementService.createPaiementWave
+    this.paiementService.createPaiement({
+      montant: this.rechargeAmount,
+      methodePaiement: 'WAVE',
+      reservationId: undefined
+    }).subscribe({
+      next: () => {
+        // Refresh after recharge
+        setTimeout(() => {
+          this.loadPortefeuille(user.id);
+          this.loadTransactions(user.id);
+          this.isRecharging = false;
+          this.showRechargeModal = false;
+          this.rechargeAmount = 0;
+        }, 2000);
+      },
+      error: (err) => {
+        console.error('Recharge failed', err);
+        this.isRecharging = false;
+        alert('Échec de la recharge. Veuillez réessayer.');
       }
     });
   }

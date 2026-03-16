@@ -8,7 +8,7 @@ export interface Notification {
   titre: string;
   message: string;
   type: string;
-  estLue: boolean;
+  estLu: boolean;
   dateCreation: string;
   data?: any;
 }
@@ -26,6 +26,13 @@ export class NotificationService {
     return this.api.get<{ content: Notification[]; total: number }>(`/notifications/utilisateur/${userId}`, params);
   }
 
+  getUnreadNotifications(userId: string, page = 0, size = 10): Observable<{ content: Notification[]; total: number }> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.api.get<{ content: Notification[]; total: number }>(`/notifications/utilisateur/${userId}/unread`, params);
+  }
+
   getUnreadCount(userId: string): Observable<{ unreadCount: number }> {
     return this.api.get<{ unreadCount: number }>(`/notifications/utilisateur/${userId}/count/unread`);
   }
@@ -40,5 +47,20 @@ export class NotificationService {
 
   deleteNotification(id: string): Observable<{ message: string }> {
     return this.api.delete<{ message: string }>(`/notifications/${id}`);
+  }
+
+  getNotificationsByType(userId: string, type: string, page = 0, size = 10): Observable<{ content: Notification[]; total: number }> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.api.get<{ content: Notification[]; total: number }>(`/notifications/utilisateur/${userId}/type/${type}`, params);
+  }
+
+  deleteAllNotifications(userId: string): Observable<{ message: string }> {
+    return this.api.delete<{ message: string }>(`/notifications/utilisateur/${userId}`);
+  }
+
+  getNotificationById(id: string): Observable<Notification> {
+    return this.api.get<Notification>(`/notifications/${id}`);
   }
 }

@@ -51,9 +51,17 @@ export class AssuranceService {
     return this.api.get(`/assurance/produits/${produitId}/options`);
   }
 
+  getProduitById(id: string): Observable<ProduitAssurance> {
+    return this.api.get(`/assurance/produits/${id}`);
+  }
+
   calculatePrix(produitId: string, optionIds: string[]): Observable<any> {
-    const params = new HttpParams().set('produitAssuranceId', produitId);
-    // Note: handle array if needed
+    let params = new HttpParams().set('produitAssuranceId', produitId);
+    if (optionIds && optionIds.length > 0) {
+      optionIds.forEach(id => {
+        params = params.append('optionIds', id);
+      });
+    }
     return this.api.get('/assurance/calcul-prix', params);
   }
 
@@ -67,5 +75,21 @@ export class AssuranceService {
 
   getSouscription(id: string): Observable<SouscriptionAssurance> {
     return this.api.get(`/assurance/souscriptions/${id}`);
+  }
+
+  processPayment(id: string, paiementId: string): Observable<SouscriptionAssurance> {
+    const params = new HttpParams().set('paiementId', paiementId);
+    return this.api.post(`/assurance/souscriptions/${id}/payment`, {}, params);
+  }
+
+  generateContract(id: string): Observable<SouscriptionAssurance> {
+    return this.api.post(`/assurance/souscriptions/${id}/contrat`, {});
+  }
+
+  uploadDocument(id: string, documentType: string, documentUrl: string): Observable<SouscriptionAssurance> {
+    const params = new HttpParams()
+      .set('documentType', documentType)
+      .set('documentUrl', documentUrl);
+    return this.api.post(`/assurance/souscriptions/${id}/documents`, {}, params);
   }
 }

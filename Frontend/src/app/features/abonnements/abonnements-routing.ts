@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { PlansAbonnementComponent } from './components/plans-abonnement/plans-abonnement.component';
 import { HistoriqueAbonnementComponent } from './components/historique-abonnement/historique-abonnement.component';
 
-export const ABONNEMENT_ROUTES: Routes = [
+const routes: Routes = [
   {
     path: 'plans',
     component: PlansAbonnementComponent
@@ -12,3 +12,5 @@ export const ABONNEMENT_ROUTES: Routes = [
     component: HistoriqueAbonnementComponent
   }
 ];
+
+export default routes;

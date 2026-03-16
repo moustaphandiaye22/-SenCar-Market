@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AbonnementService, UtilisateurAbonnement } from '../../services/abonnement.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LucideAngularModule, Calendar, Clock, CheckCircle2, AlertCircle, History, Package } from 'lucide-angular';
@@ -7,7 +8,7 @@ import { LucideAngularModule, Calendar, Clock, CheckCircle2, AlertCircle, Histor
 @Component({
   selector: 'app-historique-abonnement',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   templateUrl: './historique-abonnement.component.html'
 })
 export class HistoriqueAbonnementComponent implements OnInit {

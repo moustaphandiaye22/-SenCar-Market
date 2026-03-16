@@ -21,6 +21,11 @@ export type AbonnementRecord = {
   estCertifie: boolean | null;
   type: TypeAbonnement | null;
   estActif: boolean | null;
+  avantages: string | null;
+  prixAnnuel: unknown;
+  nombreBoostsGratuits: number | null;
+  accesPrioritaire: boolean | null;
+  supportPrioritaire: boolean | null;
 };
 
 export type UtilisateurAbonnementRecord = {
@@ -53,6 +58,11 @@ export type CreateAbonnementInput = {
   estCertifie: boolean;
   type?: TypeAbonnement;
   estActif: boolean;
+  avantages?: string;
+  prixAnnuel?: number;
+  nombreBoostsGratuits?: number;
+  accesPrioritaire?: boolean;
+  supportPrioritaire?: boolean;
 };
 
 export type UpdateAbonnementInput = Partial<CreateAbonnementInput>;

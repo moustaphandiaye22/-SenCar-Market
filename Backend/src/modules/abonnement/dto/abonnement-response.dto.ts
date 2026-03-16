@@ -29,4 +29,19 @@ export class AbonnementResponseDto {
 
   @ApiProperty({ enum: ['BASIC', 'PREMIUM', 'PROFESSIONNEL', 'ENTREPRISE'], nullable: true })
   type!: TypeAbonnement | null;
+
+  @ApiProperty({ nullable: true })
+  avantages!: string | null;
+
+  @ApiProperty({ nullable: true })
+  prixAnnuel!: string | null;
+
+  @ApiProperty({ nullable: true })
+  nombreBoostsGratuits!: number | null;
+
+  @ApiProperty({ nullable: true })
+  accesPrioritaire!: boolean | null;
+
+  @ApiProperty({ nullable: true })
+  supportPrioritaire!: boolean | null;
 }

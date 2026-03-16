@@ -39,9 +39,9 @@ export class NotificationListComponent implements OnInit {
   }
 
   markAsRead(notif: Notification) {
-    if (notif.estLue) return;
+    if (notif.estLu) return;
     this.notificationService.markAsRead(notif.id).subscribe(() => {
-      notif.estLue = true;
+      notif.estLu = true;
     });
   }
 
@@ -49,7 +49,7 @@ export class NotificationListComponent implements OnInit {
     const user = this.authService.getUser();
     if (user) {
       this.notificationService.markAllAsRead(user.id).subscribe(() => {
-        this.notifications.forEach(n => n.estLue = true);
+        this.notifications.forEach(n => n.estLu = true);
       });
     }
   }

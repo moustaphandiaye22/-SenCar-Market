@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessagerieService, Conversation, Message } from '../../services/messagerie.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { LucideAngularModule, Send, Search, User, MoreVertical, Paperclip, CheckCircle2, Phone, Video, Info, Trash2, Pin, Users, ArrowLeft } from 'lucide-angular';
+import { LucideAngularModule, Send, Search, User, MoreVertical, Paperclip, CheckCircle2, Phone, Video, Info, Trash2, Pin, Users, ArrowLeft, MessageSquare, RefreshCcw } from 'lucide-angular';
 import { Subscription, interval, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
@@ -30,7 +30,7 @@ export class MessagerieComponent implements OnInit, OnDestroy {
   
   icons = { 
     Send, Search, User, MoreVertical, Paperclip, CheckCircle2, 
-    Phone, Video, Info, Trash2, Pin, Users, ArrowLeft 
+    Phone, Video, Info, Trash2, Pin, Users, ArrowLeft, MessageSquare, RefreshCcw 
   };
   
   private refreshSubscription?: Subscription;
@@ -146,15 +146,19 @@ export class MessagerieComponent implements OnInit, OnDestroy {
 
   getParticipantName(conv: Conversation): string {
     const me = this.authService.getUser();
-    const other = conv.participants.find(p => p.utilisateur.id !== me?.id);
-    return other ? `${other.utilisateur.prenom} ${other.utilisateur.nom}` : (conv.titre || 'Groupe');
+    const other = conv.participants.find(p => p.utilisateurId !== me?.id);
+    return other ? other.utilisateurNom : (conv.titre || 'Groupe');
   }
 
   getOtherParticipantInitials(conv: Conversation): string {
     const me = this.authService.getUser();
-    const other = conv.participants.find(p => p.utilisateur.id !== me?.id);
+    const other = conv.participants.find(p => p.utilisateurId !== me?.id);
     if (!other) return conv.titre ? conv.titre[0].toUpperCase() : 'G';
-    return `${other.utilisateur.prenom[0]}${other.utilisateur.nom[0]}`.toUpperCase();
+    const names = other.utilisateurNom.split(' ');
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase();
+    }
+    return other.utilisateurNom[0].toUpperCase();
   }
 
   private scrollToBottom() {

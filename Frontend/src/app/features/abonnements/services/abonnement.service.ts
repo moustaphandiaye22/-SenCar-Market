@@ -42,8 +42,8 @@ export class AbonnementService {
     return this.api.get(`/abonnements/utilisateurs/${userId}/actif`);
   }
 
-  subscribe(planId: string, methodePaiement: string): Observable<UtilisateurAbonnement> {
-    return this.api.post('/abonnements/souscription', { abonnementId: planId, methodePaiement });
+  subscribe(data: { abonnementId: string; utilisateurId?: string; paiementId?: string }): Observable<UtilisateurAbonnement> {
+    return this.api.post('/abonnements/souscription', data);
   }
 
   cancelSubscription(userId: string): Observable<void> {
@@ -79,5 +79,9 @@ export class AbonnementService {
 
   deleteBoost(id: string): Observable<void> {
     return this.api.delete(`/abonnements/boosts/${id}`);
+  }
+
+  updateBoost(id: string, data: { niveauBoost: string }): Observable<any> {
+    return this.api.put(`/abonnements/boosts/${id}`, data);
   }
 }

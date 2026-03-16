@@ -4,9 +4,11 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { LucideAngularModule, ShieldCheck, Car, Key, Settings, RefreshCcw, User, Bell } from 'lucide-angular';
 import { AdminGaragesComponent, ProServicesComponent, ProReservationsComponent, TradeInRequestsComponent, ProfileComponent, NotificationListComponent } from '../components';
+import { CertificationListComponent } from '../../certification/components/certification-list/certification-list.component';
+import { AdminDashboardComponent } from '../../admin/dashboard/admin-dashboard.component';
 import { take } from 'rxjs';
 
-type Tab = 'garages' | 'services' | 'reservations' | 'tradein' | 'profile' | 'notifications';
+type Tab = 'garages' | 'services' | 'reservations' | 'tradein' | 'profile' | 'notifications' | 'certification' | 'admin';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,7 +21,9 @@ type Tab = 'garages' | 'services' | 'reservations' | 'tradein' | 'profile' | 'no
     ProReservationsComponent,
     TradeInRequestsComponent,
     ProfileComponent,
-    NotificationListComponent
+    NotificationListComponent,
+    CertificationListComponent,
+    AdminDashboardComponent
   ],
   templateUrl: './dashboard.component.html',
 })

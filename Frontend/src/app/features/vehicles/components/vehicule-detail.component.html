@@ -125,8 +125,27 @@
                 Sous Garantie
               </span>
               <p class="mt-1 font-bold text-gray-900">{{ vehicule.garantieMois }} mois</p>
-            </div>
           </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+          <h2 class="text-xl font-bold text-gray-900 mb-8 flex items-center">
+            <lucide-angular [img]="icons.Mail" size="20" class="mr-3 text-primary-500"></lucide-angular>
+            Avis des utilisateurs
+          </h2>
+          
+          <!-- Form to leave an avis -->
+          <div *ngIf="showAvisForm" class="mb-10">
+            <app-avis-form 
+              [targetId]="vehicule.id" 
+              typeAvis="VEHICULE" 
+              [transactionId]="transactionId"
+              (avisSent)="showAvisForm = false; checkAvisEligibility()">
+            </app-avis-form>
+          </div>
+
+          <app-avis-list [targetId]="vehicule.id" type="vehicule"></app-avis-list>
         </div>
       </div>
 
@@ -196,6 +215,23 @@
                   <lucide-angular [img]="icons.Trash2" size="16"></lucide-angular>
                   Supprimer
                 </button>
+              </div>
+
+              <div class="pt-3" *ngIf="!vehicule.certifie">
+                <button (click)="demanderCertification()"
+                        [disabled]="isCertifying"
+                        class="w-full flex justify-center items-center py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all gap-3 shadow-lg shadow-blue-100 disabled:opacity-50">
+                  <lucide-angular [img]="icons.Shield" size="20"></lucide-angular>
+                  {{ isCertifying ? 'Traitement...' : 'Faire certifier ce véhicule' }}
+                </button>
+              </div>
+
+              <div class="pt-3">
+                <a routerLink="/assurance" 
+                   class="w-full flex justify-center items-center py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all gap-3 shadow-lg shadow-green-100">
+                  <lucide-angular [img]="icons.ShieldCheck" size="20"></lucide-angular>
+                  Assurer ce véhicule
+                </a>
               </div>
             </div>
           </ng-container>

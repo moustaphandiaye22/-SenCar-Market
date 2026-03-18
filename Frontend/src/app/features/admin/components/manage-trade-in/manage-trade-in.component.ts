@@ -10,19 +10,22 @@ import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, FormsModule],
   template: `
-    <div class="p-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-        <div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Gestion des Reprises</h2>
-          <p class="text-gray-500 mt-1">Gérez les demandes de reprise et de rachat direct.</p>
-        </div>
-        <div class="relative w-full md:w-72">
-          <lucide-angular [img]="icons.Search" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 (input)="filterDemandes()"
-                 placeholder="Rechercher une demande..." 
-                 class="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500 outline-none shadow-sm transition-all">
+    <div class="p-6 lg:p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
+      <div class="mb-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 class="text-4xl font-black text-gray-900 tracking-tight">Reprises</h2>
+            <p class="text-gray-500 mt-2 font-medium">Gérez les demandes de reprise et de rachat direct.</p>
+          </div>
+          <div class="relative w-full md:w-72">
+            <lucide-angular [img]="icons.Search" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
+            <input type="text" 
+                   [(ngModel)]="searchQuery" 
+                   (input)="filterDemandes()"
+                   placeholder="Rechercher une demande..." 
+                   class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+          </div>
         </div>
       </div>
 
@@ -32,7 +35,7 @@ import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
 
       <div *ngIf="!isLoading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div *ngFor="let demande of filteredDemandes" 
-             class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 flex flex-col gap-6 hover:shadow-xl transition-all duration-300 group">
+             class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col gap-6 hover:shadow-md transition-all duration-200 group">
           
           <div class="flex justify-between items-start">
             <div class="flex items-center gap-3">
@@ -74,7 +77,7 @@ import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
             </div>
           </div>
 
-          <div class="bg-gray-50/50 rounded-[2rem] p-6 flex justify-between items-center border border-gray-50 group-hover:bg-primary-50/30 transition-colors">
+          <div class="bg-gray-50 rounded-2xl p-6 flex justify-between items-center border border-gray-100 group-hover:bg-primary-50/30 transition-colors">
             <div>
               <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Estimation</p>
               <p class="text-2xl font-black text-primary-600 tracking-tight">{{ demande.prixEstime | number }} <span class="text-xs">FCFA</span></p>
@@ -96,7 +99,7 @@ import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
         </div>
       </div>
 
-      <div *ngIf="!isLoading && filteredDemandes.length === 0" class="py-32 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+      <div *ngIf="!isLoading && filteredDemandes.length === 0" class="py-24 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
         <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <lucide-angular [img]="icons.Filter" size="32" class="text-gray-200"></lucide-angular>
         </div>

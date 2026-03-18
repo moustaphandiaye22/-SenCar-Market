@@ -1,100 +1,141 @@
-<div class="min-h-screen bg-neutral-50 py-12 px-4" *ngIf="user$ | async as user">
+<div class="min-h-screen bg-gray-50 py-8 px-4" *ngIf="user$ | async as user">
   <div class="max-w-7xl mx-auto">
-    <div class="mb-10 text-center">
-      <h1 class="text-4xl font-black text-neutral-900 mb-2">Mon Tableau de Bord</h1>
-      <p class="text-neutral-500 font-medium">Bienvenue sur votre espace personnel. <span class="bg-primary-100 text-primary-700 font-bold px-2 py-1 rounded-md ml-2">{{ user.role }}</span></p>
+
+    <!-- Page Header -->
+    <div class="mb-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-primary-600 mb-1">Espace personnel</p>
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Mon Tableau de Bord</h1>
+        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100">
+          {{ user.role }}
+        </span>
+      </div>
     </div>
 
-    <!-- Tabs/Navigation -->
-    <div class="bg-white rounded-2xl p-2 mb-8 shadow-sm border border-neutral-100 flex flex-wrap gap-2 overflow-x-auto">
-      
-      <!-- Admin Only Tabs -->
-      <button *ngIf="user.role === 'ADMIN'"
-              (click)="setTab('garages')"
-              [class.bg-primary-50]="activeTab === 'garages'"
-              [class.text-primary-600]="activeTab === 'garages'"
-              [class.text-neutral-500]="activeTab !== 'garages'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.ShieldCheck" size="18"></lucide-angular>
-        Garages à Valider
-      </button>
+    <!-- Horizontal Scrollable Tab Strip -->
+    <div class="mb-6 overflow-x-auto pb-1" style="scrollbar-width: none; -ms-overflow-style: none;">
+      <div class="flex gap-2 min-w-max">
 
-      <!-- Pro Only Tabs -->
-      <button *ngIf="user.role === 'PROFESSIONNEL' || user.role === 'ADMIN'"
-              (click)="setTab('services')"
-              [class.bg-primary-50]="activeTab === 'services'"
-              [class.text-primary-600]="activeTab === 'services'"
-              [class.text-neutral-500]="activeTab !== 'services'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.Settings" size="18"></lucide-angular>
-        Mes Garages & Services
-      </button>
+        <button *ngIf="user.role === 'ADMIN'"
+                (click)="setTab('garages')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'garages'"
+                [class.text-white]="activeTab === 'garages'"
+                [class.border-primary-600]="activeTab === 'garages'"
+                [class.shadow-md]="activeTab === 'garages'"
+                [class.bg-white]="activeTab !== 'garages'"
+                [class.text-gray-600]="activeTab !== 'garages'"
+                [class.border-gray-200]="activeTab !== 'garages'"
+                [class.hover:bg-gray-50]="activeTab !== 'garages'">
+          <lucide-angular [img]="icons.ShieldCheck" size="15"></lucide-angular>
+          Garages à Valider
+        </button>
 
-      <!-- Reservations -->
-      <button (click)="setTab('reservations')"
-              [class.bg-primary-50]="activeTab === 'reservations'"
-              [class.text-primary-600]="activeTab === 'reservations'"
-              [class.text-neutral-500]="activeTab !== 'reservations'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.Key" size="18"></lucide-angular>
-        Locations & Réservations
-      </button>
+        <button *ngIf="user.role === 'PROFESSIONNEL' || user.role === 'ADMIN'"
+                (click)="setTab('services')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'services'"
+                [class.text-white]="activeTab === 'services'"
+                [class.border-primary-600]="activeTab === 'services'"
+                [class.shadow-md]="activeTab === 'services'"
+                [class.bg-white]="activeTab !== 'services'"
+                [class.text-gray-600]="activeTab !== 'services'"
+                [class.border-gray-200]="activeTab !== 'services'"
+                [class.hover:bg-gray-50]="activeTab !== 'services'">
+          <lucide-angular [img]="icons.Settings" size="15"></lucide-angular>
+          Mes Garages & Services
+        </button>
 
-      <!-- Trade-In Requests (Admin or Expert or User) -->
-      <button (click)="setTab('tradein')"
-              [class.bg-primary-50]="activeTab === 'tradein'"
-              [class.text-primary-600]="activeTab === 'tradein'"
-              [class.text-neutral-500]="activeTab !== 'tradein'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.RefreshCcw" size="18"></lucide-angular>
-        Dossiers de Reprise
-      </button>
+        <button (click)="setTab('reservations')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'reservations'"
+                [class.text-white]="activeTab === 'reservations'"
+                [class.border-primary-600]="activeTab === 'reservations'"
+                [class.shadow-md]="activeTab === 'reservations'"
+                [class.bg-white]="activeTab !== 'reservations'"
+                [class.text-gray-600]="activeTab !== 'reservations'"
+                [class.border-gray-200]="activeTab !== 'reservations'"
+                [class.hover:bg-gray-50]="activeTab !== 'reservations'">
+          <lucide-angular [img]="icons.Key" size="15"></lucide-angular>
+          Locations & Réservations
+        </button>
 
-      <!-- Profile -->
-      <button (click)="setTab('profile')"
-              [class.bg-primary-50]="activeTab === 'profile'"
-              [class.text-primary-600]="activeTab === 'profile'"
-              [class.text-neutral-500]="activeTab !== 'profile'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.User" size="18"></lucide-angular>
-        Mon Profil
-      </button>
+        <button (click)="setTab('tradein')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'tradein'"
+                [class.text-white]="activeTab === 'tradein'"
+                [class.border-primary-600]="activeTab === 'tradein'"
+                [class.shadow-md]="activeTab === 'tradein'"
+                [class.bg-white]="activeTab !== 'tradein'"
+                [class.text-gray-600]="activeTab !== 'tradein'"
+                [class.border-gray-200]="activeTab !== 'tradein'"
+                [class.hover:bg-gray-50]="activeTab !== 'tradein'">
+          <lucide-angular [img]="icons.RefreshCcw" size="15"></lucide-angular>
+          Dossiers de Reprise
+        </button>
 
-      <!-- Notifications -->
-      <button (click)="setTab('notifications')"
-              [class.bg-primary-50]="activeTab === 'notifications'"
-              [class.text-primary-600]="activeTab === 'notifications'"
-              [class.text-neutral-500]="activeTab !== 'notifications'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50 relative">
-        <lucide-angular [img]="icons.Bell" size="18"></lucide-angular>
-        Notifications
-      </button>
+        <button (click)="setTab('profile')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'profile'"
+                [class.text-white]="activeTab === 'profile'"
+                [class.border-primary-600]="activeTab === 'profile'"
+                [class.shadow-md]="activeTab === 'profile'"
+                [class.bg-white]="activeTab !== 'profile'"
+                [class.text-gray-600]="activeTab !== 'profile'"
+                [class.border-gray-200]="activeTab !== 'profile'"
+                [class.hover:bg-gray-50]="activeTab !== 'profile'">
+          <lucide-angular [img]="icons.User" size="15"></lucide-angular>
+          Mon Profil
+        </button>
 
-      <!-- Certification -->
-      <button (click)="setTab('certification')"
-              [class.bg-primary-50]="activeTab === 'certification'"
-              [class.text-primary-600]="activeTab === 'certification'"
-              [class.text-neutral-500]="activeTab !== 'certification'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.ShieldCheck" size="18"></lucide-angular>
-        Certifications
-      </button>
+        <button (click)="setTab('notifications')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'notifications'"
+                [class.text-white]="activeTab === 'notifications'"
+                [class.border-primary-600]="activeTab === 'notifications'"
+                [class.shadow-md]="activeTab === 'notifications'"
+                [class.bg-white]="activeTab !== 'notifications'"
+                [class.text-gray-600]="activeTab !== 'notifications'"
+                [class.border-gray-200]="activeTab !== 'notifications'"
+                [class.hover:bg-gray-50]="activeTab !== 'notifications'">
+          <lucide-angular [img]="icons.Bell" size="15"></lucide-angular>
+          Notifications
+        </button>
 
-      <!-- Admin Stats (Admin only) -->
-      <button *ngIf="user.role === 'ADMIN'"
-              (click)="setTab('admin')"
-              [class.bg-primary-50]="activeTab === 'admin'"
-              [class.text-primary-600]="activeTab === 'admin'"
-              [class.text-neutral-500]="activeTab !== 'admin'"
-              class="flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all hover:bg-neutral-50">
-        <lucide-angular [img]="icons.Settings" size="18"></lucide-angular>
-        Statistiques Admin
-      </button>
+        <button (click)="setTab('certification')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'certification'"
+                [class.text-white]="activeTab === 'certification'"
+                [class.border-primary-600]="activeTab === 'certification'"
+                [class.shadow-md]="activeTab === 'certification'"
+                [class.bg-white]="activeTab !== 'certification'"
+                [class.text-gray-600]="activeTab !== 'certification'"
+                [class.border-gray-200]="activeTab !== 'certification'"
+                [class.hover:bg-gray-50]="activeTab !== 'certification'">
+          <lucide-angular [img]="icons.ShieldCheck" size="15"></lucide-angular>
+          Certifications
+        </button>
+
+        <button *ngIf="user.role === 'ADMIN'"
+                (click)="setTab('admin')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all border"
+                [class.bg-primary-600]="activeTab === 'admin'"
+                [class.text-white]="activeTab === 'admin'"
+                [class.border-primary-600]="activeTab === 'admin'"
+                [class.shadow-md]="activeTab === 'admin'"
+                [class.bg-white]="activeTab !== 'admin'"
+                [class.text-gray-600]="activeTab !== 'admin'"
+                [class.border-gray-200]="activeTab !== 'admin'"
+                [class.hover:bg-gray-50]="activeTab !== 'admin'">
+          <lucide-angular [img]="icons.Settings" size="15"></lucide-angular>
+          Statistiques Admin
+        </button>
+
+      </div>
     </div>
 
-    <!-- Active Tab Content -->
-    <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-neutral-200/50 border border-neutral-100">
-      
+    <!-- Tab Content -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <app-admin-garages *ngIf="activeTab === 'garages'"></app-admin-garages>
       <app-pro-services *ngIf="activeTab === 'services'"></app-pro-services>
       <app-pro-reservations *ngIf="activeTab === 'reservations'"></app-pro-reservations>
@@ -103,7 +144,7 @@
       <app-notification-list *ngIf="activeTab === 'notifications'"></app-notification-list>
       <app-certification-list *ngIf="activeTab === 'certification'"></app-certification-list>
       <app-admin-dashboard *ngIf="activeTab === 'admin'"></app-admin-dashboard>
-
     </div>
+
   </div>
 </div>

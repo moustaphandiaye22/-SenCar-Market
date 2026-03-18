@@ -46,9 +46,14 @@ export class PaiementCoreService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const utilisateurId = this.resolveTargetUtilisateurId(request.utilisateurId, currentUser);
     const targetUser = await this.mustFindUser(utilisateurId);
-    const reservation = await this.repository.findReservationById(request.reservationId);
-    if (!reservation) {
-      throw new DomainException('Réservation non trouvée', 404, 'RESERVATION_NOT_FOUND');
+
+    // Validate reservation only if provided (optional for wallet recharge)
+    let reservation: { id: string } | null = null;
+    if (request.reservationId) {
+      reservation = await this.repository.findReservationById(request.reservationId);
+      if (!reservation) {
+        throw new DomainException('Réservation non trouvée', 404, 'RESERVATION_NOT_FOUND');
+      }
     }
 
     const isEscrow = Boolean(request.isEscrow);
@@ -58,7 +63,7 @@ export class PaiementCoreService {
     const created = await this.repository.createPaiement({
       id: this.repository.newId(),
       utilisateur: { connect: { id: targetUser.id } },
-      reservation: { connect: { id: reservation.id } },
+      ...(reservation ? { reservation: { connect: { id: reservation.id } } } : {}),
       montant: request.montant,
       montantEscrow,
       commission,

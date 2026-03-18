@@ -177,6 +177,7 @@ export class GarageController {
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Garage ou service non trouvé' })
+  @ApiResponse({ status: 409, type: ApiErrorResponseDto, description: 'Conflict - Service déjà associé au garage' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   associateService(
     @Param('garageId', new ParseUUIDPipe()) garageId: string,

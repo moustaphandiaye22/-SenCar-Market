@@ -69,6 +69,12 @@ export class PaiementService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const utilisateurId = this.resolveTargetUtilisateurId(request.utilisateurId, currentUser);
     const targetUser = await this.mustFindUser(utilisateurId);
+
+    // For reservation payments, reservationId is required
+    if (!request.reservationId) {
+      throw new DomainException('Réservation requise pour ce type de paiement', 400, 'RESERVATION_REQUIRED');
+    }
+
     const reservation = await this.repository.findReservationById(request.reservationId);
     if (!reservation) {
       throw new DomainException('Réservation non trouvée', 404, 'RESERVATION_NOT_FOUND');

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { LucideAngularModule, LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-angular';
+import { LucideAngularModule, LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, ShieldCheck } from 'lucide-angular';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +25,7 @@ export class LoginComponent {
   errorMessage = '';
   showPassword = false;
 
-  icons = { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff };
+  icons = { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, ShieldCheck };
 
   togglePassword() {
     this.showPassword = !this.showPassword;

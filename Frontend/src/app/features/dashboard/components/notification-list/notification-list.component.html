@@ -1,17 +1,18 @@
-<div class="max-w-4xl mx-auto p-6">
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
-        <lucide-angular [img]="icons.Bell" class="text-primary-600"></lucide-angular>
-        Centre de notifications
-      </h1>
-      <p class="text-gray-500 mt-1">Restez informé de l'activité sur vos annonces et votre compte.</p>
+<div class="p-6 lg:p-8 relative overflow-hidden">
+  <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
+  
+  <div class="mb-10">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-4xl font-black text-gray-900 tracking-tight">Notifications</h2>
+        <p class="text-gray-500 mt-2 font-medium">Restez informé de l'activité sur vos annonces et votre compte.</p>
+      </div>
+      <button *ngIf="notifications.length > 0" 
+              (click)="markAllAsRead()"
+              class="text-sm font-bold text-primary-600 hover:text-primary-700 bg-primary-50 px-4 py-2 rounded-xl transition-all">
+        Tout marquer comme lu
+      </button>
     </div>
-    <button *ngIf="notifications.length > 0" 
-            (click)="markAllAsRead()"
-            class="text-sm font-bold text-primary-600 hover:text-primary-700 bg-primary-50 px-4 py-2 rounded-xl transition-all">
-      Tout marquer comme lu
-    </button>
   </div>
 
   <div *ngIf="isLoading" class="flex justify-center p-20">
@@ -48,12 +49,12 @@
       </div>
     </div>
 
-    <div *ngIf="notifications.length === 0" class="text-center py-20 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200">
+    <div *ngIf="notifications.length === 0" class="p-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
       <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
         <lucide-angular [img]="icons.Bell" class="text-gray-200" size="32"></lucide-angular>
       </div>
       <h3 class="text-xl font-bold text-gray-900">Tout est à jour !</h3>
-      <p class="text-gray-500 mt-2 max-w-xs mx-auto">Vous n'avez aucune nouvelle notification pour le moment.</p>
+      <p class="text-gray-500 mt-2">Vous n'avez aucune nouvelle notification pour le moment.</p>
     </div>
   </div>
 </div>

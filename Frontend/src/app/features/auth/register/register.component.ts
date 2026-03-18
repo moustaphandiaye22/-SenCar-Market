@@ -22,7 +22,9 @@ export class RegisterComponent {
     email: ['', [Validators.required, Validators.email]],
     telephone: ['', [Validators.required, Validators.pattern('^\\+221[7-9][0-9]{8}$')]],
     motDePasse: ['', [Validators.required, Validators.minLength(8)]],
-    typeUtilisateur: ['UTILISATEUR', Validators.required]
+    typeUtilisateur: ['UTILISATEUR', Validators.required],
+    adresse: [''],
+    dateDeNaissance: ['']
   });
 
   isLoading = false;

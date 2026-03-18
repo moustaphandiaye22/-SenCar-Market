@@ -9,19 +9,22 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, FormsModule],
   template: `
-    <div class="p-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-        <div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Modération des Avis</h2>
-          <p class="text-gray-500 mt-1">Supervisez les retours d'expérience et maintenez la qualité.</p>
-        </div>
-        <div class="relative w-full md:w-72">
-          <lucide-angular [img]="icons.Search" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 (input)="filterAvis()"
-                 placeholder="Filtrer les commentaires..." 
-                 class="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500 outline-none shadow-sm transition-all">
+    <div class="p-6 lg:p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
+      <div class="mb-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 class="text-4xl font-black text-gray-900 tracking-tight">Avis & Modération</h2>
+            <p class="text-gray-500 mt-2 font-medium">Supervisez les retours d'expérience et maintenez la qualité.</p>
+          </div>
+          <div class="relative w-full md:w-72">
+            <lucide-angular [img]="icons.Search" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
+            <input type="text" 
+                   [(ngModel)]="searchQuery" 
+                   (input)="filterAvis()"
+                   placeholder="Filtrer les commentaires..." 
+                   class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+          </div>
         </div>
       </div>
 
@@ -31,7 +34,7 @@ import { FormsModule } from '@angular/forms';
 
       <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <div *ngFor="let avis of filteredAvis" 
-             class="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl group flex flex-col justify-between">
+             class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md group flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-start mb-6">
               <div class="flex items-center gap-3">
@@ -71,7 +74,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <div *ngIf="!isLoading && filteredAvis.length === 0" class="py-32 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+      <div *ngIf="!isLoading && filteredAvis.length === 0" class="py-24 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
         <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <lucide-angular [img]="icons.MessageSquare" size="32" class="text-gray-200"></lucide-angular>
         </div>

@@ -125,8 +125,10 @@
                 Sous Garantie
               </span>
               <p class="mt-1 font-bold text-gray-900">{{ vehicule.garantieMois }} mois</p>
+            </div>
           </div>
         </div>
+        <!-- /Description Card -->
 
         <!-- Reviews Section -->
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
@@ -147,7 +149,10 @@
 
           <app-avis-list [targetId]="vehicule.id" type="vehicule"></app-avis-list>
         </div>
+        <!-- /Reviews Section -->
+
       </div>
+      <!-- /col-span-8 -->
 
       <!-- Right Column: Info & Contact -->
       <div class="lg:col-span-4 space-y-6">

@@ -44,7 +44,7 @@ export class AdminGaragesComponent implements OnInit {
   refuserGarage(id: string) {
     const reason = prompt("Raison du refus :");
     if(reason) {
-      this.garageService.validerGarage(id, { nouveauStatut: 'REJETE', commentaireAdmin: reason }).subscribe(() => {
+      this.garageService.validerGarage(id, { nouveauStatut: 'REJET', commentaireAdmin: reason }).subscribe(() => {
         this.loadGaragesEnAttente();
       });
     }

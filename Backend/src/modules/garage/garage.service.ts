@@ -242,7 +242,7 @@ export class GarageService {
 
     const existing = await this.repository.findAssociationByGarageAndService(garageId, request.serviceId);
     if (existing) {
-      throw new DomainException('Service déjà associé à ce garage', 400, 'GARAGE_SERVICE_ALREADY_ASSOCIATED');
+      throw new DomainException('Service déjà associé à ce garage', 409, 'GARAGE_SERVICE_ALREADY_ASSOCIATED');
     }
 
     const now = new Date();

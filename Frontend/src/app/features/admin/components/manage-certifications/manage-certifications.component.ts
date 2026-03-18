@@ -9,26 +9,28 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, FormsModule],
   template: `
-    <div class="p-6 max-w-7xl mx-auto relative overflow-hidden">
+    <div class="p-6 lg:p-8 relative overflow-hidden">
       <!-- Decorative background -->
       <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
 
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-        <div>
-          <h2 class="text-4xl font-black text-gray-900 tracking-tight">Certifications</h2>
-          <p class="text-gray-500 mt-2 font-medium">Validation technique et labellisation des véhicules.</p>
-        </div>
-        <div class="relative w-full md:w-80">
-          <lucide-angular [img]="icons.Search" size="18" class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 (input)="filterDemandes()"
-                 placeholder="Filtrer les demandes..." 
-                 class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+      <div class="mb-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 class="text-4xl font-black text-gray-900 tracking-tight">Certifications</h2>
+            <p class="text-gray-500 mt-2 font-medium">Validation technique et labellisation des véhicules.</p>
+          </div>
+          <div class="relative w-full md:w-80">
+            <lucide-angular [img]="icons.Search" size="18" class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
+            <input type="text" 
+                   [(ngModel)]="searchQuery" 
+                   (input)="filterDemandes()"
+                   placeholder="Filtrer les demandes..." 
+                   class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+          </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-[2.5rem] shadow-xl shadow-gray-100/50 border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>

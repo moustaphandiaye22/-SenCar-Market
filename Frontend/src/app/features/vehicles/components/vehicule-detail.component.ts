@@ -10,6 +10,7 @@ import { AvisListComponent } from '../../avis/components/avis-list/avis-list.com
 import { AvisFormComponent } from '../../avis/components/avis-form/avis-form.component';
 import { CertificationService } from '../../../core/services/certification.service';
 import { AvisService } from '../../../core/services/avis.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-vehicule-detail',
@@ -24,6 +25,7 @@ export class VehiculeDetailComponent implements OnInit {
   private authService = inject(AuthService);
   private certificationService = inject(CertificationService);
   private avisService = inject(AvisService);
+  private toast = inject(ToastService);
 
   vehicule: VehiculeResponse | null = null;
   isLoading = true;
@@ -123,60 +125,55 @@ export class VehiculeDetailComponent implements OnInit {
     this.vehiculeService.publishVehicule(this.vehicule.id).subscribe({
       next: (updated) => {
         this.vehicule = updated;
-        alert('Votre annonce a été publiée avec succès !');
+        this.toast.success('Votre annonce a été publiée avec succès !');
       },
-      error: (err) => alert('Erreur lors de la publication.')
+      error: () => this.toast.error('Erreur lors de la publication.')
     });
   }
 
   deleteVehicule(): void {
     if (!this.vehicule) return;
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
-      this.vehiculeService.deleteVehicule(this.vehicule.id).subscribe({
-        next: () => {
-          alert('Annonce supprimée.');
-          this.router.navigate(['/vehicles/me']);
-        },
-        error: (err) => alert('Erreur lors de la suppression.')
-      });
-    }
+    this.vehiculeService.deleteVehicule(this.vehicule.id).subscribe({
+      next: () => {
+        this.toast.success('Annonce supprimée.');
+        this.router.navigate(['/vehicles/me']);
+      },
+      error: () => this.toast.error('Erreur lors de la suppression.')
+    });
   }
 
   boostVehicule(): void {
     if (!this.vehicule) return;
-    // Simple boost for 7 days starting now
     const now = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(now.getDate() + 7);
-    
+
     this.vehiculeService.boostVehicule(
-      this.vehicule.id, 
-      now.toISOString(), 
+      this.vehicule.id,
+      now.toISOString(),
       nextWeek.toISOString()
     ).subscribe({
       next: (updated) => {
         this.vehicule = updated;
-        alert('Votre annonce est maintenant boostée pour 7 jours !');
+        this.toast.success('Votre annonce est maintenant boostée pour 7 jours !');
       },
-      error: (err) => alert('Erreur lors du boost.')
+      error: () => this.toast.error('Erreur lors du boost.')
     });
   }
 
   demanderCertification(): void {
     if (!this.vehicule) return;
-    if (confirm('Voulez-vous demander une certification pour ce véhicule ? Des frais d\'inspection s\'appliquent.')) {
-      this.isCertifying = true;
-      this.certificationService.createDemande({ vehiculeId: this.vehicule.id }).subscribe({
-        next: (demande) => {
-          this.isCertifying = false;
-          alert('Demande de certification créée ! Vous pouvez maintenant procéder au paiement.');
-          this.router.navigate(['/dashboard'], { queryParams: { tab: 'certification' } });
-        },
-        error: (err) => {
-          this.isCertifying = false;
-          alert('Erreur lors de la demande : ' + (err.error?.message || 'Problème technique'));
-        }
-      });
-    }
+    this.isCertifying = true;
+    this.certificationService.createDemande({ vehiculeId: this.vehicule.id }).subscribe({
+      next: () => {
+        this.isCertifying = false;
+        this.toast.success('Demande de certification créée ! Procédez au paiement.');
+        this.router.navigate(['/dashboard'], { queryParams: { tab: 'certification' } });
+      },
+      error: (err) => {
+        this.isCertifying = false;
+        this.toast.error('Erreur : ' + (err.error?.message || 'Problème technique'));
+      }
+    });
   }
 }

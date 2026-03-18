@@ -9,26 +9,28 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, FormsModule],
   template: `
-    <div class="p-6 max-w-7xl mx-auto relative overflow-hidden">
+    <div class="p-6 lg:p-8 relative overflow-hidden">
       <!-- Decorative background -->
       <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
 
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-        <div>
-          <h2 class="text-4xl font-black text-gray-900 tracking-tight">Utilisateurs</h2>
-          <p class="text-gray-500 mt-2 font-medium">Gérez la communauté et les droits d'accès.</p>
-        </div>
-        <div class="relative w-full md:w-80">
-          <lucide-angular [img]="icons.Search" size="18" class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 (input)="filterUsers()"
-                 placeholder="Rechercher par nom, email..." 
-                 class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+      <div class="mb-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 class="text-4xl font-black text-gray-900 tracking-tight">Utilisateurs</h2>
+            <p class="text-gray-500 mt-2 font-medium">Gérez la communauté et les droits d'accès.</p>
+          </div>
+          <div class="relative w-full md:w-80">
+            <lucide-angular [img]="icons.Search" size="18" class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></lucide-angular>
+            <input type="text" 
+                   [(ngModel)]="searchQuery" 
+                   (input)="filterUsers()"
+                   placeholder="Rechercher par nom, email..." 
+                   class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none shadow-sm transition-all duration-300">
+          </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-[2.5rem] shadow-xl shadow-gray-100/50 border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
@@ -147,28 +149,18 @@ export class ManageUsersComponent implements OnInit {
   }
 
   changerRole(user: any, newRole: string) {
-    if (confirm(`Changer le rôle de ${user.prenom} en ${newRole} ?`)) {
-      this.adminService.modifierRole(user.id, newRole).subscribe(() => this.loadUsers());
-    }
+    this.adminService.modifierRole(user.id, newRole).subscribe(() => this.loadUsers());
   }
 
   suspendre(user: any) {
-    const reason = prompt("Raison de la suspension :");
-    if (reason) {
-      this.adminService.suspendreUtilisateur(user.id, reason).subscribe(() => this.loadUsers());
-    }
+    this.adminService.suspendreUtilisateur(user.id, 'Suspendu par administrateur').subscribe(() => this.loadUsers());
   }
 
   reactiver(user: any) {
-    if (confirm(`Réactiver l'utilisateur ${user.prenom} ${user.nom} ?`)) {
-      this.adminService.reactiverUtilisateur(user.id).subscribe(() => this.loadUsers());
-    }
+    this.adminService.reactiverUtilisateur(user.id).subscribe(() => this.loadUsers());
   }
 
   bannir(user: any) {
-    const reason = prompt("Raison du bannissement (Action IRRÉVERSIBLE) :");
-    if (reason) {
-      this.adminService.bannirUtilisateur(user.id, reason).subscribe(() => this.loadUsers());
-    }
+    this.adminService.bannirUtilisateur(user.id, 'Banni par administrateur').subscribe(() => this.loadUsers());
   }
 }

@@ -9,17 +9,12 @@ import { LucideAngularModule, User, Mail, Phone, Lock, Save, RefreshCw } from 'l
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
   template: `
-    <div class="max-w-4xl mx-auto">
-      <div class="flex items-center gap-3 mb-8">
-        <div class="p-3 bg-primary-100 rounded-2xl">
-          <lucide-angular [img]="icons.User" class="text-primary-600" size="32"></lucide-angular>
-        </div>
-        <div>
-          <h2 class="text-2xl font-black text-gray-900">Mon Profil</h2>
-          <p class="text-gray-500 text-sm font-medium">Gérez vos informations personnelles et la sécurité de votre compte.</p>
-        </div>
+    <div class="p-6 lg:p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
+      <div class="mb-10">
+        <h2 class="text-4xl font-black text-gray-900 tracking-tight">Mon Profil</h2>
+        <p class="text-gray-500 mt-2 font-medium">Gérez vos informations personnelles et la sécurité de votre compte.</p>
       </div>
-
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Informations Personnelles -->
         <div class="md:col-span-2 space-y-6">
@@ -29,6 +24,12 @@ import { LucideAngularModule, User, Mail, Phone, Lock, Save, RefreshCw } from 'l
               Informations Personnelles
             </h3>
 
+            <div *ngIf="profileSuccess" class="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-100 text-sm font-medium text-green-700 flex items-center gap-2">
+              <span>✓</span> {{ profileSuccess }}
+            </div>
+            <div *ngIf="profileError" class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm font-medium text-red-700">
+              {{ profileError }}
+            </div>
             <form (ngSubmit)="updateProfile()" #profileForm="ngForm" class="space-y-5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -79,6 +80,12 @@ import { LucideAngularModule, User, Mail, Phone, Lock, Save, RefreshCw } from 'l
               Changer le mot de passe
             </h3>
 
+            <div *ngIf="pwdSuccess" class="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-100 text-sm font-medium text-green-700 flex items-center gap-2">
+              <span>✓</span> {{ pwdSuccess }}
+            </div>
+            <div *ngIf="pwdError" class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm font-medium text-red-700">
+              {{ pwdError }}
+            </div>
             <form (ngSubmit)="changePassword()" #pwdForm="ngForm" class="space-y-4">
               <div class="space-y-4">
                 <div>
@@ -145,6 +152,10 @@ export class ProfileComponent implements OnInit {
 
   isSaving = false;
   isChangingPwd = false;
+  profileSuccess = '';
+  profileError = '';
+  pwdSuccess = '';
+  pwdError = '';
   icons = { User, Mail, Phone, Lock, Save, RefreshCw };
 
   pwdData = {
@@ -164,6 +175,8 @@ export class ProfileComponent implements OnInit {
 
   updateProfile() {
     this.isSaving = true;
+    this.profileSuccess = '';
+    this.profileError = '';
     this.authService.updateProfile({
       prenom: this.profile.prenom,
       nom: this.profile.nom,
@@ -171,33 +184,40 @@ export class ProfileComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.isSaving = false;
-        alert('Profil mis à jour avec succès !');
+        this.profileSuccess = 'Profil mis à jour avec succès !';
+        setTimeout(() => this.profileSuccess = '', 4000);
       },
       error: () => {
         this.isSaving = false;
-        alert('Erreur lors de la mise à jour.');
+        this.profileError = 'Erreur lors de la mise à jour du profil.';
+        setTimeout(() => this.profileError = '', 4000);
       }
     });
   }
 
   changePassword() {
     this.isChangingPwd = true;
+    this.pwdSuccess = '';
+    this.pwdError = '';
     this.authService.changePassword(this.pwdData).subscribe({
       next: () => {
         this.isChangingPwd = false;
         this.pwdData = { ancienMotDePasse: '', nouveauMotDePasse: '' };
-        alert('Mot de passe mis à jour !');
+        this.pwdSuccess = 'Mot de passe mis à jour avec succès !';
+        setTimeout(() => this.pwdSuccess = '', 4000);
       },
       error: (err: any) => {
         this.isChangingPwd = false;
-        alert(err.error?.message || 'Erreur lors du changement de mot de passe.');
+        this.pwdError = err.error?.message || 'Erreur lors du changement de mot de passe.';
+        setTimeout(() => this.pwdError = '', 4000);
       }
     });
   }
 
   forgotPassword() {
     this.authService.forgotPassword(this.profile.email).subscribe(() => {
-      alert('Un code de réinitialisation vous a été envoyé par email.');
+      this.pwdSuccess = 'Un code de réinitialisation vous a été envoyé par email.';
+      setTimeout(() => this.pwdSuccess = '', 5000);
     });
   }
 }

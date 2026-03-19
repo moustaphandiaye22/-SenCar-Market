@@ -105,5 +105,11 @@ export class VehiculeResponseDto {
   proprietaireId!: string;
 
   @ApiProperty()
+  proprietaireTelephone!: string | null;
+
+  @ApiProperty()
+  proprietaireEmail!: string | null;
+
+  @ApiProperty()
   createdAt!: Date | null;
 }

@@ -36,7 +36,7 @@ export class VehiculeService {
     user: AuthenticatedUser,
   ): Promise<VehiculeResponseDto> {
     const currentUser = await this.mustFindUser(user.email);
-    this.accessPolicy.assertCanCreate(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertCanCreate(currentUser.type_utilisateur?.nom);
     const couleur = normalizeRequiredField(request.couleur, 'couleur', 'VEHICULE_INVALID_FIELD');
     const numeroVin = normalizeRequiredField(request.numeroVin, 'numeroVin', 'VEHICULE_INVALID_FIELD');
     const description = normalizeOptionalField(request.description);
@@ -62,38 +62,38 @@ export class VehiculeService {
       proprietaire: { connect: { id: currentUser.id } },
       marque: { connect: { id: marque.id } },
       modele: { connect: { id: modele.id } },
-      anneeFabrication: request.anneeFabrication,
+      annee_fabrication: request.anneeFabrication,
       kilometrage: request.kilometrage,
       carburant: { connect: { id: request.carburantId } },
-      boiteVitesse: { connect: { id: request.boiteVitesseId } },
+      boite_vitesse: { connect: { id: request.boiteVitesseId } },
       couleur,
-      prixVente: request.prixVente,
+      prix_vente: request.prixVente,
       ...(description !== undefined ? { description } : {}),
-      numeroVin,
+      numero_vin: numeroVin,
       ...(immatriculation !== undefined ? { immatriculation } : {}),
-      prixNegociable: request.prixNegociable ?? false,
+      prix_negociable: request.prixNegociable ?? false,
       certifie: request.certifie ?? false,
       titre: request.titre,
-      nombrePortes: request.nombrePortes,
-      nombrePlaces: request.nombrePlaces,
+      nombre_portes: request.nombrePortes,
+      nombre_places: request.nombrePlaces,
       cylindree: request.cylindree,
-      puissanceFiscale: request.puissanceFiscale,
-      estGarantie: request.estGarantie ?? false,
-      garantieMois: request.garantieMois,
+      puissance_fiscale: request.puissanceFiscale,
+      est_garantie: request.estGarantie ?? false,
+      garantie_mois: request.garantieMois,
       statut,
-      estBoost: false,
+      est_boost: false,
       vues: 0,
-      nombreFavoris: 0,
-    });
+      nombre_favoris: 0,
+    } as any);
 
     if (photosUrls.length) {
       await Promise.all(
         photosUrls.map((url, index) =>
           this.repository.createPhoto({
             id: randomUUID(),
-            vehicule: { connect: { id: vehicule.id } },
+            vehicule_id: vehicule.id,
             url,
-            estPrincipale: index === 0,
+            est_principale: index === 0,
             ordre: index,
           }),
         ),
@@ -130,7 +130,7 @@ export class VehiculeService {
   async getVehiculeById(id: string, user: AuthenticatedUser): Promise<VehiculeResponseDto> {
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
-    this.accessPolicy.assertCanReadVehicule(vehicule, currentUser.id, currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertCanReadVehicule(vehicule, currentUser.id, currentUser.type_utilisateur?.nom);
 
     const views = (vehicule.vues ?? 0) + 1;
     await this.repository.updateVehicule(id, { vues: views });
@@ -150,7 +150,11 @@ export class VehiculeService {
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
 
-    this.accessPolicy.assertAdminOrOwner(currentUser.typeUtilisateur?.nom, currentUser.id, vehicule.proprietaireId);
+    this.accessPolicy.assertAdminOrOwner(
+      currentUser.type_utilisateur?.nom,
+      currentUser.id,
+      vehicule.proprietaire_id,
+    );
 
     await this.repository.updateVehicule(id, { statut: 'PUBLIE' });
     const updated = await this.mustFindVehicule(id);
@@ -167,12 +171,12 @@ export class VehiculeService {
     const vehicule = await this.mustFindVehicule(id);
 
     this.accessPolicy.assertAdminOrOwner(
-      currentUser.typeUtilisateur?.nom,
+      currentUser.type_utilisateur?.nom,
       currentUser.id,
-      vehicule.proprietaireId,
+      vehicule.proprietaire_id,
     );
 
-    const updateData: UpdateVehiculeInput = {};
+    const updateData: any = {};
 
     if (request.marque) {
       const marque = await this.repository.findOrCreateMarque(request.marque);
@@ -180,7 +184,7 @@ export class VehiculeService {
     }
 
     if (request.modele) {
-      const marqueIdToUse = updateData.marque?.connect?.id || vehicule.marqueId;
+      const marqueIdToUse = updateData.marque?.connect?.id || vehicule.marque_id;
       if (!marqueIdToUse) {
         throw new DomainException('Impossible de définir le modèle sans marque', 400, 'NO_MARQUE_FOR_MODELE');
       }
@@ -198,33 +202,33 @@ export class VehiculeService {
       const boiteVitesse = await this.repository.findBoiteVitesseById(request.boiteVitesseId);
       if (!boiteVitesse)
         throw new DomainException('Boîte de vitesse non trouvée', 404, 'BOITE_VITESSE_NOT_FOUND');
-      updateData.boiteVitesse = { connect: { id: request.boiteVitesseId } };
+      updateData.boite_vitesse = { connect: { id: request.boiteVitesseId } };
     }
 
-    if (request.anneeFabrication) updateData.anneeFabrication = request.anneeFabrication;
+    if (request.anneeFabrication) updateData.annee_fabrication = request.anneeFabrication;
     if (request.kilometrage !== undefined) updateData.kilometrage = request.kilometrage;
     if (request.couleur)
       updateData.couleur = normalizeRequiredField(request.couleur, 'couleur', 'VEHICULE_INVALID_FIELD');
-    if (request.prixVente) updateData.prixVente = request.prixVente;
+    if (request.prixVente) updateData.prix_vente = request.prixVente;
     if (request.description !== undefined)
       updateData.description = normalizeOptionalField(request.description);
     if (request.numeroVin)
-      updateData.numeroVin = normalizeRequiredField(
+      updateData.numero_vin = normalizeRequiredField(
         request.numeroVin,
         'numeroVin',
         'VEHICULE_INVALID_FIELD',
       );
     if (request.immatriculation !== undefined)
       updateData.immatriculation = normalizeOptionalField(request.immatriculation);
-    if (request.prixNegociable !== undefined) updateData.prixNegociable = request.prixNegociable;
+    if (request.prixNegociable !== undefined) updateData.prix_negociable = request.prixNegociable;
     if (request.certifie !== undefined) updateData.certifie = request.certifie;
     if (request.titre !== undefined) updateData.titre = request.titre;
-    if (request.nombrePortes !== undefined) updateData.nombrePortes = request.nombrePortes;
-    if (request.nombrePlaces !== undefined) updateData.nombrePlaces = request.nombrePlaces;
+    if (request.nombrePortes !== undefined) updateData.nombre_portes = request.nombrePortes;
+    if (request.nombrePlaces !== undefined) updateData.nombre_places = request.nombrePlaces;
     if (request.cylindree !== undefined) updateData.cylindree = request.cylindree;
-    if (request.puissanceFiscale !== undefined) updateData.puissanceFiscale = request.puissanceFiscale;
-    if (request.estGarantie !== undefined) updateData.estGarantie = request.estGarantie;
-    if (request.garantieMois !== undefined) updateData.garantieMois = request.garantieMois;
+    if (request.puissanceFiscale !== undefined) updateData.puissance_fiscale = request.puissanceFiscale;
+    if (request.estGarantie !== undefined) updateData.est_garantie = request.estGarantie;
+    if (request.garantieMois !== undefined) updateData.garantie_mois = request.garantieMois;
 
     if (request.enregistrerEnBrouillon !== undefined) {
       updateData.statut = request.enregistrerEnBrouillon ? 'BROUILLON' : 'PUBLIE';
@@ -247,7 +251,11 @@ export class VehiculeService {
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
 
-    this.accessPolicy.assertAdminOrOwner(currentUser.typeUtilisateur?.nom, currentUser.id, vehicule.proprietaireId);
+    this.accessPolicy.assertAdminOrOwner(
+      currentUser.type_utilisateur?.nom,
+      currentUser.id,
+      vehicule.proprietaire_id,
+    );
     await this.repository.deleteVehicule(id);
   }
 
@@ -303,13 +311,13 @@ export class VehiculeService {
 
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
-    this.accessPolicy.assertAdminOrOwner(currentUser.typeUtilisateur?.nom, currentUser.id, vehicule.proprietaireId);
+    this.accessPolicy.assertAdminOrOwner(currentUser.type_utilisateur?.nom, currentUser.id, vehicule.proprietaire_id);
 
     await this.repository.updateVehicule(id, {
-      estBoost: true,
-      boostDebut: debut,
-      boostFin: fin,
-    });
+      est_boost: true,
+      boost_debut: debut,
+      boost_fin: fin,
+    } as any);
 
     const updated = await this.mustFindVehicule(id);
     return this.mapper.toVehiculeResponse(updated, false);
@@ -342,7 +350,7 @@ export class VehiculeService {
     }
 
     const count = await this.repository.countFavoris(vehiculeId);
-    await this.repository.updateVehicule(vehiculeId, { nombreFavoris: count });
+    await this.repository.updateVehicule(vehiculeId, { nombre_favoris: count } as any);
   }
 
   private async mustFindUser(email: string): Promise<UserWithRoleRecord> {

@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CertificationService } from '../../../../core/services/certification.service';
 import { LucideAngularModule, Shield, Check, X, Search, Filter, Calendar } from 'lucide-angular';
+import { ConfirmService } from '../../../../core/services/confirm.service';
+import { PromptService } from '../../../../core/services/prompt.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -100,6 +102,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageCertificationsComponent implements OnInit {
   private certService = inject(CertificationService);
+  private confirmService = inject(ConfirmService);
+  private promptService = inject(PromptService);
   demandes: any[] = [];
   filteredDemandes: any[] = [];
   searchQuery = '';
@@ -133,16 +137,28 @@ export class ManageCertificationsComponent implements OnInit {
   }
 
   valider(d: any) {
-    if (confirm('Voulez-vous valider cette demande de certification ?')) {
-      this.certService.validerDemande(d.id).subscribe(() => this.loadDemandes());
-    }
+    this.confirmService.show({
+      title: 'Valider la certification ?',
+      message: 'Confirmez-vous que ce véhicule a passé les contrôles techniques ?',
+      confirmText: 'Certifier',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        this.certService.validerDemande(d.id).subscribe(() => this.loadDemandes());
+      }
+    });
   }
 
   rejeter(d: any) {
-    const raison = prompt('Raison du rejet (sera communiquée au demandeur) :');
-    if (raison) {
-      this.certService.rejeterDemande(d.id, raison).subscribe(() => this.loadDemandes());
-    }
+    this.promptService.show({
+      title: 'Rejeter la certification',
+      message: 'Veuillez indiquer la raison du rejet technique.',
+      placeholder: 'Ex: Photos floues, documents non conformes...',
+      onConfirm: (raison) => {
+        if (raison) {
+          this.certService.rejeterDemande(d.id, raison).subscribe(() => this.loadDemandes());
+        }
+      }
+    });
   }
 
   getStatusClass(status: string) {

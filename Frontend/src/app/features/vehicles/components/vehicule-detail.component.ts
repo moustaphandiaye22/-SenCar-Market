@@ -11,6 +11,7 @@ import { AvisFormComponent } from '../../avis/components/avis-form/avis-form.com
 import { CertificationService } from '../../../core/services/certification.service';
 import { AvisService } from '../../../core/services/avis.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { MessagerieService } from '../../messagerie/services/messagerie.service';
 
 @Component({
   selector: 'app-vehicule-detail',
@@ -26,6 +27,7 @@ export class VehiculeDetailComponent implements OnInit {
   private certificationService = inject(CertificationService);
   private avisService = inject(AvisService);
   private toast = inject(ToastService);
+  private messagerieService = inject(MessagerieService);
 
   vehicule: VehiculeResponse | null = null;
   isLoading = true;
@@ -34,6 +36,7 @@ export class VehiculeDetailComponent implements OnInit {
   isCertifying = false;
   showAvisForm = false;
   transactionId = '';
+  showPhone = false;
   
   currentUser$ = this.authService.currentUser$;
 
@@ -175,5 +178,40 @@ export class VehiculeDetailComponent implements OnInit {
         this.toast.error('Erreur : ' + (err.error?.message || 'Problème technique'));
       }
     });
+  }
+
+  onShowPhone(): void {
+    this.showPhone = true;
+  }
+
+  onContactEmail(): void {
+    if (this.vehicule?.proprietaireEmail) {
+      const subject = `Intérêt pour votre annonce : ${this.vehicule.marque} ${this.vehicule.modele}`;
+      window.location.href = `mailto:${this.vehicule.proprietaireEmail}?subject=${encodeURIComponent(subject)}`;
+    }
+  }
+
+  onMessageDirect(): void {
+    const user = this.authService.getUser();
+    if (!user) {
+      this.toast.info('Veuillez vous connecter pour envoyer un message.');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (user.id === this.vehicule?.proprietaireId) {
+      this.toast.warning('Vous ne pouvez pas vous envoyer de message à vous-même.');
+      return;
+    }
+
+    if (this.vehicule?.proprietaireId) {
+      const titre = `Négociation : ${this.vehicule.marque} ${this.vehicule.modele}`;
+      this.messagerieService.createConversation(this.vehicule.proprietaireId, titre).subscribe({
+        next: (conv) => {
+          this.router.navigate(['/messagerie'], { queryParams: { id: conv.id } });
+        },
+        error: () => this.toast.error('Impossible de créer la conversation.')
+      });
+    }
   }
 }

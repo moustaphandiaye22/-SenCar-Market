@@ -73,7 +73,7 @@ export class PaiementWebhookService {
         return 'IGNORED';
       }
 
-      if (paiement.statut === nouveauStatut && paiement.datePaiement) {
+      if (paiement.statut === nouveauStatut && paiement.date_paiement) {
         await this.paiementLogService.createLogAction(
           paiement.id,
           'WEBHOOK_DUPLICATE',
@@ -84,9 +84,9 @@ export class PaiementWebhookService {
 
       await this.repository.updatePaiement(paiement.id, {
         statut: nouveauStatut,
-        referenceExterne: paiement.referenceExterne ?? externalRef ?? undefined,
-        datePaiement: nouveauStatut === 'CONFIRME' ? new Date() : undefined,
-        updatedAt: new Date(),
+        reference_externe: paiement.reference_externe ?? externalRef ?? undefined,
+        date_paiement: nouveauStatut === 'CONFIRME' ? new Date() : undefined,
+        updated_at: new Date(),
       });
 
       await this.paiementLogService.createLogAction(

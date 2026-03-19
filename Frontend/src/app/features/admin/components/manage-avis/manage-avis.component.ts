@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AvisService, Avis } from '../../../../core/services/avis.service';
 import { LucideAngularModule, MessageSquare, Trash2, Star, User, Calendar, ShieldAlert, Search, Filter } from 'lucide-angular';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -86,6 +87,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageAvisComponent implements OnInit {
   private avisService = inject(AvisService);
+  private confirmService = inject(ConfirmService);
   avisList: Avis[] = [];
   filteredAvis: Avis[] = [];
   searchQuery = '';
@@ -125,10 +127,16 @@ export class ManageAvisComponent implements OnInit {
   }
 
   supprimer(avis: Avis) {
-    if (confirm('Voulez-vous vraiment supprimer cet avis ? Cette action est irréversible.')) {
-      this.avisService.deleteAvis(avis.id).subscribe(() => {
-        this.loadAvis();
-      });
-    }
+    this.confirmService.show({
+      title: 'Supprimer cet avis ?',
+      message: 'Voulez-vous vraiment supprimer cet avis ? Cette action est irréversible.',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        this.avisService.deleteAvis(avis.id).subscribe(() => {
+          this.loadAvis();
+        });
+      }
+    });
   }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessagerieService, Conversation, Message } from '../../services/messagerie.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 import { LucideAngularModule, Send, Search, User, MoreVertical, Paperclip, CheckCircle2, Phone, Video, Info, Trash2, Pin, Users, ArrowLeft, MessageSquare, RefreshCcw } from 'lucide-angular';
 import { Subscription, interval, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -16,6 +17,7 @@ import { Subscription, interval, Subject, debounceTime, distinctUntilChanged } f
 export class MessagerieComponent implements OnInit, OnDestroy {
   private messagerieService = inject(MessagerieService);
   private authService = inject(AuthService);
+  private confirmService = inject(ConfirmService);
 
   currentUser$ = this.authService.currentUser$;
   conversations: Conversation[] = [];
@@ -130,11 +132,17 @@ export class MessagerieComponent implements OnInit, OnDestroy {
   }
 
   deleteMessage(messageId: string) {
-    if (confirm('Supprimer ce message ?')) {
-      this.messagerieService.deleteMessage(messageId).subscribe(() => {
-        this.messages = this.messages.filter(m => m.id !== messageId);
-      });
-    }
+    this.confirmService.show({
+      title: 'Supprimer le message ?',
+      message: 'Cette action supprimera définitivement le message pour vous.',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        this.messagerieService.deleteMessage(messageId).subscribe(() => {
+          this.messages = this.messages.filter(m => m.id !== messageId);
+        });
+      }
+    });
   }
 
   pinMessage(msg: Message) {

@@ -56,16 +56,16 @@ export class AvisService {
 
     const created = await this.repository.createAvis({
       id: this.repository.newId(),
-      auteur: { connect: { id: auteur.id } },
-      ...(request.cibleUtilisateurId ? { cibleUtilisateur: { connect: { id: request.cibleUtilisateurId } } } : {}),
-      ...(request.vehiculeId ? { vehicule: { connect: { id: request.vehiculeId } } } : {}),
-      ...(request.garageId ? { garageId: request.garageId } : {}),
-      typeAvis: request.typeAvis,
-      transactionId: request.transactionId,
+      auteur_id: auteur.id,
+      cible_utilisateur_id: request.cibleUtilisateurId,
+      vehicule_id: request.vehiculeId,
+      garage_id: request.garageId,
+      type_avis: request.typeAvis as any,
+      transaction_id: request.transactionId,
       note: request.note,
       commentaire: request.commentaire,
-      statut: 'PUBLIE',
-      createdAt: new Date(),
+      statut: 'PUBLIE' as any,
+      created_at: new Date(),
     });
 
     return this.mapper.toAvisResponse(created);
@@ -128,7 +128,7 @@ export class AvisService {
     const avis = await this.repository.findAvisById(avisId);
     if (!avis) throw new DomainException('Avis non trouvé', 404, 'AVIS_NOT_FOUND');
 
-    if (avis.auteurId === auteur.id) {
+    if (avis.auteur_id === auteur.id) {
       throw new DomainException('Vous ne pouvez pas signaler votre propre avis', 400, 'AVIS_CANNOT_REPORT_SELF');
     }
 
@@ -142,7 +142,7 @@ export class AvisService {
     const avis = await this.repository.findAvisById(avisId);
     if (!avis) throw new DomainException('Avis non trouvé', 404, 'AVIS_NOT_FOUND');
 
-    if (avis.auteurId !== requester.id) {
+    if (avis.auteur_id !== requester.id) {
       throw new DomainException('Seul l\'auteur peut supprimer cet avis', 403, 'AVIS_CANNOT_DELETE');
     }
 

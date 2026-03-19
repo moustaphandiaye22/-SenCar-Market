@@ -6,7 +6,7 @@ import { OptionRecord } from '../assurance.models';
 @Injectable()
 export class AssurancePricingService {
   calculateTotalPrice(prixBase: number, options: OptionRecord[]): number {
-    return options.reduce((sum, option) => sum + (toNullableNumber(option.prixSupplementaire) ?? 0), prixBase);
+    return options.reduce((sum, option) => sum + (toNullableNumber(option.prix_supplementaire) ?? 0), prixBase);
   }
 
   resolveDateFin(dateDebut: Date, dureeMois: number | null): Date {

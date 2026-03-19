@@ -7,15 +7,17 @@ import { VehiculeRecord } from '../vehicule.models';
 export class VehiculeMapper {
   toVehiculeResponse(vehicule: VehiculeRecord, estFavori: boolean): VehiculeResponseDto {
     const marque = (vehicule.marque as { nom?: string | null } | null)?.nom ?? null;
-    const marqueId = vehicule.marqueId;
+    const marqueId = vehicule.marque_id;
     const modele = (vehicule.modele as { nom?: string | null } | null)?.nom ?? null;
-    const modeleId = vehicule.modeleId;
+    const modeleId = vehicule.modele_id;
     const carburant = (vehicule.carburant as { nom?: string | null } | null)?.nom ?? null;
-    const carburantId = vehicule.carburantId;
-    const boiteVitesse = (vehicule.boiteVitesse as { nom?: string | null } | null)?.nom ?? null;
-    const boiteVitesseId = vehicule.boiteVitesseId;
-    const proprietaire = vehicule.proprietaire as { id: string; nom?: string | null };
-    const photos = ((vehicule.photos as Array<{ url: string }> | undefined) ?? []).map((p) => p.url);
+    const carburantId = vehicule.carburant_id;
+    const boiteVitesse = (vehicule.boite_vitesse as { nom?: string | null } | null)?.nom ?? null;
+    const boiteVitesseId = vehicule.boite_vitesse_id;
+    const proprietaire = vehicule.utilisateur;
+    const photos = ((vehicule.photo_vehicule as Array<{ url: string }> | undefined) ?? []).map(
+      (p) => p.url,
+    );
 
     return {
       id: vehicule.id,
@@ -23,37 +25,39 @@ export class VehiculeMapper {
       marqueId,
       modele,
       modeleId,
-      anneeFabrication: vehicule.anneeFabrication,
+      anneeFabrication: vehicule.annee_fabrication,
       kilometrage: vehicule.kilometrage,
       carburant,
       carburantId,
       boiteVitesse,
       boiteVitesseId,
       couleur: vehicule.couleur,
-      prixVente: vehicule.prixVente ? String(vehicule.prixVente) : null,
+      prixVente: vehicule.prix_vente ? String(vehicule.prix_vente) : null,
       description: vehicule.description,
-      numeroVin: vehicule.numeroVin,
+      numeroVin: vehicule.numero_vin,
       immatriculation: vehicule.immatriculation,
       statut: vehicule.statut,
-      prixNegociable: vehicule.prixNegociable,
+      prixNegociable: vehicule.prix_negociable,
       certifie: vehicule.certifie,
       titre: vehicule.titre,
-      nombrePortes: vehicule.nombrePortes,
-      nombrePlaces: vehicule.nombrePlaces,
+      nombrePortes: vehicule.nombre_portes,
+      nombrePlaces: vehicule.nombre_places,
       cylindree: vehicule.cylindree,
-      puissanceFiscale: vehicule.puissanceFiscale,
-      estGarantie: vehicule.estGarantie,
-      garantieMois: vehicule.garantieMois,
+      puissanceFiscale: vehicule.puissance_fiscale,
+      estGarantie: vehicule.est_garantie,
+      garantieMois: vehicule.garantie_mois,
       photosUrls: photos,
-      estBoost: vehicule.estBoost,
-      boostDebut: vehicule.boostDebut,
-      boostFin: vehicule.boostFin,
+      estBoost: vehicule.est_boost,
+      boostDebut: vehicule.boost_debut,
+      boostFin: vehicule.boost_fin,
       vues: vehicule.vues,
-      nombreFavoris: vehicule.nombreFavoris,
+      nombreFavoris: vehicule.nombre_favoris,
       estFavori,
       proprietaireNom: proprietaire?.nom ?? null,
-      proprietaireId: proprietaire.id,
-      createdAt: vehicule.createdAt,
+      proprietaireId: vehicule.proprietaire_id,
+      proprietaireTelephone: proprietaire?.telephone ?? null,
+      proprietaireEmail: proprietaire?.email ?? null,
+      createdAt: vehicule.created_at,
     };
   }
 }

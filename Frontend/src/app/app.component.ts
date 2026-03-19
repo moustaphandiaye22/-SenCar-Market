@@ -2,9 +2,11 @@ import { Component, inject, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { ToastComponent } from './core/components/toast/toast.component';
+import { ConfirmDialogComponent } from './core/components/confirm-dialog/confirm-dialog.component';
+import { PromptDialogComponent } from './core/components/prompt-dialog/prompt-dialog.component';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
-import { LucideAngularModule, Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck } from 'lucide-angular';
+import { LucideAngularModule, Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified } from 'lucide-angular';
 import { filter } from 'rxjs';
 
 @Component({
@@ -16,7 +18,9 @@ import { filter } from 'rxjs';
     RouterLink,
     RouterLinkActive,
     LucideAngularModule,
-    ToastComponent
+    ToastComponent,
+    ConfirmDialogComponent,
+    PromptDialogComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -30,10 +34,11 @@ export class AppComponent implements OnInit {
   icons = { 
     Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, 
     ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, 
-    LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck 
+    LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified
   };
 
   isUserDropdownOpen = false;
+  isServicesDropdownOpen = false;
   isMobileMenuOpen = false;
   unreadCount = 0;
   isAdminRoute = false;
@@ -84,7 +89,14 @@ export class AppComponent implements OnInit {
 
   toggleUserDropdown(event: Event) {
     event.stopPropagation();
+    this.isServicesDropdownOpen = false;
     this.isUserDropdownOpen = !this.isUserDropdownOpen;
+  }
+
+  toggleServicesDropdown(event: Event) {
+    event.stopPropagation();
+    this.isUserDropdownOpen = false;
+    this.isServicesDropdownOpen = !this.isServicesDropdownOpen;
   }
 
   toggleMobileMenu() {
@@ -98,6 +110,7 @@ export class AppComponent implements OnInit {
   @HostListener('document:click')
   closeDropdowns() {
     this.isUserDropdownOpen = false;
+    this.isServicesDropdownOpen = false;
     this.isMobileMenuOpen = false;
   }
 

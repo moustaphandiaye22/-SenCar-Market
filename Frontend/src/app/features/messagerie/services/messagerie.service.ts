@@ -58,8 +58,13 @@ export class MessagerieService {
     return this.api.post('/messagerie/messages', { conversationId, contenu });
   }
 
-  createConversation(destinataireId: string, titre?: string): Observable<Conversation> {
-    return this.api.post('/messagerie/conversations', { participantIds: [destinataireId], titre });
+  createConversation(destinataireId: string, titre?: string, annonceId?: string): Observable<Conversation> {
+    return this.api.post('/messagerie/conversations', { 
+      autreUtilisateurId: destinataireId, 
+      titre,
+      annonceId,
+      typeConversation: 'DIRECT'
+    });
   }
 
   markAsRead(conversationId: string): Observable<void> {

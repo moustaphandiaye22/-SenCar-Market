@@ -80,24 +80,22 @@ export class PaiementService {
       throw new DomainException('Réservation non trouvée', 404, 'RESERVATION_NOT_FOUND');
     }
 
-    const isEscrow = Boolean(request.isEscrow);
-    const commission = isEscrow ? this.calculateCommission(request.montant) : 0;
-    const montantEscrow = isEscrow ? request.montant - commission : request.montant;
+    const is_escrow = Boolean(request.isEscrow);
+    const commission = is_escrow ? this.calculateCommission(request.montant) : 0;
+    const montantEscrow = is_escrow ? request.montant - commission : request.montant;
 
     const created = await this.repository.createPaiement({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: targetUser.id } },
-      reservation: { connect: { id: reservation.id } },
+      utilisateur_id: targetUser.id,
+      reservation_id: reservation.id,
       montant: request.montant,
-      montantEscrow,
+      montant_escrow: montantEscrow,
       commission,
-      methodePaiement: request.methodePaiement,
+      methode_paiement: request.methodePaiement,
       statut: 'EN_ATTENTE',
-      isEscrow,
-      referenceTransaction: this.repository.newId(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      is_escrow,
+      reference_transaction: this.repository.newId(),
+    } as any);
 
     await this.paiementLogService.createLogAction(created.id, 'CREATION', 'Paiement créé');
     return this.toPaiementResponse(created);
@@ -109,9 +107,9 @@ export class PaiementService {
   ): Promise<PaiementResponseDto> {
     const paiement = await this.createPaiement(request, user);
     const updated = await this.repository.updatePaiement(paiement.id, {
-      urlPaiement: this.buildPaymentUrl(this.wavePayUrlBase),
-      updatedAt: new Date(),
-    });
+      url_paiement: this.buildPaymentUrl(this.wavePayUrlBase),
+      updated_at: new Date(),
+    } as any);
     return this.toPaiementResponse(updated);
   }
 
@@ -121,9 +119,9 @@ export class PaiementService {
   ): Promise<PaiementResponseDto> {
     const paiement = await this.createPaiement(request, user);
     const updated = await this.repository.updatePaiement(paiement.id, {
-      urlPaiement: this.buildPaymentUrl(this.omPayUrlBase),
-      updatedAt: new Date(),
-    });
+      url_paiement: this.buildPaymentUrl(this.omPayUrlBase),
+      updated_at: new Date(),
+    } as any);
     return this.toPaiementResponse(updated);
   }
 
@@ -137,13 +135,13 @@ export class PaiementService {
   async getPaiementById(id: string, user: AuthenticatedUser): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const paiement = await this.mustFindPaiement(id);
-    this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
+    this.assertOwnerOrAdmin(currentUser, paiement.utilisateur_id);
     return this.toPaiementResponse(paiement);
   }
 
   async getAllPaiements(page: number, size: number, user: AuthenticatedUser): Promise<PaginatedResponseDto<PaiementResponseDto>> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const clampedPage = clampPage(page);
     const clampedSize = clampSize(size, 20, 100);
@@ -170,7 +168,7 @@ export class PaiementService {
     user: AuthenticatedUser,
   ): Promise<PaiementResponseDto[]> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const paiements = await this.repository.findPaiementsByReservationId(reservationId);
     return paiements.map((item) => this.toPaiementResponse(item));
@@ -178,7 +176,7 @@ export class PaiementService {
 
   async getPaiementsByStatut(statut: string, user: AuthenticatedUser): Promise<PaiementResponseDto[]> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const parsed = this.parsePaiementStatut(statut);
     const paiements = await this.repository.findPaiementsByStatut(parsed);
@@ -192,7 +190,7 @@ export class PaiementService {
   ): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const paiement = await this.mustFindPaiement(id);
-    this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
+    this.assertOwnerOrAdmin(currentUser, paiement.utilisateur_id);
     const referenceExterneClean = requireNonBlank(
       referenceExterne,
       'Référence externe requise',
@@ -201,10 +199,10 @@ export class PaiementService {
 
     const updated = await this.repository.updatePaiement(id, {
       statut: 'CONFIRME',
-      referenceExterne: referenceExterneClean,
-      datePaiement: new Date(),
-      updatedAt: new Date(),
-    });
+      reference_externe: referenceExterneClean,
+      date_paiement: new Date(),
+      updated_at: new Date(),
+    } as any);
 
     await this.paiementLogService.createLogAction(
       id,
@@ -212,11 +210,20 @@ export class PaiementService {
       `Paiement confirmé avec référence externe: ${referenceExterneClean}`,
     );
 
-    if (updated.isEscrow && updated.utilisateurId) {
+    if (updated.is_escrow && updated.utilisateur_id) {
       await this.escrowService.bloquerFondsEscrow(
-        updated.utilisateurId,
-        toNumberOrZero(updated.montantEscrow),
-        updated.referenceTransaction,
+        updated.utilisateur_id,
+        toNumberOrZero(updated.montant_escrow),
+        updated.reference_transaction ?? '',
+      );
+    }
+
+    if (updated.reservation_id) {
+      await this.repository.updateReservationStatus(updated.reservation_id, 'CONFIRME');
+      await this.paiementLogService.createLogAction(
+        id,
+        'RESERVATION_CONFIRMED',
+        `Réservation ${updated.reservation_id} confirmée suite au paiement`,
       );
     }
 
@@ -226,14 +233,14 @@ export class PaiementService {
   async annulerPaiement(id: string, user: AuthenticatedUser): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const paiement = await this.mustFindPaiement(id);
-    this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
+    this.assertOwnerOrAdmin(currentUser, paiement.utilisateur_id);
 
     return this.updateStatutPaiement(id, 'ANNULE');
   }
 
   async remboursementPaiement(id: string, montant: number, user: AuthenticatedUser): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
     this.assertNonNegativeFiniteAmount(
       montant,
       'Montant de remboursement invalide',
@@ -243,8 +250,8 @@ export class PaiementService {
     const paiement = await this.mustFindPaiement(id);
     const updated = await this.repository.updatePaiement(paiement.id, {
       statut: 'REMBOURSE',
-      updatedAt: new Date(),
-    });
+      updated_at: new Date(),
+    } as any);
     await this.paiementLogService.createLogAction(id, 'REMBOURSEMENT', `Remboursement de ${montant}`);
 
     return this.toPaiementResponse(updated);
@@ -266,25 +273,25 @@ export class PaiementService {
   async confirmerReceptionEtLiberer(id: string, user: AuthenticatedUser): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const paiement = await this.mustFindPaiement(id);
-    this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
-    if (paiement.isEscrow !== true) {
+    this.assertOwnerOrAdmin(currentUser, paiement.utilisateur_id);
+    if (paiement.is_escrow !== true) {
       throw new DomainException('Libération possible uniquement pour un paiement escrow', 400, 'ESCROW_NOT_ENABLED');
     }
     if (paiement.statut !== 'CONFIRME') {
       throw new DomainException('Paiement doit être confirmé avant libération', 400, 'ESCROW_RELEASE_REQUIRES_CONFIRMED_PAYMENT');
     }
-    const reference = paiement.referenceTransaction;
+    const reference = paiement.reference_transaction;
     if (!reference) {
       throw new DomainException('Référence transaction manquante', 400, 'ESCROW_REFERENCE_MISSING');
     }
 
-    const proprietaireId = paiement.reservation?.annonceLocation?.proprietaireId;
+    const proprietaireId = paiement.reservation?.annonce_location?.proprietaire_id;
     if (proprietaireId) {
       const alreadyReleased = await this.repository.hasEscrowReleaseTransaction(proprietaireId, reference);
       if (alreadyReleased) {
         throw new DomainException('Fonds escrow déjà libérés', 400, 'ESCROW_ALREADY_RELEASED');
       }
-      await this.escrowService.libererFondsEscrow(proprietaireId, toNumberOrZero(paiement.montantEscrow), reference);
+      await this.escrowService.libererFondsEscrow(proprietaireId, toNumberOrZero(paiement.montant_escrow), reference);
     }
 
     await this.paiementLogService.createLogAction(id, 'ESCROW_RELEASE', 'Fonds escrow libérés');
@@ -363,7 +370,7 @@ export class PaiementService {
 
   async getTransactionById(id: string, user: AuthenticatedUser): Promise<TransactionResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    if (!hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION)) {
+    if (!hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION)) {
       const owned = await this.repository.transactionBelongsToUser(id, currentUser.id);
       if (!owned) {
         throw new DomainException('Accès refusé', 403, 'ACCESS_DENIED_RESOURCE');
@@ -380,7 +387,7 @@ export class PaiementService {
 
   async getLogsByPaiement(id: string, user: AuthenticatedUser): Promise<PaiementLogResponseDto[]> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const logs = await this.repository.findLogsByPaiementId(id);
     return logs.map((item) => this.toPaiementLogResponse(item));
@@ -388,7 +395,7 @@ export class PaiementService {
 
   async calculateCommissionForUser(montant: number, user: AuthenticatedUser): Promise<number> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
     this.assertNonNegativeFiniteAmount(montant, 'Montant invalide', 'PAIEMENT_AMOUNT_INVALID');
     return this.calculateCommission(montant);
   }
@@ -405,9 +412,9 @@ export class PaiementService {
   private async updateStatutPaiement(id: string, statut: StatutPaiement): Promise<PaiementResponseDto> {
     const updated = await this.repository.updatePaiement(id, {
       statut,
-      datePaiement: statut === 'CONFIRME' ? new Date() : undefined,
-      updatedAt: new Date(),
-    });
+      date_paiement: statut === 'CONFIRME' ? new Date() : undefined,
+      updated_at: new Date(),
+    } as any);
 
     await this.paiementLogService.createLogAction(id, 'STATUT_UPDATE', `Statut changé vers ${statut}`);
     return this.toPaiementResponse(updated);
@@ -438,14 +445,14 @@ export class PaiementService {
   }
 
   private resolveTargetUtilisateurId(requestedId: string | undefined, currentUser: UserRecord): string {
-    if (!hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION) || !requestedId) {
+    if (!hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION) || !requestedId) {
       return currentUser.id;
     }
     return requestedId;
   }
 
   private assertOwnerOrAdmin(currentUser: UserRecord, ownerId: string | null): void {
-    if (hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION)) {
+    if (hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION)) {
       return;
     }
 
@@ -495,60 +502,60 @@ export class PaiementService {
   private toPaiementResponse(item: PaiementRecord): PaiementResponseDto {
     return {
       id: item.id,
-      utilisateurId: item.utilisateurId,
-      reservationId: item.reservationId,
+      utilisateurId: item.utilisateur_id ?? '',
+      reservationId: item.reservation_id ?? '',
       montant: toNullableString(item.montant),
-      montantEscrow: toNullableString(item.montantEscrow),
+      montantEscrow: toNullableString(item.montant_escrow),
       commission: toNullableString(item.commission),
-      statut: item.statut,
-      methodePaiement: item.methodePaiement,
-      datePaiement: item.datePaiement,
-      referenceTransaction: item.referenceTransaction,
-      referenceExterne: item.referenceExterne,
-      urlPaiement: item.urlPaiement,
-      isEscrow: item.isEscrow,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
+      statut: item.statut ?? 'EN_ATTENTE',
+      methodePaiement: item.methode_paiement ?? null,
+      datePaiement: item.date_paiement ?? null,
+      referenceTransaction: item.reference_transaction ?? null,
+      referenceExterne: item.reference_externe ?? null,
+      urlPaiement: item.url_paiement ?? null,
+      isEscrow: item.is_escrow ?? false,
+      createdAt: item.created_at ?? null,
+      updatedAt: item.updated_at ?? null,
     };
   }
 
   private toPortefeuilleResponse(item: PortefeuilleRecord): PortefeuilleResponseDto {
     const solde = toNumberOrZero(item.solde);
-    const soldeBloque = toNumberOrZero(item.soldeBloque);
+    const soldeBloque = toNumberOrZero(item.solde_bloque);
 
     return {
       id: item.id,
-      utilisateurId: item.utilisateurId,
+      utilisateurId: item.utilisateur_id,
       solde: String(solde),
       soldeBloque: String(soldeBloque),
       soldeDisponible: String(solde - soldeBloque),
-      dateDerniereRecharge: item.dateDerniereRecharge,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
+      dateDerniereRecharge: item.date_derniere_recharge ?? null,
+      createdAt: item.created_at ?? null,
+      updatedAt: item.updated_at ?? null,
     };
   }
 
   private toTransactionResponse(item: TransactionRecord): TransactionResponseDto {
     return {
       id: item.id,
-      portefeuilleId: item.portefeuilleId,
+      portefeuilleId: item.portefeuille_id,
       montant: toNullableString(item.montant) ?? '0',
-      typeTransaction: item.typeTransaction,
+      typeTransaction: item.type_transaction,
       statut: this.parseStatutTransaction(item.statut),
-      description: item.description,
-      referenceExterne: item.referenceExterne,
-      dateTransaction: item.dateTransaction,
-      createdAt: item.createdAt,
+      description: item.description ?? null,
+      referenceExterne: item.reference_externe ?? null,
+      dateTransaction: item.date_transaction ?? null,
+      createdAt: item.created_at ?? null,
     };
   }
 
   private toPaiementLogResponse(item: PaiementLogRecord): PaiementLogResponseDto {
     return {
       id: item.id,
-      paiementId: item.paiementId,
+      paiementId: item.paiement_id ?? null,
       action: item.action,
-      details: item.details,
-      dateAction: item.dateAction,
+      details: item.details ?? null,
+      dateAction: item.date_action ?? null,
     };
   }
 

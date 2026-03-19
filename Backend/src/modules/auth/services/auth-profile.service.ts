@@ -54,8 +54,8 @@ export class AuthProfileService {
       ...(prenom !== undefined ? { prenom } : {}),
       ...(nom !== undefined ? { nom } : {}),
       ...(telephone !== undefined ? { telephone } : {}),
-      ...(photoProfilUrl !== undefined ? { photoProfilUrl } : {}),
-    });
+      ...(photoProfilUrl !== undefined ? { photo_profil_url: photoProfilUrl } : {}),
+    } as any);
 
     return this.toUtilisateurResponse(user.userId);
   }

@@ -4,6 +4,8 @@ import { TradeInService } from '../../../trade-in/services/trade-in.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { DemandeTradeIn, ValidationTradeInRequest } from '../../../trade-in/models/trade-in.model';
 import { LucideAngularModule, RefreshCcw, Info, Eye, Check, X, Bell } from 'lucide-angular';
+import { ToastService } from '../../../../core/services/toast.service';
+import { PromptService } from '../../../../core/services/prompt.service';
 
 @Component({
   selector: 'app-trade-in-requests',
@@ -14,6 +16,8 @@ import { LucideAngularModule, RefreshCcw, Info, Eye, Check, X, Bell } from 'luci
 export class TradeInRequestsComponent implements OnInit {
   private tradeInService = inject(TradeInService);
   public authService = inject(AuthService);
+  private toastService = inject(ToastService);
+  private promptService = inject(PromptService);
 
   demandes: DemandeTradeIn[] = [];
   isLoading = true;
@@ -57,7 +61,7 @@ export class TradeInRequestsComponent implements OnInit {
   notifierClient(id: string) {
     this.tradeInService.notifierUtilisateur(id).subscribe({
       next: () => {
-        alert('Notification envoyée au client avec succès.');
+        this.toastService.success('Notification envoyée au client avec succès.');
         this.loadDemandes();
       },
       error: (err: any) => console.error('Erreur notification', err)
@@ -65,16 +69,26 @@ export class TradeInRequestsComponent implements OnInit {
   }
 
   validerDemande(id: string) {
-    const offre = prompt("Quel est le montant de l'offre finale (en CFA) ?");
-    if (offre && !isNaN(Number(offre))) {
-      const request: ValidationTradeInRequest = {
-        nouveauStatut: 'OFFRE_PROPOSEE',
-        prixPropose: Number(offre)
-      };
-      this.tradeInService.validerDemande(id, request).subscribe({
-        next: () => this.loadDemandes(),
-        error: (err: any) => console.error('Erreur validation', err)
-      });
-    }
+    this.promptService.show({
+      title: 'Offre finale',
+      message: 'Indiquez le montant de l\'offre finale (en FCFA).',
+      placeholder: 'Ex: 4500000',
+      inputType: 'number',
+      onConfirm: (offre) => {
+        if (offre && !isNaN(Number(offre))) {
+          const request: ValidationTradeInRequest = {
+            nouveauStatut: 'OFFRE_PROPOSEE',
+            prixPropose: Number(offre)
+          };
+          this.tradeInService.validerDemande(id, request).subscribe({
+            next: () => this.loadDemandes(),
+            error: (err: any) => {
+               console.error('Erreur validation', err);
+               this.toastService.error('Erreur lors de la validation.');
+            }
+          });
+        }
+      }
+    });
   }
 }

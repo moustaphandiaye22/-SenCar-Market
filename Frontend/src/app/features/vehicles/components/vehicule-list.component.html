@@ -1,43 +1,63 @@
-<div class="min-h-screen bg-gray-50/50 pb-20">
+<div class="min-h-screen bg-gray-50/50 pb-20 relative overflow-x-hidden">
+  <!-- Floating Action Button for Mobile -->
+  <!-- Always visible on mobile, hidden on large screens -->
+  <a routerLink="/vehicles/new" 
+     class="block lg:hidden fixed bottom-6 right-6 z-[100] flex items-center justify-center w-14 h-14 bg-primary-600 rounded-full shadow-2xl text-white active:scale-95 transition-all border-4 border-white hover:bg-primary-700">
+    <lucide-angular [img]="icons.Plus" size="24"></lucide-angular>
+  </a>
+
   <!-- Header & Filters Section -->
-  <div class="bg-white border-b border-gray-100 sticky top-16 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Marketplace</h1>
-          <p class="text-sm text-gray-500 mt-1">{{ totalElements }} véhicules disponibles au Sénégal</p>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="relative flex-1 max-w-xl group">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <lucide-angular [img]="icons.Search" size="18" class="text-gray-400 group-focus-within:text-primary-500 transition-colors"></lucide-angular>
+  <div class="bg-white border-b border-gray-100 sticky top-16 z-30 shadow-sm w-full">
+    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col gap-4">
+        <!-- Marketplace Title Row -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="min-w-0 flex-shrink">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900 tracking-tight truncate">Marketplace</h1>
+            <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5 truncate">{{ totalElements }} véhicules disponibles</p>
           </div>
-          <input 
-            type="text" 
-            [(ngModel)]="filters.q" 
-            (ngModelChange)="onFilterChange()"
-            placeholder="Rechercher une marque, un modèle..." 
-            class="block w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl leading-5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all sm:text-sm"
-          >
+          
+          <!-- Desktop Vendre button (ONLY on large screens) -->
+          <a routerLink="/vehicles/new" 
+             class="hidden lg:flex items-center px-6 py-2.5 bg-primary-600 rounded-xl shadow-lg shadow-primary-500/20 text-sm font-bold text-white hover:bg-primary-700 transition-all whitespace-nowrap flex-shrink-0">
+            <lucide-angular [img]="icons.Plus" size="18" class="mr-2"></lucide-angular>
+            Vendre un véhicule
+          </a>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button class="inline-flex items-center px-4 py-2.5 border border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all focus:outline-none ring-1 ring-transparent hover:ring-gray-200">
-            <lucide-angular [img]="icons.Filter" size="16" class="mr-2"></lucide-angular>
-            Filtres
-          </button>
-          
-          <select 
-            [(ngModel)]="filters.sortBy" 
-            (change)="onFilterChange()"
-            class="inline-flex items-center px-4 py-2.5 border border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-all outline-none"
-          >
-            <option value="createdAt">Plus récents</option>
-            <option value="prixVente">Prix croissant</option>
-            <option value="prixVenteDesc">Prix décroissant</option>
-            <option value="anneeFabrication">Année</option>
-          </select>
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          <!-- Search Bar -->
+          <div class="relative flex-1 min-w-0">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-angular [img]="icons.Search" size="18" class="text-gray-400"></lucide-angular>
+            </div>
+            <input 
+              type="search" 
+              [(ngModel)]="filters.q" 
+              (ngModelChange)="onFilterChange()"
+              placeholder="Marque, modèle..." 
+              class="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none"
+            >
+          </div>
+
+          <!-- Bottom bar: Filter and Sort -->
+          <div class="flex items-center gap-2">
+            <button class="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all">
+              <lucide-angular [img]="icons.Filter" size="16" class="mr-2"></lucide-angular>
+              Filtres
+            </button>
+            
+            <select 
+              [(ngModel)]="filters.sortBy" 
+              (change)="onFilterChange()"
+              class="flex-1 md:flex-none px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none outline-none appearance-none"
+            >
+              <option value="createdAt">Récent</option>
+              <option value="prixVente">Prix ↑</option>
+              <option value="prixVenteDesc">Prix ↓</option>
+              <option value="anneeFabrication">Année</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>

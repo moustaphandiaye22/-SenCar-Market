@@ -35,9 +35,12 @@ export interface ServiceGarage {
 export interface GarageServiceAssociation {
   id: string;
   garageId: string;
+  garageNom?: string | null;
   serviceId: string;
-  service: ServiceGarage;
+  serviceNom?: string | null;
   prix?: number | null;
   dureeEstimee?: number | null;
   actif: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }

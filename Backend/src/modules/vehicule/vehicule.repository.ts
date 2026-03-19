@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
@@ -24,7 +25,7 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
       select: {
         id: true,
         email: true,
-        typeUtilisateur: { select: { nom: true } },
+        type_utilisateur: { select: { nom: true } },
       },
     });
     return user as unknown as UserWithRoleRecord | null;
@@ -32,14 +33,14 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
 
   async findVehiculeById(id: string): Promise<VehiculeRecord | null> {
     const vehicule = await this.prisma.vehicule.findUnique({
-      where: { id, deletedAt: null },
+      where: { id, deleted_at: null },
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: { select: { id: true, nom: true } },
-        photos: { select: { url: true } },
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
     });
     return vehicule as unknown as VehiculeRecord | null;
@@ -56,13 +57,13 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   async findOrCreateMarque(nom: string): Promise<{ id: string }> {
     const existing = await this.prisma.marque.findFirst({ where: { nom: { equals: nom, mode: 'insensitive' } }, select: { id: true } });
     if (existing) return existing;
-    return this.prisma.marque.create({ data: { nom }, select: { id: true } });
+    return this.prisma.marque.create({ data: { id: randomUUID(), nom }, select: { id: true } });
   }
 
   async findOrCreateModele(marqueId: string, nom: string): Promise<{ id: string }> {
-    const existing = await this.prisma.modele.findFirst({ where: { marqueId, nom: { equals: nom, mode: 'insensitive' } }, select: { id: true } });
+    const existing = await this.prisma.modele.findFirst({ where: { marque_id: marqueId, nom: { equals: nom, mode: 'insensitive' } }, select: { id: true } });
     if (existing) return existing;
-    return this.prisma.modele.create({ data: { marqueId, nom }, select: { id: true } });
+    return this.prisma.modele.create({ data: { id: randomUUID(), marque_id: marqueId, nom }, select: { id: true } });
   }
 
   async findCarburantById(id: string): Promise<{ id: string } | null> {
@@ -70,7 +71,7 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }
 
   async findBoiteVitesseById(id: string): Promise<{ id: string } | null> {
-    return this.prisma.boiteVitesse.findUnique({ where: { id }, select: { id: true } });
+    return this.prisma.boite_vitesse.findUnique({ where: { id }, select: { id: true } });
   }
 
   async findAllMarques(): Promise<{ id: string; nom: string }[]> {
@@ -83,7 +84,7 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
 
   async findModelesByMarque(marqueId: string): Promise<{ id: string; nom: string }[]> {
     const items = await this.prisma.modele.findMany({
-      where: { marqueId },
+      where: { marque_id: marqueId },
       select: { id: true, nom: true },
       orderBy: { nom: 'asc' },
     });
@@ -99,7 +100,7 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }
 
   async findAllBoiteVitesses(): Promise<{ id: string; nom: string }[]> {
-    const items = await this.prisma.boiteVitesse.findMany({ 
+    const items = await this.prisma.boite_vitesse.findMany({ 
       select: { id: true, nom: true }, 
       orderBy: { nom: 'asc' } 
     });
@@ -113,17 +114,17 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: { select: { id: true, nom: true } },
-        photos: { select: { url: true } },
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
     });
     return vehicule as unknown as VehiculeRecord;
   }
 
   async createPhoto(data: CreateVehiculePhotoInput): Promise<VehiculePhotoRecord> {
-    return this.prisma.photoVehicule.create({
-      data,
+    return this.prisma.photo_vehicule.create({
+      data: { ...data, id: randomUUID() },
       select: { url: true },
     }) as unknown as VehiculePhotoRecord;
   }
@@ -138,11 +139,12 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }): Promise<{ total: number; items: VehiculeRecord[] }> {
     const { skip, take, orderBy, marqueId, modeleId, q } = params;
 
-    const where: Prisma.VehiculeWhereInput = {
+    const where: Prisma.vehiculeWhereInput = {
       statut: 'PUBLIE',
-      deletedAt: null,
-      ...(marqueId && { marqueId }),
-      ...(modeleId && { modeleId }),
+      deleted_at: null,
+      ...(marqueId && { marque_id_equals: { marque_id: marqueId } }), // This depends on how Prisma maps it, but typically:
+      ...(marqueId && { marque_id: marqueId }),
+      ...(modeleId && { modele_id: modeleId }),
       ...(q && {
         OR: [
           { marque: { nom: { contains: q, mode: 'insensitive' } } },
@@ -163,9 +165,9 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
           marque: true,
           modele: true,
           carburant: true,
-          boiteVitesse: true,
-          proprietaire: { select: { id: true, nom: true } },
-          photos: { select: { url: true } },
+          boite_vitesse: true,
+          utilisateur: { select: { id: true, nom: true } },
+          photo_vehicule: { select: { url: true } },
         },
       }),
     ]);
@@ -175,16 +177,16 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
 
   async findByProprietaireId(proprietaireId: string): Promise<VehiculeRecord[]> {
     const vehicules = await this.prisma.vehicule.findMany({
-      where: { proprietaireId, deletedAt: null },
+      where: { proprietaire_id: proprietaireId, deleted_at: null },
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: { select: { id: true, nom: true } },
-        photos: { select: { url: true } },
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
     return vehicules as unknown as VehiculeRecord[];
   }
@@ -197,9 +199,9 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: { select: { id: true, nom: true } },
-        photos: { select: { url: true } },
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
     });
     return vehicule as unknown as VehiculeRecord;
@@ -208,43 +210,43 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   async deleteVehicule(id: string): Promise<{ id: string }> {
     return this.prisma.vehicule.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { deleted_at: new Date() },
       select: { id: true },
     });
   }
 
   async existsFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
-    return this.prisma.vehiculeFavori.findUnique({
-      where: { utilisateurId_vehiculeId: { utilisateurId, vehiculeId } },
+    return this.prisma.vehicule_favori.findUnique({
+      where: { utilisateur_id_vehicule_id: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId } },
       select: { id: true },
     });
   }
 
   async createFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string }> {
-    return this.prisma.vehiculeFavori.create({
-      data: { utilisateurId, vehiculeId },
+    return this.prisma.vehicule_favori.create({
+      data: { id: randomUUID(), utilisateur_id: utilisateurId, vehicule_id: vehiculeId },
       select: { id: true },
     });
   }
 
   async deleteFavori(utilisateurId: string, vehiculeId: string): Promise<{ count: number }> {
-    return this.prisma.vehiculeFavori.deleteMany({
-      where: { utilisateurId, vehiculeId },
+    return this.prisma.vehicule_favori.deleteMany({
+      where: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId },
     });
   }
 
   async findFavorisByUtilisateur(utilisateurId: string): Promise<VehiculeFavoriRecord[]> {
-    const favoris = await this.prisma.vehiculeFavori.findMany({
-      where: { utilisateurId },
+    const favoris = await this.prisma.vehicule_favori.findMany({
+      where: { utilisateur_id: utilisateurId },
       include: {
         vehicule: {
           include: {
             marque: true,
             modele: true,
             carburant: true,
-            boiteVitesse: true,
-            proprietaire: { select: { id: true, nom: true } },
-            photos: { select: { url: true } },
+            boite_vitesse: true,
+            utilisateur: { select: { id: true, nom: true } },
+            photo_vehicule: { select: { url: true } },
           },
         },
       },
@@ -253,22 +255,23 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
   }
 
   async isFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
-    return this.prisma.vehiculeFavori.findUnique({
-      where: { utilisateurId_vehiculeId: { utilisateurId, vehiculeId } },
+    return this.prisma.vehicule_favori.findUnique({
+      where: { utilisateur_id_vehicule_id: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId } },
       select: { id: true },
     });
   }
 
   async countFavoris(vehiculeId: string): Promise<number> {
-    return this.prisma.vehiculeFavori.count({ where: { vehiculeId } });
+    return this.prisma.vehicule_favori.count({ where: { vehicule_id: vehiculeId } });
   }
 
   async updateVehiculePhotos(vehiculeId: string, photosUrls: string[]): Promise<void> {
     await this.prisma.$transaction([
-      this.prisma.photoVehicule.deleteMany({ where: { vehiculeId } }),
-      this.prisma.photoVehicule.createMany({
+      this.prisma.photo_vehicule.deleteMany({ where: { vehicule_id: vehiculeId } }),
+      this.prisma.photo_vehicule.createMany({
         data: photosUrls.map((url) => ({
-          vehiculeId,
+          id: randomUUID(),
+          vehicule_id: vehiculeId,
           url,
         })),
       }),

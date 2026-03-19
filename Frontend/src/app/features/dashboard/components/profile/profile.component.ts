@@ -34,12 +34,12 @@ import { LucideAngularModule, User, Mail, Phone, Lock, Save, RefreshCw } from 'l
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Prénom</label>
-                  <input type="text" [(ngModel)]="profile.prenom" name="prenom" required
+                  <input type="text" [(ngModel)]="profile.prenom" name="prenom" required autocomplete="given-name"
                          class="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-gray-900">
                 </div>
                 <div>
                   <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Nom</label>
-                  <input type="text" [(ngModel)]="profile.nom" name="nom" required
+                  <input type="text" [(ngModel)]="profile.nom" name="nom" required autocomplete="family-name"
                          class="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-gray-900">
                 </div>
               </div>

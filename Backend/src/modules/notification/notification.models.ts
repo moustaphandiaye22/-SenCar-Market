@@ -10,66 +10,66 @@ export type UserRecord = {
   email: string;
   nom: string | null;
   prenom: string | null;
-  typeUtilisateur: { nom: string } | null;
+  type_utilisateur: { nom: string } | null;
 };
 
 export type NotificationRecord = {
   id: string;
-  utilisateurId: string;
+  utilisateur_id: string;
   titre: string;
   message: string | null;
   type: TypeNotification;
-  estLu: boolean | null;
-  referenceId: string | null;
-  referenceType: string | null;
-  dateCreation: Date | null;
-  dateLecture: Date | null;
+  est_lu: boolean | null;
+  reference_id: string | null;
+  reference_type: string | null;
+  created_at: Date | null;
+  date_lecture: Date | null;
 };
 
 export type SignalementRecord = {
   id: string;
-  utilisateurId: string;
-  typeEntite: TypeEntiteSignalable;
-  entiteId: string;
+  utilisateur_id: string;
+  type_entite: TypeEntiteSignalable;
+  entite_id: string;
   motif: MotifSignalement;
   description: string | null;
-  statutTraitement: StatutTraitementSignalement;
-  adminId: string | null;
-  dateTraitement: Date | null;
-  dateSignalement: Date | null;
+  statut_traitement: StatutTraitementSignalement;
+  traite_par: string | null;
+  date_traitement: Date | null;
+  created_at: Date | null;
   utilisateur: { nom: string | null; prenom: string | null } | null;
 };
 
 export type CreateNotificationInput = {
   id: string;
-  utilisateur: { connect: { id: string } };
+  utilisateur_id: string;
   titre: string;
   message: string;
   type: TypeNotification;
-  estLu: boolean;
-  referenceId?: string;
-  referenceType?: string;
-  dateCreation: Date;
+  est_lu: boolean;
+  reference_id?: string;
+  reference_type?: string;
+  created_at: Date;
 };
 
 export type UpdateNotificationInput = Partial<{
-  estLu: boolean;
-  dateLecture: Date;
+  est_lu: boolean;
+  date_lecture: Date;
 }>;
 
 export type CreateSignalementInput = {
   id: string;
-  utilisateur: { connect: { id: string } };
-  typeEntite: TypeEntiteSignalable;
-  entiteId: string;
+  utilisateur_id: string;
+  type_entite: TypeEntiteSignalable;
+  entite_id: string;
   motif: MotifSignalement;
   description: string;
-  statutTraitement: StatutTraitementSignalement;
-  dateSignalement: Date;
+  statut_traitement: StatutTraitementSignalement;
+  created_at: Date;
 };
 
 export type UpdateSignalementInput = Partial<{
-  statutTraitement: StatutTraitementSignalement;
-  adminId: string;
-  dateTraitement: Date;
+  statut_traitement: StatutTraitementSignalement;
+  traite_par: string;
+  date_traitement: Date;
 }>;

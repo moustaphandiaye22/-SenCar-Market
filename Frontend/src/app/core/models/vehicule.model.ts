@@ -34,6 +34,8 @@ export interface VehiculeResponse {
   estFavori: boolean;
   proprietaireNom: string | null;
   proprietaireId: string;
+  proprietaireTelephone: string | null;
+  proprietaireEmail: string | null;
   createdAt: Date | null;
 }
 

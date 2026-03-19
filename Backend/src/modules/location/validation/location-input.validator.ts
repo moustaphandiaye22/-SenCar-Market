@@ -25,7 +25,10 @@ export class LocationInputValidator {
     if (dateDebut > dateFin) {
       throw new DomainException('La date de début doit précéder la date de fin', 400, 'RESERVATION_INVALID_DATE_ORDER');
     }
-    if (dateDebut < new Date()) {
+    const todayUtc = new Date();
+    todayUtc.setUTCHours(0, 0, 0, 0);
+    
+    if (dateDebut < todayUtc) {
       throw new DomainException('La date de début ne peut pas être dans le passé', 400, 'RESERVATION_START_DATE_PAST');
     }
 

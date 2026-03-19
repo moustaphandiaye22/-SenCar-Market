@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 import {
   AbonnementRecord,
   BoostAnnonceRecord,
   UtilisateurAbonnementRecord,
-} from '../abonnement.models';
-import { AbonnementResponseDto } from '../dto/abonnement-response.dto';
-import { BoostAnnonceResponseDto } from '../dto/boost-annonce-response.dto';
-import { UtilisateurAbonnementResponseDto } from '../dto/utilisateur-abonnement-response.dto';
-import { AbonnementInputValidator } from '../validation/abonnement-input.validator';
+} from "../abonnement.models";
+import { AbonnementResponseDto } from "../dto/abonnement-response.dto";
+import { BoostAnnonceResponseDto } from "../dto/boost-annonce-response.dto";
+import { UtilisateurAbonnementResponseDto } from "../dto/utilisateur-abonnement-response.dto";
+import { AbonnementInputValidator } from "../validation/abonnement-input.validator";
 
 @Injectable()
 export class AbonnementMapper {
@@ -33,8 +33,10 @@ export class AbonnementMapper {
     };
   }
 
-  toUtilisateurAbonnementResponse(item: UtilisateurAbonnementRecord): UtilisateurAbonnementResponseDto {
-    const totalAllowed = item.abonnement?.nombreAnnonces;
+  toUtilisateurAbonnementResponse(
+    item: UtilisateurAbonnementRecord,
+  ): UtilisateurAbonnementResponseDto {
+    const totalAllowed = item.abonnement?.nombre_annonces;
     const used = item.nombreAnnoncesUtilisees ?? 0;
 
     return {
@@ -46,7 +48,8 @@ export class AbonnementMapper {
       dateFin: item.dateFin,
       statut: this.inputValidator.parseStatutOrDefault(item.statut),
       nombreAnnoncesUtilisees: item.nombreAnnoncesUtilisees,
-      nombreAnnoncesRestantes: totalAllowed != null ? Math.max(0, totalAllowed - used) : null,
+      nombreAnnoncesRestantes:
+        totalAllowed != null ? Math.max(0, totalAllowed - used) : null,
     };
   }
 

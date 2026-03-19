@@ -29,7 +29,7 @@ export class GarageAccessPolicy {
     currentUserId: string,
     role: string | null | undefined,
   ): void {
-    if (garage.utilisateurId && garage.utilisateurId === currentUserId) {
+    if (garage.utilisateur_id && garage.utilisateur_id === currentUserId) {
       return;
     }
     this.assertAdmin(role);

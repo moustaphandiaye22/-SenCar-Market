@@ -6,6 +6,7 @@ import { LucideAngularModule, Search, MapPin, Calendar, Fuel, Gauge, Filter, Sta
 import { RentalService } from '../services/rental.service';
 import { AnnonceLocation } from '../models/rental.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-rental-list',
@@ -67,27 +68,47 @@ export class RentalListComponent implements OnInit {
   }
 
   applyFilter(): void {
-    if (this.activeFilter === 'Tout') {
-      this.filteredAnnonces = [...this.annonces];
-    } else {
-      this.filteredAnnonces = this.annonces.filter(a => {
-        const searchStr = `${a.vehiculeMarque ?? ''} ${a.vehiculeModele ?? ''} ${a.description ?? ''} ${a.conditions ?? ''}`.toLowerCase();
+    let results = [...this.annonces];
+
+    // Filter by Search Term (Location/Keyword)
+    if (this.filters.q) {
+      const q = this.filters.q.toLowerCase();
+      results = results.filter(a => 
+        (a.vehiculeMarque?.toLowerCase().includes(q)) ||
+        (a.vehiculeModele?.toLowerCase().includes(q)) ||
+        (a.description?.toLowerCase().includes(q)) ||
+        (a.conditions?.toLowerCase().includes(q))
+      );
+    }
+
+    // Filter by Category (Active Tab)
+    if (this.activeFilter !== 'Tout') {
+      results = results.filter(a => {
+        const searchStr = `${a.vehiculeMarque ?? ''} ${a.vehiculeModele ?? ''} ${a.description ?? ''} ${a.vehiculeTransmission ?? ''} ${a.vehiculeCarburant ?? ''}`.toLowerCase();
         switch (this.activeFilter) {
           case 'SUV & 4x4':
-            return searchStr.includes('suv') || searchStr.includes('4x4') || searchStr.includes('prado');
+            return searchStr.includes('suv') || searchStr.includes('4x4') || searchStr.includes('prado') || searchStr.includes('cherokee') || searchStr.includes('jeep');
           case 'Berlines':
-            return searchStr.includes('berline') || searchStr.includes('sedan') || searchStr.includes('corolla');
+            return searchStr.includes('berline') || searchStr.includes('sedan') || searchStr.includes('corolla') || searchStr.includes('mercedes') || searchStr.includes('bmw');
           case 'Économiques':
-            return searchStr.includes('eco') || searchStr.includes('petit') || searchStr.includes('yaris');
+            return searchStr.includes('eco') || searchStr.includes('petit') || searchStr.includes('yaris') || searchStr.includes('kia') || searchStr.includes('i10');
           default:
             return true;
         }
       });
     }
+
+    this.filteredAnnonces = results;
   }
 
   formatPrice(price: string | null): string {
     if (!price) return '—';
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(parseInt(price));
+  }
+
+  getImageUrl(url: string | null | undefined): string {
+    if (!url) return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80';
+    if (url.startsWith('http')) return url;
+    return `${environment.apiUrl.replace('/api', '')}${url}`;
   }
 }

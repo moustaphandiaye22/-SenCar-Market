@@ -9,10 +9,10 @@ export class PaiementLogService {
   async createLogAction(paiementId: string | null, action: string, details: string): Promise<void> {
     await this.repository.createPaiementLog({
       id: this.repository.newId(),
-      paiementId: paiementId ?? undefined,
+      paiement_id: paiementId ?? undefined,
       action,
       details,
-      dateAction: new Date(),
-    });
+      date_action: new Date(),
+    } as any);
   }
 }

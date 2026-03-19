@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { GarageService } from '../../../garages/services/garage.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LucideAngularModule, Wrench, Settings, Plus, Building, Trash2 } from 'lucide-angular';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-pro-services',
@@ -14,6 +15,7 @@ import { LucideAngularModule, Wrench, Settings, Plus, Building, Trash2 } from 'l
 export class ProServicesComponent implements OnInit {
   private garageService = inject(GarageService);
   private authService = inject(AuthService);
+  private confirmService = inject(ConfirmService);
   
   garages: any[] = [];
   servicesDispos: any[] = [];
@@ -72,10 +74,18 @@ export class ProServicesComponent implements OnInit {
   }
 
   removeService(serviceId: string) {
-    if (this.selectedGarageId && confirm("Retirer ce service du catalogue du garage ?")) {
-      this.garageService.disassociateService(this.selectedGarageId, serviceId).subscribe(() => {
-        this.loadGarageServices(this.selectedGarageId!);
-      });
-    }
+    this.confirmService.show({
+      title: 'Retirer ce service ?',
+      message: 'Ce service ne sera plus proposé par votre garage.',
+      confirmText: 'Retirer',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        if (this.selectedGarageId) {
+          this.garageService.disassociateService(this.selectedGarageId, serviceId).subscribe(() => {
+            this.loadGarageServices(this.selectedGarageId!);
+          });
+        }
+      }
+    });
   }
 }

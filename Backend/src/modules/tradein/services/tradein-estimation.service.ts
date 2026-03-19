@@ -7,8 +7,8 @@ import { ETAT_VEHICULE_VALUES } from '../types/tradein.types';
 
 type EstimationVehicule = {
   id: string;
-  anneeFabrication: number | null;
-  prixVente: unknown;
+  annee_fabrication: number | null;
+  prix_vente: unknown;
   marque: { nom: string | null } | null;
   modele: { nom: string | null } | null;
 };
@@ -30,10 +30,10 @@ export class TradeInEstimationService {
     kilometrage: number,
     etatVehicule: string,
   ): EstimationResponseDto {
-    const prixBase = toNullableNumber(vehicule.prixVente) ?? 0;
+    const prixBase = toNullableNumber(vehicule.prix_vente) ?? 0;
     const km = kilometrage ?? 0;
     const currentYear = new Date().getFullYear();
-    const anneeVehicule = vehicule.anneeFabrication ?? currentYear;
+    const anneeVehicule = vehicule.annee_fabrication ?? currentYear;
 
     const coeffEtat = this.getCoefficientEtat(etatVehicule);
     const depreciationKm = Math.min(km * 0.000002, 0.4);

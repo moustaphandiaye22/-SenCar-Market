@@ -12,13 +12,13 @@ export class AuthMapper {
       telephone: user.telephone,
       prenom: user.prenom,
       nom: user.nom,
-      photoProfilUrl: user.photoProfilUrl,
-      emailVerifie: user.emailVerifie,
-      telephoneVerifie: user.telephoneVerifie,
-      doubleAuthActive: user.doubleAuthActive,
-      typeUtilisateur: user.typeUtilisateur?.nom ?? null,
-      statutVerification: user.statutVerification,
-      createdAt: user.createdAt,
+      photoProfilUrl: user.photo_profil_url ?? null,
+      emailVerifie: user.email_verifie ?? false,
+      telephoneVerifie: user.telephone_verifie ?? false,
+      doubleAuthActive: user.double_auth_active ?? false,
+      typeUtilisateur: user.type_utilisateur?.nom ?? null,
+      statutVerification: user.statut_verification ?? null,
+      createdAt: user.created_at ?? null,
     };
   }
 }

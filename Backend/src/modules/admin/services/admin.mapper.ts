@@ -62,6 +62,8 @@ export class AdminMapper {
       garantieMois: vehicule.garantieMois,
       proprietaireNom: vehicule.proprietaire?.nom ?? null,
       proprietaireId: vehicule.proprietaireId,
+      proprietaireTelephone: vehicule.proprietaire?.telephone ?? null,
+      proprietaireEmail: vehicule.proprietaire?.email ?? null,
       createdAt: vehicule.createdAt,
     };
   }

@@ -5,6 +5,7 @@ import { LucideAngularModule, MapPin, Phone, Globe, Mail, Clock, ShieldCheck, St
 import { GarageService } from '../services/garage.service';
 import { Garage, GarageServiceAssociation } from '../models/garage.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -39,7 +40,8 @@ export class GarageDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private garageService: GarageService,
-    private authService: AuthService
+    private authService: AuthService,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -91,14 +93,18 @@ export class GarageDetailComponent implements OnInit {
   }
 
   deleteGarage(): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce garage ? Cette action est irréversible.')) {
-      if (!this.garage?.id) return;
-      this.garageService.deleteGarage(this.garage.id).subscribe({
-        next: () => {
-          this.router.navigate(['/garages']);
-        },
-        error: (err) => console.error('Error deleting garage', err)
-      });
-    }
+    this.confirmService.show({
+      title: 'Supprimer le garage ?',
+      message: 'Êtes-vous sûr de vouloir supprimer ce garage ? Cette action est irréversible.',
+      confirmText: 'Supprimer',
+      cancelText: 'Retour',
+      onConfirm: () => {
+        if (!this.garage?.id) return;
+        this.garageService.deleteGarage(this.garage.id).subscribe({
+          next: () => this.router.navigate(['/garages']),
+          error: (err) => console.error('Error deleting garage', err)
+        });
+      }
+    });
   }
 }

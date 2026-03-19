@@ -1,6 +1,6 @@
-import type { StatutReservation } from '@prisma/client';
+import type { StatutReservation } from "@prisma/client";
 
-import type { HistoriqueStatutResponseDto } from './dto/historique-statut-response.dto';
+import type { HistoriqueStatutResponseDto } from "./dto/historique-statut-response.dto";
 
 type ConnectById = { connect: { id: string } };
 
@@ -9,133 +9,139 @@ type UserRole = { nom: string };
 export type UserRecord = {
   id: string;
   email: string;
+  telephone: string;
   prenom: string | null;
   nom: string | null;
-  typeUtilisateur: UserRole | null;
+  type_utilisateur: UserRole | null;
 };
 
 type NamedRecord = { nom: string | null };
-type PhotoRecord = { url: string };
+type PhotoRecord = { url: string; est_principale: boolean | null };
 
 export type VehiculeRecord = {
   id: string;
   marque: NamedRecord | null;
   modele: NamedRecord | null;
-  photos: PhotoRecord[];
+  photo_vehicule: PhotoRecord[];
+  carburant: NamedRecord | null;
+  boite_vitesse: NamedRecord | null;
+  nombre_places: number | null;
 };
 
 export type AnnonceRecord = {
   id: string;
-  vehiculeId: string | null;
-  proprietaireId: string;
-  tarifJournalier: unknown;
+  vehicule_id: string | null;
+  proprietaire_id: string;
+  tarif_journalier: unknown;
   description: string | null;
   conditions: string | null;
   caution: unknown;
-  kilometrageInclus: number | null;
-  tarifKmSupplementaire: unknown;
+  kilometrage_inclus: number | null;
+  tarif_km_supplementaire: unknown;
   statut: string | null;
   actif: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  created_at: Date | null;
+  updated_at: Date | null;
   vehicule: VehiculeRecord | null;
-  proprietaire: UserRecord;
+  utilisateur: UserRecord;
 };
 
 export type ReservationRecord = {
   id: string;
-  annonceLocationId: string;
-  locataireId: string;
+  annonce_location_id: string;
+  locataire_id: string;
   statut: StatutReservation | null;
-  coutTotal: unknown;
-  paiementId: string | null;
-  dateDebut: Date | null;
-  dateFin: Date | null;
-  dateCreation: Date | null;
-  motifAnnulation: string | null;
-  annonceLocation: AnnonceRecord;
-  locataire: UserRecord;
+  cout_total: unknown;
+  paiement_id: string | null;
+  date_debut: Date | null;
+  date_fin: Date | null;
+  date_creation: Date | null;
+  motif_annulation: string | null;
+  annonce_location: AnnonceRecord;
+  utilisateur: UserRecord;
 };
 
 export type DisponibiliteRecord = {
   id: string;
-  annonceLocationId: string;
+  annonce_location_id: string;
   date: Date | null;
-  estDisponible: boolean | null;
+  est_disponible: boolean | null;
 };
 
 export type HistoriqueRecord = {
   id: string;
-  reservationId: string;
-  ancienStatutId: string | null;
-  nouveauStatutId: string | null;
-  createdAt: Date | null;
+  reservation_id: string;
+  ancien_statut_id: string | null;
+  nouveau_statut_id: string | null;
+  created_at: Date | null;
 };
 
 export type CreateAnnonceInput = {
   id: string;
   vehicule: ConnectById;
-  proprietaire: ConnectById;
-  tarifJournalier: number;
+  utilisateur: ConnectById;
+  tarif_journalier: number;
   description?: string;
   conditions?: string;
   caution?: number;
-  kilometrageInclus?: number;
-  tarifKmSupplementaire?: number;
+  kilometrage_inclus?: number;
+  tarif_km_supplementaire?: number;
   statut: string;
   actif: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateAnnonceInput = Partial<{
-  tarifJournalier: number;
+  tarif_journalier: number;
   description: string;
   conditions: string;
   caution: number;
-  kilometrageInclus: number;
-  tarifKmSupplementaire: number;
+  kilometrage_inclus: number;
+  tarif_km_supplementaire: number;
   actif: boolean;
-  updatedAt: Date;
+  updated_at: Date;
 }>;
 
 export type CreateReservationInput = {
   id: string;
-  annonceLocation: ConnectById;
-  locataire: ConnectById;
+  annonce_location: ConnectById;
+  utilisateur: ConnectById;
   statut: StatutReservation;
-  coutTotal: number;
-  dateDebut: Date;
-  dateFin: Date;
-  dateCreation: Date;
+  cout_total: number;
+  date_debut: Date;
+  date_fin: Date;
+  date_creation: Date;
 };
 
 export type UpdateReservationInput = Partial<{
   statut: StatutReservation;
-  motifAnnulation: string | null;
+  motif_annulation: string | null;
 }>;
 
 export type CreateDisponibiliteInput = {
   id: string;
-  annonceLocation: ConnectById;
+  annonce_location: ConnectById;
   date: Date;
-  estDisponible: boolean;
+  est_disponible: boolean;
 };
 
 export type CreateHistoriqueInput = {
   id: string;
-  reservation: ConnectById;
-  ancienStatutId: string | null;
-  nouveauStatutId: string;
-  createdAt: Date;
+  reservation_location: ConnectById;
+  ancien_statut_id: string | null;
+  nouveau_statut_id: string;
+  created_at: Date;
 };
 
-export function toHistoriqueDto(item: HistoriqueRecord): HistoriqueStatutResponseDto {
+export function toHistoriqueDto(
+  item: HistoriqueRecord,
+): HistoriqueStatutResponseDto {
   return {
     id: item.id,
-    reservationId: item.reservationId,
-    ancienStatutId: item.ancienStatutId,
-    nouveauStatutId: item.nouveauStatutId,
-    createdAt: item.createdAt,
+    reservationId: item.reservation_id,
+    ancienStatutId: item.ancien_statut_id,
+    nouveauStatutId: item.nouveau_statut_id,
+    createdAt: item.created_at,
   };
 }

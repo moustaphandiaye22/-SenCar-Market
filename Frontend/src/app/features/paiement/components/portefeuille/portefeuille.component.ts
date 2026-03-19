@@ -2,9 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaiementService, Portefeuille } from '../../services/paiement.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, Wallet, ArrowUpRight, ArrowDownLeft, Plus, History, CreditCard } from 'lucide-angular';
 
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-portefeuille',
@@ -15,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 export class PortefeuilleComponent implements OnInit {
   private paiementService = inject(PaiementService);
   private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   user$ = this.authService.currentUser$;
   portefeuille?: Portefeuille;
@@ -28,13 +32,19 @@ export class PortefeuilleComponent implements OnInit {
   
   icons = { Wallet, ArrowUpRight, ArrowDownLeft, Plus, History, CreditCard };
 
-  ngOnInit() {
-    this.user$.subscribe(user => {
+  constructor() {
+    this.user$.pipe(
+      takeUntilDestroyed(),
+      filter(user => !!user)
+    ).subscribe(user => {
       if (user) {
         this.loadPortefeuille(user.id);
         this.loadTransactions(user.id);
       }
     });
+  }
+
+  ngOnInit() {
   }
 
   loadPortefeuille(userId: string) {
@@ -82,7 +92,7 @@ export class PortefeuilleComponent implements OnInit {
       error: (err) => {
         console.error('Recharge failed', err);
         this.isRecharging = false;
-        alert('Échec de la recharge. Veuillez réessayer.');
+        this.toastService.error('Échec de la recharge. Veuillez réessayer.');
       }
     });
   }

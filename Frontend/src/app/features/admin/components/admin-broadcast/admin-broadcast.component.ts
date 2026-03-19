@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, Megaphone, Send } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 
@@ -102,6 +103,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class AdminBroadcastComponent {
   private adminService = inject(AdminService);
+  private toastService = inject(ToastService);
   
   titre = '';
   message = '';
@@ -121,7 +123,7 @@ export class AdminBroadcastComponent {
       },
       error: (err) => {
         this.isSending = false;
-        alert('Échec de la diffusion. Veuillez vérifier votre connexion.');
+        this.toastService.error('Échec de la diffusion. Veuillez vérifier votre connexion.');
       }
     });
   }

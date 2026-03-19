@@ -1,8 +1,8 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from "crypto";
 
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from "../../prisma/prisma.service";
 
 import {
   CreateOptionInput,
@@ -16,8 +16,8 @@ import {
   UpdateSouscriptionInput,
   UserRecord,
   VehiculeSummaryRecord,
-} from './assurance.models';
-import { AssuranceRepositoryPort } from './assurance.repository.port';
+} from "./assurance.models";
+import { AssuranceRepositoryPort } from "./assurance.repository.port";
 
 @Injectable()
 export class AssuranceRepository implements AssuranceRepositoryPort {
@@ -26,82 +26,88 @@ export class AssuranceRepository implements AssuranceRepositoryPort {
   findUserByEmail(email: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { email },
-      include: { typeUtilisateur: true },
+      include: { type_utilisateur: true },
     });
   }
 
   findUserById(id: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { id },
-      include: { typeUtilisateur: true },
+      include: { type_utilisateur: true },
     });
   }
 
   findVehiculeById(id: string): Promise<VehiculeSummaryRecord | null> {
     return this.prisma.vehicule.findUnique({
       where: { id },
-      include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+      include: {
+        marque: { select: { nom: true } },
+        modele: { select: { nom: true } },
+      },
     });
   }
 
   createProduit(data: CreateProduitInput): Promise<ProduitRecord> {
-    return this.prisma.produitAssurance.create({
+    return this.prisma.produit_assurance.create({
       data,
-      include: { options: true },
+      include: { option_assurance: true },
     });
   }
 
   findProduitById(id: string): Promise<ProduitRecord | null> {
-    return this.prisma.produitAssurance.findUnique({
+    return this.prisma.produit_assurance.findUnique({
       where: { id },
-      include: { options: true },
+      include: { option_assurance: true },
     });
   }
 
   updateProduit(id: string, data: UpdateProduitInput): Promise<ProduitRecord> {
-    return this.prisma.produitAssurance.update({
+    return this.prisma.produit_assurance.update({
       where: { id },
       data,
-      include: { options: true },
+      include: { option_assurance: true },
     });
   }
 
-  findProduitsPaged(page: number, size: number): Promise<{ items: ProduitRecord[]; total: number }> {
+  findProduitsPaged(
+    page: number,
+    size: number,
+  ): Promise<{ items: ProduitRecord[]; total: number }> {
     return Promise.all([
-      this.prisma.produitAssurance.findMany({
+      this.prisma.produit_assurance.findMany({
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { options: true },
+        orderBy: { created_at: "desc" },
+        include: { option_assurance: true },
       }),
-      this.prisma.produitAssurance.count(),
+      this.prisma.produit_assurance.count(),
     ]).then(([items, total]) => ({ items, total }));
   }
 
   findProduitsActifs(): Promise<ProduitRecord[]> {
-    return this.prisma.produitAssurance.findMany({
-      where: { estActif: true },
-      orderBy: { createdAt: 'desc' },
-      include: { options: true },
+    return this.prisma.produit_assurance.findMany({
+      where: { est_actif: true },
+      orderBy: { created_at: "desc" },
+      include: { option_assurance: true },
     });
   }
 
   createOption(data: CreateOptionInput): Promise<OptionRecord> {
-    return this.prisma.optionAssurance.create({ data });
+    return this.prisma.option_assurance.create({ data });
   }
 
   findOptionById(id: string): Promise<OptionRecord | null> {
-    return this.prisma.optionAssurance.findUnique({ where: { id } });
+    return this.prisma.option_assurance.findUnique({ where: { id } });
   }
 
   updateOption(id: string, data: UpdateOptionInput): Promise<OptionRecord> {
-    return this.prisma.optionAssurance.update({ where: { id }, data });
+    return this.prisma.option_assurance.update({ where: { id }, data });
   }
 
-  findOptionsByProduitId(produitAssuranceId: string): Promise<OptionRecord[]> {
-    return this.prisma.optionAssurance.findMany({
-      where: { produitAssuranceId },
-      orderBy: { createdAt: 'desc' },
+  findOptionsByProduitId(produit_assuranceId: string): Promise<OptionRecord[]> {
+    return this.prisma.option_assurance.findMany({
+      where: { produit_assurance_id: produit_assuranceId },
+      orderBy: { created_at: "desc" },
     });
   }
 
@@ -110,57 +116,90 @@ export class AssuranceRepository implements AssuranceRepositoryPort {
       return Promise.resolve([]);
     }
 
-    return this.prisma.optionAssurance.findMany({
+    return this.prisma.option_assurance.findMany({
       where: { id: { in: ids } },
     });
   }
 
-  createSouscription(data: CreateSouscriptionInput): Promise<SouscriptionRecord> {
-    return this.prisma.souscriptionAssurance.create({
-      data,
+  createSouscription(
+    data: CreateSouscriptionInput,
+  ): Promise<SouscriptionRecord> {
+    // Transform optionsSelectionnees to snake_case for Prisma
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prismaData: any = {
+      ...data,
+      subscription_options: data.optionsSelectionnees,
+    };
+    return this.prisma.souscription_assurance.create({
+      data: prismaData,
       include: {
         utilisateur: { select: { id: true, nom: true } },
-        produitAssurance: { select: { id: true, nom: true } },
-        vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
-        optionsSelectionnees: { include: { option: true } },
+        produit_assurance: { select: { id: true, nom: true } },
+        vehicule: {
+          include: {
+            marque: { select: { nom: true } },
+            modele: { select: { nom: true } },
+          },
+        },
+        souscription_options: { include: { option_assurance: true } },
       },
     });
   }
 
   findSouscriptionById(id: string): Promise<SouscriptionRecord | null> {
-    return this.prisma.souscriptionAssurance.findUnique({
+    return this.prisma.souscription_assurance.findUnique({
       where: { id },
       include: {
         utilisateur: { select: { id: true, nom: true } },
-        produitAssurance: { select: { id: true, nom: true } },
-        vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
-        optionsSelectionnees: { include: { option: true } },
+        produit_assurance: { select: { id: true, nom: true } },
+        vehicule: {
+          include: {
+            marque: { select: { nom: true } },
+            modele: { select: { nom: true } },
+          },
+        },
+        souscription_options: { include: { option_assurance: true } },
       },
     });
   }
 
-  findSouscriptionsByUtilisateurId(utilisateurId: string): Promise<SouscriptionRecord[]> {
-    return this.prisma.souscriptionAssurance.findMany({
-      where: { utilisateurId },
-      orderBy: { createdAt: 'desc' },
+  findSouscriptionsByUtilisateurId(
+    utilisateurId: string,
+  ): Promise<SouscriptionRecord[]> {
+    return this.prisma.souscription_assurance.findMany({
+      where: { utilisateur_id: utilisateurId },
+      orderBy: { created_at: "desc" },
       include: {
         utilisateur: { select: { id: true, nom: true } },
-        produitAssurance: { select: { id: true, nom: true } },
-        vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
-        optionsSelectionnees: { include: { option: true } },
+        produit_assurance: { select: { id: true, nom: true } },
+        vehicule: {
+          include: {
+            marque: { select: { nom: true } },
+            modele: { select: { nom: true } },
+          },
+        },
+        souscription_options: { include: { option_assurance: true } },
       },
     });
   }
 
-  updateSouscription(id: string, data: UpdateSouscriptionInput): Promise<SouscriptionRecord> {
-    return this.prisma.souscriptionAssurance.update({
+  updateSouscription(
+    id: string,
+    data: UpdateSouscriptionInput,
+  ): Promise<SouscriptionRecord> {
+    return this.prisma.souscription_assurance.update({
       where: { id },
       data,
       include: {
         utilisateur: { select: { id: true, nom: true } },
-        produitAssurance: { select: { id: true, nom: true } },
-        vehicule: { include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } } },
-        optionsSelectionnees: { include: { option: true } },
+        produit_assurance: { select: { id: true, nom: true } },
+        vehicule: {
+          include: {
+            marque: { select: { nom: true } },
+            modele: { select: { nom: true } },
+          },
+        },
+        souscription_options: { include: { option_assurance: true } },
       },
     });
   }

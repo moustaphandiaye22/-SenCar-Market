@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight } from 'lucide-angular';
+import { LucideAngularModule, Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight, RefreshCw, Verified, Home, Shield, Layout, Briefcase, Star, MessageSquare } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { VehiculeService } from '../../core/services/vehicule.service';
 import { VehiculeResponse } from '../../core/models/vehicule.model';
@@ -15,7 +15,7 @@ import { environment } from '../../../environments/environment';
 export class HomeComponent implements OnInit {
   private vehiculeService = inject(VehiculeService);
   
-  icons = { Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight };
+  icons = { Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight, RefreshCw, Verified, Home, Shield, Layout, Briefcase, Star, MessageSquare };
   
   latestVehicules: VehiculeResponse[] = [];
   isLoading = true;

@@ -36,21 +36,25 @@
 
       <ul class="space-y-4 mb-10 flex-1">
         <li class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
-          <span>{{ plan.nombreAnnonces }} annonces incluses</span>
+          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
+          <span class="font-bold text-gray-900">{{ plan.nombreAnnonces }}</span> annonces incluses
         </li>
         <li *ngIf="plan.nombreBoostsGratuits > 0" class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
-          <span>{{ plan.nombreBoostsGratuits }} boosts gratuits / mois</span>
+          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
+          <span class="font-bold text-gray-900">{{ plan.nombreBoostsGratuits }}</span> boosts offerts
         </li>
         <li *ngIf="plan.estCertifie" class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
+          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
           <span>Badge "Vendeur Certifié"</span>
         </li>
-        <li *ngFor="let item of plan.avantages?.split(',')" class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-green-500 flex-shrink-0"></lucide-angular>
-          <span>{{ item }}</span>
-        </li>
+        <!-- Only show extra advantages that aren't already mentioned -->
+        <ng-container *ngFor="let item of plan.avantages?.split(',')">
+          <li *ngIf="item.trim() && !item.toLowerCase().includes('boost') && !item.toLowerCase().includes('annonce')" 
+              class="flex items-center gap-3 text-sm text-gray-600">
+            <lucide-angular [img]="icons.Check" size="18" class="text-gray-400 flex-shrink-0"></lucide-angular>
+            <span>{{ item.trim() }}</span>
+          </li>
+        </ng-container>
       </ul>
 
       <button 
@@ -61,17 +65,22 @@
         [class.text-gray-900]="!plan.estVedette"
         [class.hover:bg-primary-700]="plan.estVedette"
         [class.hover:bg-gray-200]="!plan.estVedette"
-        class="w-full py-4 rounded-xl font-bold transition-all shadow-lg shadow-gray-100 flex items-center justify-center gap-2">
-        {{ currentSub?.abonnementId === plan.id ? 'Plan actuel' : 'Choisir ce plan' }}
+        class="w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+        {{ currentSub?.abonnementId === plan.id ? 'Plan actuel' : 'Souscrire maintenant' }}
       </button>
     </div>
   </div>
 
-  <div class="mt-20 text-center bg-gray-50 rounded-3xl p-12">
-    <h2 class="text-2xl font-bold text-gray-900 mb-4">Besoin d'une solution sur mesure ?</h2>
-    <p class="text-gray-500 mb-8 max-w-xl mx-auto">Vous êtes un grand garage ou une agence ? Contactez notre équipe commerciale pour des tarifs adaptés.</p>
-    <button class="text-primary-600 font-bold border-2 border-primary-600 px-8 py-3 rounded-xl hover:bg-primary-600 hover:text-white transition-all">
-      Contacter le service commercial
+  <!-- Help section simplified -->
+  <div class="mt-20 flex flex-col md:flex-row items-center justify-between gap-8 bg-gray-900 rounded-[2.5rem] p-10 text-white overflow-hidden relative">
+    <div class="relative z-10">
+      <h2 class="text-3xl font-extrabold mb-4">Besoin d'une solution Enterprise ?</h2>
+      <p class="text-gray-400 max-w-lg">Grands garages, concessionnaires ou flottes — nous avons des tarifs dégressifs adaptés à votre volume.</p>
+    </div>
+    <button class="relative z-10 px-8 py-4 bg-primary-600 rounded-2xl font-bold hover:bg-primary-500 transition-all whitespace-nowrap">
+      Parler à un expert
     </button>
+    <!-- Decoration -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
   </div>
 </div>

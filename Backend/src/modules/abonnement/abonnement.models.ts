@@ -1,4 +1,7 @@
-import type { StatutAbonnement, TypeAbonnement } from './types/abonnement.types';
+import type {
+  StatutAbonnement,
+  TypeAbonnement,
+} from "./types/abonnement.types";
 
 type ConnectById = { connect: { id: string } };
 
@@ -36,8 +39,14 @@ export type UtilisateurAbonnementRecord = {
   dateFin: Date | null;
   statut: StatutAbonnement;
   nombreAnnoncesUtilisees: number | null;
-  abonnement: { id: string; nom: string; nombreAnnonces: number | null } | null;
+  abonnement: {
+    id: string;
+    nom: string;
+    nombre_annonces: number | null;
+  } | null;
 };
+
+export type StatutBoost = "EN_ATTENTE" | "ACTIF" | "EXPIRE" | "ANNULE";
 
 export type BoostAnnonceRecord = {
   id: string;
@@ -45,6 +54,8 @@ export type BoostAnnonceRecord = {
   dateDebut: Date | null;
   dateFin: Date | null;
   niveauBoost: string | null;
+  statut: StatutBoost | null;
+  paymentId: string | null;
 };
 
 export type CreateAbonnementInput = {
@@ -86,14 +97,18 @@ export type UpdateUtilisateurAbonnementInput = Partial<{
 
 export type CreateBoostInput = {
   id: string;
-  annonceLocation: ConnectById;
+  annonce_location: ConnectById;
   dateDebut: Date;
   dateFin: Date;
   niveauBoost: string;
+  statut?: StatutBoost;
+  payment_id?: string;
 };
 
 export type UpdateBoostInput = Partial<{
   dateDebut: Date;
   dateFin: Date;
   niveauBoost: string;
+  statut: StatutBoost;
+  payment_id: string;
 }>;

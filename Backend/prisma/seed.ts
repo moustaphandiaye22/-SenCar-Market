@@ -308,13 +308,13 @@ async function main(): Promise<void> {
 
   await prisma.photoVehicule.upsert({
     where: { id: IDS.photoVehicule1 },
-    update: { vehiculeId: IDS.vehiculeVendeur, url: 'https://cdn.sen-car.test/vehicules/v1.jpg', estPrincipale: true, ordre: 0 },
-    create: { id: IDS.photoVehicule1, vehiculeId: IDS.vehiculeVendeur, url: 'https://cdn.sen-car.test/vehicules/v1.jpg', estPrincipale: true, ordre: 0 },
+    update: { vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule1, vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
   });
   await prisma.photoVehicule.upsert({
     where: { id: IDS.photoVehicule2 },
-    update: { vehiculeId: IDS.vehiculeLoueur, url: 'https://cdn.sen-car.test/vehicules/v2.jpg', estPrincipale: true, ordre: 0 },
-    create: { id: IDS.photoVehicule2, vehiculeId: IDS.vehiculeLoueur, url: 'https://cdn.sen-car.test/vehicules/v2.jpg', estPrincipale: true, ordre: 0 },
+    update: { vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule2, vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
   });
 
   await prisma.garage.upsert({

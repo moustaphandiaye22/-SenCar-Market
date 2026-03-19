@@ -37,6 +37,10 @@ export class PaiementService {
     return this.api.post('/paiements/wave', data);
   }
 
+  createPaiementOrangeMoney(data: any): Observable<Paiement> {
+    return this.api.post('/paiements/orange-money', data);
+  }
+
   getMesPaiements(userId: string): Observable<Paiement[]> {
     return this.api.get(`/paiements/utilisateur/${userId}`);
   }

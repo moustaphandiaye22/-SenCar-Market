@@ -141,7 +141,7 @@
           <div *ngIf="showAvisForm" class="mb-10">
             <app-avis-form 
               [targetId]="vehicule.id" 
-              typeAvis="VEHICULE" 
+              typeAvis="ACHAT_VEHICULE" 
               [transactionId]="transactionId"
               (avisSent)="showAvisForm = false; checkAvisEligibility()">
             </app-avis-form>
@@ -180,13 +180,25 @@
           </div>
 
           <!-- Quick Actions -->
-          <div class="mt-8 space-y-3">
-            <button class="w-full flex justify-center items-center py-4 bg-primary-600 text-white rounded-2xl font-bold shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all gap-3">
+          <div class="mt-8 space-y-3" *ngIf="(currentUser$ | async)?.id !== vehicule.proprietaireId">
+            <button 
+              (click)="onShowPhone()"
+              class="w-full flex justify-center items-center py-4 bg-primary-600 text-white rounded-2xl font-bold shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all gap-3"
+            >
               <lucide-angular [img]="icons.Phone" size="20"></lucide-angular>
-              Afficher le téléphone
+              {{ showPhone ? vehicule.proprietaireTelephone : 'Afficher le téléphone' }}
             </button>
-            <button class="w-full flex justify-center items-center py-4 bg-white text-primary-600 border-2 border-primary-50 px-4 rounded-2xl font-bold hover:bg-primary-50 transition-all gap-3">
+            <button 
+              (click)="onMessageDirect()"
+              class="w-full flex justify-center items-center py-4 bg-primary-100 text-primary-700 rounded-2xl font-bold hover:bg-primary-200 transition-all gap-3"
+            >
               <lucide-angular [img]="icons.Mail" size="20"></lucide-angular>
+              Envoyer un message
+            </button>
+            <button 
+              (click)="onContactEmail()"
+              class="w-full flex justify-center items-center py-4 bg-white text-gray-600 border border-gray-100 rounded-2xl font-semibold hover:bg-gray-50 transition-all gap-3 text-sm"
+            >
               Contacter par email
             </button>
           </div>

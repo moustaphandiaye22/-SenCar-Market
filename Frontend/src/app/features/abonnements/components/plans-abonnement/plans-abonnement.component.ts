@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AbonnementService, PlanAbonnement, UtilisateurAbonnement } from '../../services/abonnement.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, Check, Star, Zap, Shield, Crown } from 'lucide-angular';
 
 @Component({
@@ -14,6 +15,7 @@ import { LucideAngularModule, Check, Star, Zap, Shield, Crown } from 'lucide-ang
 export class PlansAbonnementComponent implements OnInit {
   private abonnementService = inject(AbonnementService);
   private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   plans: PlanAbonnement[] = [];
   currentSub?: UtilisateurAbonnement;
@@ -56,12 +58,12 @@ export class PlansAbonnementComponent implements OnInit {
       abonnementId: plan.id 
     }).subscribe({
       next: () => {
-        alert('Souscription réussie !');
+        this.toastService.success('Souscription réussie !');
         this.router.navigate(['/abonnements/historique']);
       },
       error: (err) => {
         this.isLoading = false;
-        alert('Erreur lors de la souscription. Vérifiez votre solde.');
+        this.toastService.error('Erreur lors de la souscription. Vérifiez votre solde.');
       }
     });
   }

@@ -58,6 +58,123 @@
   </div>
 </div>
 
+<!-- Core Features Section -->
+<section class="py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <span class="text-primary-600 font-bold text-sm uppercase tracking-widest px-4 py-1.5 rounded-full bg-primary-50">Nos Services</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mt-4">Pourquoi choisir Sen-Car-Market ?</h2>
+      <p class="text-gray-600 mt-4 max-w-2xl mx-auto">Une plateforme complète pour sécuriser et simplifier chaque étape de votre projet automobile.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <!-- Feature 1: Certification -->
+      <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 group">
+        <div class="w-14 h-14 rounded-xl bg-green-50 flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform">
+          <lucide-angular [img]="icons.Verified" size="28"></lucide-angular>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-3">Certification Expert</h3>
+        <p class="text-gray-600 text-sm leading-relaxed mb-6">Achetez en toute sérénité. Nos experts inspectent les véhicules et délivrent un rapport détaillé pour garantir l'état réel.</p>
+        <a routerLink="/certification" class="text-primary-600 font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all">
+          En savoir plus <lucide-angular [img]="icons.ArrowRight" size="16"></lucide-angular>
+        </a>
+      </div>
+
+      <!-- Feature 2: Trade-In -->
+      <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 group">
+        <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
+          <lucide-angular [img]="icons.RefreshCw" size="28"></lucide-angular>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-3">Reprise (Trade-In)</h3>
+        <p class="text-gray-600 text-sm leading-relaxed mb-6">Échangez votre ancien véhicule contre un nouveau. Obtenez une estimation rapide auprès de garages professionnels agréés.</p>
+        <a routerLink="/trade-in" class="text-primary-600 font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all">
+          Estimer ma voiture <lucide-angular [img]="icons.ArrowRight" size="16"></lucide-angular>
+        </a>
+      </div>
+
+      <!-- Feature 3: Location -->
+      <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 group">
+        <div class="w-14 h-14 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform">
+          <lucide-angular [img]="icons.Home" size="28"></lucide-angular>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-3">Location Facile</h3>
+        <p class="text-gray-600 text-sm leading-relaxed mb-6">Besoin d'un véhicule pour un jour ou un mois ? Explorez notre large sélection de voitures de location partout au Sénégal.</p>
+        <a routerLink="/rentals" class="text-primary-600 font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all">
+          Louer une voiture <lucide-angular [img]="icons.ArrowRight" size="16"></lucide-angular>
+        </a>
+      </div>
+
+      <!-- Feature 4: Assurance -->
+      <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 group">
+        <div class="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 transition-transform">
+          <lucide-angular [img]="icons.Shield" size="28"></lucide-angular>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-3">Assurance Auto</h3>
+        <p class="text-gray-600 text-sm leading-relaxed mb-6">Protégez votre investissement. Trouvez et souscrivez aux meilleures offres d'assurance directement sur la plateforme.</p>
+        <a routerLink="/assurance" class="text-primary-600 font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all">
+          Voir les offres <lucide-angular [img]="icons.ArrowRight" size="16"></lucide-angular>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Additional Services: Professional and Messaging -->
+<section class="py-20 bg-white border-t border-gray-100 overflow-hidden">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-col lg:flex-row items-center gap-16">
+      <div class="lg:w-1/2">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Plus qu'une simple transaction, un écosystème complet.</h2>
+        
+        <div class="space-y-8">
+          <div class="flex gap-6">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-700">
+              <lucide-angular [img]="icons.Briefcase" size="20"></lucide-angular>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900 text-lg mb-2">Espace Professionnels</h4>
+              <p class="text-gray-600">Outils de gestion de stock et visibilité accrue pour les garages et concessionnaires.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-6">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-700">
+              <lucide-angular [img]="icons.MessageSquare" size="20"></lucide-angular>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900 text-lg mb-2">Messagerie Intégrée</h4>
+              <p class="text-gray-600">Discutez en temps réel avec les vendeurs et les experts sans quitter l'application.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-6">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-700">
+              <lucide-angular [img]="icons.Star" size="20"></lucide-angular>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-900 text-lg mb-2">Communauté de Confiance</h4>
+              <p class="text-gray-600">Système de notation et d'avis pour chaque véhicule, garage et utilisateur.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="lg:w-1/2 relative">
+        <div class="bg-gray-100 w-full aspect-video rounded-3xl overflow-hidden shadow-2xl relative z-10">
+          <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+             <!-- On pourrait mettre ici une capture d'écran de l'interface dashboard ou messagerie -->
+             <lucide-angular [img]="icons.Layout" size="64" class="opacity-20"></lucide-angular>
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-tr from-primary-600/10 to-transparent"></div>
+        </div>
+        <!-- Decorative elements -->
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style="animation-delay: 2s"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Recent Listings -->
 <div class="max-w-7xl w-full mx-auto px-6 py-16">
   <div class="flex justify-between items-end mb-10">

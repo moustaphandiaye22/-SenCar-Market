@@ -20,7 +20,7 @@ export class LocationAccessPolicy {
   }
 
   assertAnnonceOwnerOrAdmin(annonce: AnnonceRecord, userId: string, role: string | undefined | null): void {
-    if (!isOwnerOrHasAnyRole(userId, annonce.proprietaireId, role, ROLES_ADMIN_SUPER_ADMIN)) {
+    if (!isOwnerOrHasAnyRole(userId, annonce.proprietaire_id, role, ROLES_ADMIN_SUPER_ADMIN)) {
       throw new DomainException('Accès refusé à cette annonce', 403, 'ACCESS_DENIED_ANNONCE');
     }
   }
@@ -34,8 +34,8 @@ export class LocationAccessPolicy {
       return;
     }
 
-    const ownerId = reservation.annonceLocation.proprietaireId;
-    const locataireId = reservation.locataireId;
+    const ownerId = reservation.annonce_location.proprietaire_id;
+    const locataireId = reservation.locataire_id;
 
     if (ownerId !== userId && locataireId !== userId) {
       throw new DomainException('Accès refusé à cette réservation', 403, 'ACCESS_DENIED_RESERVATION');

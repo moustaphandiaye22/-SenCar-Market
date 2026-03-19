@@ -4,8 +4,13 @@ export interface AnnonceLocation {
   vehiculeMarque: string | null;
   vehiculeModele: string | null;
   vehiculePhoto: string | null;
+  vehiculeTransmission: string | null;
+  vehiculeCarburant: string | null;
+  vehiculePlaces: number | null;
   proprietaireId: string;
   proprietaireNom: string | null;
+  proprietaireTelephone: string | null;
+  proprietaireEmail: string | null;
   tarifJournalier: string | null;
   description: string | null;
   conditions: string | null;
@@ -23,6 +28,7 @@ export interface ReservationLocation {
   annonceLocationId: string;
   vehiculeMarque: string | null;
   vehiculeModele: string | null;
+  vehiculePhoto: string | null;
   locataireId: string;
   locataireNom: string | null;
   locataireEmail: string | null;

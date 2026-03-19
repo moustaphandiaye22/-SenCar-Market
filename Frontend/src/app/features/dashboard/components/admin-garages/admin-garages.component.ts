@@ -4,6 +4,8 @@ import { GarageService } from '../../../garages/services/garage.service';
 import { Garage } from '../../../garages/models/garage.model';
 import { LucideAngularModule, Check, X, ShieldAlert, Building } from 'lucide-angular';
 import { RouterModule } from '@angular/router';
+import { ConfirmService } from '../../../../core/services/confirm.service';
+import { PromptService } from '../../../../core/services/prompt.service';
 
 @Component({
   selector: 'app-admin-garages',
@@ -13,6 +15,8 @@ import { RouterModule } from '@angular/router';
 })
 export class AdminGaragesComponent implements OnInit {
   private garageService = inject(GarageService);
+  private confirmService = inject(ConfirmService);
+  private promptService = inject(PromptService);
   garages: Garage[] = [];
   isLoading = true;
 
@@ -34,19 +38,33 @@ export class AdminGaragesComponent implements OnInit {
   }
 
   validerGarage(id: string) {
-    if(confirm("Confirmer la validation de ce garage ? Il sera publiquement visible.")) {
-      this.garageService.validerGarage(id, { nouveauStatut: 'ACTIF' }).subscribe(() => {
-        this.loadGaragesEnAttente();
-      });
-    }
+    this.confirmService.show({
+      title: 'Valider ce garage ?',
+      message: 'Une fois validé, ce garage sera visible par tous les utilisateurs de la plateforme.',
+      confirmText: 'Valider',
+      cancelText: 'Plus tard',
+      onConfirm: () => {
+        this.garageService.validerGarage(id, { nouveauStatut: 'ACTIF' }).subscribe(() => {
+          this.loadGaragesEnAttente();
+        });
+      }
+    });
   }
 
   refuserGarage(id: string) {
-    const reason = prompt("Raison du refus :");
-    if(reason) {
-      this.garageService.validerGarage(id, { nouveauStatut: 'REJET', commentaireAdmin: reason }).subscribe(() => {
-        this.loadGaragesEnAttente();
-      });
-    }
+    this.promptService.show({
+      title: 'Refuser le garage',
+      message: 'Veuillez indiquer la raison du refus pour informer le propriétaire.',
+      placeholder: 'Ex: Documents incomplets, coordonnées invalides...',
+      confirmText: 'Confirmer le refus',
+      cancelText: 'Annuler',
+      onConfirm: (reason) => {
+        if (reason) {
+          this.garageService.validerGarage(id, { nouveauStatut: 'REJET', commentaireAdmin: reason }).subscribe(() => {
+            this.loadGaragesEnAttente();
+          });
+        }
+      }
+    });
   }
 }

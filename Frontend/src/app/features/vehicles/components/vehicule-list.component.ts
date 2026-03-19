@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { VehiculeService } from '../../../core/services/vehicule.service';
 import { VehiculeResponse, VehiculeFilter } from '../../../core/models/vehicule.model';
 import { environment } from '../../../../environments/environment';
-import { LucideAngularModule, Search, Filter, SlidersHorizontal, Heart, MapPin, Gauge, Fuel, Zap } from 'lucide-angular';
+import { LucideAngularModule, Search, Filter, SlidersHorizontal, Heart, MapPin, Gauge, Fuel, Zap, Plus } from 'lucide-angular';
 
 @Component({
   selector: 'app-vehicule-list',
@@ -27,7 +27,7 @@ export class VehiculeListComponent implements OnInit {
     sortDir: 'DESC'
   };
 
-  icons = { Search, Filter, SlidersHorizontal, Heart, MapPin, Gauge, Fuel, Zap };
+  icons = { Search, Filter, SlidersHorizontal, Heart, MapPin, Gauge, Fuel, Zap, Plus };
 
   ngOnInit(): void {
     this.loadVehicules();

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsDateString, IsOptional, IsUUID } from "class-validator";
 
 export class CreateReservationRequestDto {
   @ApiProperty()
@@ -13,4 +13,9 @@ export class CreateReservationRequestDto {
   @ApiProperty()
   @IsDateString()
   dateFin!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  paiementId?: string;
 }

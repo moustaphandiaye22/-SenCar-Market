@@ -4,6 +4,9 @@ import { TradeInService } from '../../../trade-in/services/trade-in.service';
 import { LucideAngularModule, Car, Check, X, Info, Send, ShieldCheck, Clock, Search, Filter } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
+import { PromptService } from '../../../../core/services/prompt.service';
 
 @Component({
   selector: 'app-manage-trade-in',
@@ -111,6 +114,9 @@ import { DemandeTradeIn } from '../../../trade-in/models/trade-in.model';
 })
 export class ManageTradeInComponent implements OnInit {
   private tradeInService = inject(TradeInService);
+  private toastService = inject(ToastService);
+  private confirmService = inject(ConfirmService);
+  private promptService = inject(PromptService);
   demandes: DemandeTradeIn[] = [];
   filteredDemandes: DemandeTradeIn[] = [];
   searchQuery = '';
@@ -150,27 +156,37 @@ export class ManageTradeInComponent implements OnInit {
   }
 
   valider(demande: DemandeTradeIn) {
-    if (confirm(`Valider l'estimation de ${demande.prixEstime} FCFA pour ce véhicule ?`)) {
-      const valObj = {
-        nouveauStatut: 'VALIDEE',
-        prixPropose: demande.prixEstime || 0,
-        commentaireAdmin: 'Estimation validée par l\'administrateur'
-      };
-      this.tradeInService.validerDemande(demande.id, valObj).subscribe(() => this.loadDemandes());
-    }
+    this.confirmService.show({
+      title: 'Valider l\'estimation ?',
+      message: `Confirmer l'offre de ${new Intl.NumberFormat('fr-FR').format(demande.prixEstime || 0)} FCFA pour ce véhicule ?`,
+      confirmText: 'Valider',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        const valObj = {
+          nouveauStatut: 'VALIDEE',
+          prixPropose: demande.prixEstime || 0,
+          commentaireAdmin: 'Estimation validée par l\'administrateur'
+        };
+        this.tradeInService.validerDemande(demande.id, valObj).subscribe(() => this.loadDemandes());
+      }
+    });
   }
 
   rejeter(demande: DemandeTradeIn) {
-    const reason = prompt('Raison du rejet (facultatif) :');
-    if (reason !== null) {
-      this.tradeInService.updateStatut(demande.id, 'REJETEE').subscribe(() => this.loadDemandes());
-    }
+    this.promptService.show({
+      title: 'Rejeter la demande',
+      message: 'Veuillez indiquer une raison pour ce rejet (facultatif).',
+      placeholder: 'Raison du rejet...',
+      onConfirm: (reason) => {
+        this.tradeInService.updateStatut(demande.id, 'REJETEE').subscribe(() => this.loadDemandes());
+      }
+    });
   }
 
   notifier(demande: DemandeTradeIn) {
     this.tradeInService.notifierUtilisateur(demande.id).subscribe({
-      next: () => alert('Rappel envoyé au vendeur !'),
-      error: () => alert('Erreur lors de l\'envoi de la notification')
+      next: () => this.toastService.success('Rappel envoyé au vendeur !'),
+      error: () => this.toastService.error('Erreur lors de l\'envoi de la notification')
     });
   }
 

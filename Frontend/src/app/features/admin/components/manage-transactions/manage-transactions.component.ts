@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
 import { LucideAngularModule, CreditCard, RotateCcw, Search, Filter } from 'lucide-angular';
+import { PromptService } from '../../../../core/services/prompt.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -108,6 +109,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageTransactionsComponent implements OnInit {
   private adminService = inject(AdminService);
+  private promptService = inject(PromptService);
   transactions: any[] = [];
   filteredTransactions: any[] = [];
   searchQuery = '';
@@ -145,10 +147,16 @@ export class ManageTransactionsComponent implements OnInit {
   }
 
   rembourser(t: any) {
-    const reason = prompt("Raison du remboursement :");
-    if (reason) {
-      this.adminService.effectuerRemboursement(t.id, reason).subscribe(() => this.loadTransactions());
-    }
+    this.promptService.show({
+      title: 'Remboursement',
+      message: 'Veuillez indiquer la raison de ce remboursement.',
+      placeholder: 'Ex: Annulation client, erreur de paiement...',
+      onConfirm: (reason) => {
+        if (reason) {
+          this.adminService.effectuerRemboursement(t.id, reason).subscribe(() => this.loadTransactions());
+        }
+      }
+    });
   }
 
   getStatusClass(status: string) {

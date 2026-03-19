@@ -27,7 +27,7 @@ export type VehiculeRecord = {
   modele: { nom: string | null } | null;
   carburant: { nom: string | null } | null;
   boiteVitesse: { nom: string | null } | null;
-  proprietaire: { id: string; nom: string | null };
+  proprietaire: { id: string; nom: string | null; email: string; telephone: string };
   photos: Array<{ url: string }>;
   anneeFabrication: number | null;
   kilometrage: number | null;

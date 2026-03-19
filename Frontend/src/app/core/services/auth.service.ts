@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { ApiService } from './api.service';
-import { BehaviorSubject, tap, map, Observable } from 'rxjs';
+import { BehaviorSubject, tap, map, Observable, distinctUntilChanged } from 'rxjs';
 import { AuthResponse, UserProfile } from '../models/auth.model';
 
 // Shape of the raw API response from the backend
@@ -28,7 +28,9 @@ export class AuthService {
   private api = inject(ApiService);
   private currentUserSubject = new BehaviorSubject<AuthResponse['user'] | null>(this.getSavedUser());
   
-  public currentUser$ = this.currentUserSubject.asObservable();
+  public currentUser$ = this.currentUserSubject.asObservable().pipe(
+    distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+  );
 
   private getSavedUser(): AuthResponse['user'] | null {
     try {

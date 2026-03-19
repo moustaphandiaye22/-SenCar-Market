@@ -1,31 +1,39 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from "@nestjs/common";
 
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
-import { DomainException } from '../../common/exceptions/domain.exception';
-import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
-import { normalizeRequiredField } from '../../common/utils/field.util';
-import { buildPaged, parsePaginationParams } from '../../common/utils/pagination-helper.util';
+import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
+import { DomainException } from "../../common/exceptions/domain.exception";
+import type { AuthenticatedUser } from "../../common/types/authenticated-user.type";
+import { normalizeRequiredField } from "../../common/utils/field.util";
+import {
+  buildPaged,
+  parsePaginationParams,
+} from "../../common/utils/pagination-helper.util";
 
 import {
   AbonnementRecord,
   BoostAnnonceRecord,
   UserRecord,
-} from './abonnement.models';
-import { ABONNEMENT_REPOSITORY_PORT, AbonnementRepositoryPort } from './abonnement.repository.port';
-import { AbonnementResponseDto } from './dto/abonnement-response.dto';
-import { BoostAnnonceResponseDto } from './dto/boost-annonce-response.dto';
-import { CreateAbonnementRequestDto } from './dto/create-abonnement-request.dto';
-import { CreateBoostRequestDto } from './dto/create-boost-request.dto';
-import { SouscriptionRequestDto } from './dto/souscription-request.dto';
-import { UtilisateurAbonnementResponseDto } from './dto/utilisateur-abonnement-response.dto';
-import { AbonnementAccessPolicy } from './services/abonnement-access.policy';
-import { AbonnementMapper } from './services/abonnement.mapper';
-import { AbonnementInputValidator } from './validation/abonnement-input.validator';
+  UtilisateurAbonnementRecord,
+} from "./abonnement.models";
+import {
+  ABONNEMENT_REPOSITORY_PORT,
+  AbonnementRepositoryPort,
+} from "./abonnement.repository.port";
+import { AbonnementResponseDto } from "./dto/abonnement-response.dto";
+import { BoostAnnonceResponseDto } from "./dto/boost-annonce-response.dto";
+import { CreateAbonnementRequestDto } from "./dto/create-abonnement-request.dto";
+import { CreateBoostRequestDto } from "./dto/create-boost-request.dto";
+import { SouscriptionRequestDto } from "./dto/souscription-request.dto";
+import { UtilisateurAbonnementResponseDto } from "./dto/utilisateur-abonnement-response.dto";
+import { AbonnementAccessPolicy } from "./services/abonnement-access.policy";
+import { AbonnementMapper } from "./services/abonnement.mapper";
+import { AbonnementInputValidator } from "./validation/abonnement-input.validator";
 
 @Injectable()
 export class AbonnementService {
   constructor(
-    @Inject(ABONNEMENT_REPOSITORY_PORT) private readonly repository: AbonnementRepositoryPort,
+    @Inject(ABONNEMENT_REPOSITORY_PORT)
+    private readonly repository: AbonnementRepositoryPort,
     private readonly inputValidator: AbonnementInputValidator,
     private readonly accessPolicy: AbonnementAccessPolicy,
     private readonly mapper: AbonnementMapper,
@@ -92,7 +100,9 @@ export class AbonnementService {
 
   async getAllPlans(): Promise<AbonnementResponseDto[]> {
     const plans = await this.repository.findAllAbonnements();
-    return plans.filter((item) => item.estActif === true).map((item) => this.mapper.toAbonnementResponse(item));
+    return plans
+      .filter((item) => item.estActif === true)
+      .map((item) => this.mapper.toAbonnementResponse(item));
   }
 
   async subscribe(
@@ -100,21 +110,39 @@ export class AbonnementService {
     user: AuthenticatedUser,
   ): Promise<UtilisateurAbonnementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    const utilisateurId = this.resolveTargetUtilisateurId(request.utilisateurId, currentUser);
+    const utilisateurId = this.resolveTargetUtilisateurId(
+      request.utilisateurId,
+      currentUser,
+    );
 
     const plan = await this.mustFindAbonnement(request.abonnementId);
     if (plan.estActif !== true) {
-      throw new DomainException('Abonnement inactif', 400, 'ABONNEMENT_INACTIF');
+      throw new DomainException(
+        "Abonnement inactif",
+        400,
+        "ABONNEMENT_INACTIF",
+      );
     }
 
-    const existing = await this.repository.findActiveSubscription(utilisateurId, new Date());
+    const existing = await this.repository.findActiveSubscription(
+      utilisateurId,
+      new Date(),
+    );
     if (existing) {
-      throw new DomainException('Un abonnement actif existe déjà', 400, 'SUBSCRIPTION_ALREADY_ACTIVE');
+      throw new DomainException(
+        "Un abonnement actif existe déjà",
+        400,
+        "SUBSCRIPTION_ALREADY_ACTIVE",
+      );
     }
 
     const dateDebut = new Date();
     const dateFin = new Date(dateDebut.getTime());
     dateFin.setDate(dateFin.getDate() + (plan.dureeJours ?? 0));
+
+    // If paymentId is provided, create subscription with EN_ATTENTE status
+    // Otherwise, create with ACTIF status (free subscription or no payment required)
+    const statut = request.paiementId ? "EN_ATTENTE" : "ACTIF";
 
     const created = await this.repository.createUtilisateurAbonnement({
       id: this.repository.newId(),
@@ -122,20 +150,87 @@ export class AbonnementService {
       abonnement: { connect: { id: plan.id } },
       dateDebut,
       dateFin,
-      statut: 'ACTIF',
+      statut,
       nombreAnnoncesUtilisees: 0,
     });
 
     return this.mapper.toUtilisateurAbonnementResponse(created);
   }
 
-  async renewSubscription(utilisateurId: string, user: AuthenticatedUser): Promise<UtilisateurAbonnementResponseDto> {
+  async activateSubscription(
+    subscriptionId: string,
+    paymentId: string,
+    user: AuthenticatedUser,
+  ): Promise<UtilisateurAbonnementResponseDto> {
+    const currentUser = await this.mustFindCurrentUser(user.email);
+    this.accessPolicy.assertCanManageBoost(currentUser.typeUtilisateur?.nom);
+
+    const subscription =
+      await this.mustFindUtilisateurAbonnement(subscriptionId);
+
+    // Verify subscription is in EN_ATTENTE status
+    if (subscription.statut !== "EN_ATTENTE") {
+      throw new DomainException(
+        "L'abonnement doit être en statut EN_ATTENTE pour être activé",
+        400,
+        "SUBSCRIPTION_NOT_PENDING",
+      );
+    }
+
+    // Verify the payment exists and is CONFIRME
+    const payment = await this.repository.findPaymentById(paymentId);
+    if (!payment) {
+      throw new DomainException(
+        "Paiement non trouvé",
+        404,
+        "PAYMENT_NOT_FOUND",
+      );
+    }
+
+    if (payment.statut !== "CONFIRME") {
+      throw new DomainException(
+        "Le paiement doit être confirmé pour activer l'abonnement",
+        400,
+        "PAYMENT_NOT_CONFIRMED",
+      );
+    }
+
+    // Calculate dates based on current date and plan duration
+    const now = new Date();
+    const plan = await this.mustFindAbonnement(subscription.abonnementId);
+    const newDateFin = new Date(now.getTime());
+    newDateFin.setDate(newDateFin.getDate() + (plan.dureeJours ?? 0));
+
+    // Update subscription status to ACTIF with new dates
+    const updated = await this.repository.updateUtilisateurAbonnement(
+      subscriptionId,
+      {
+        statut: "ACTIF",
+        dateDebut: now,
+        dateFin: newDateFin,
+      },
+    );
+
+    return this.mapper.toUtilisateurAbonnementResponse(updated);
+  }
+
+  async renewSubscription(
+    utilisateurId: string,
+    user: AuthenticatedUser,
+  ): Promise<UtilisateurAbonnementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertOwnerOrAdmin(currentUser, utilisateurId);
 
-    const active = await this.repository.findActiveSubscription(utilisateurId, new Date());
+    const active = await this.repository.findActiveSubscription(
+      utilisateurId,
+      new Date(),
+    );
     if (!active) {
-      throw new DomainException('Aucun abonnement actif', 404, 'NO_ACTIVE_SUBSCRIPTION');
+      throw new DomainException(
+        "Aucun abonnement actif",
+        404,
+        "NO_ACTIVE_SUBSCRIPTION",
+      );
     }
 
     const plan = await this.mustFindAbonnement(active.abonnementId);
@@ -143,25 +238,38 @@ export class AbonnementService {
     const newDateFin = new Date(baseDate.getTime());
     newDateFin.setDate(newDateFin.getDate() + (plan.dureeJours ?? 0));
 
-    const updated = await this.repository.updateUtilisateurAbonnement(active.id, {
-      dateFin: newDateFin,
-      statut: 'ACTIF',
-    });
+    const updated = await this.repository.updateUtilisateurAbonnement(
+      active.id,
+      {
+        dateFin: newDateFin,
+        statut: "ACTIF",
+      },
+    );
 
     return this.mapper.toUtilisateurAbonnementResponse(updated);
   }
 
-  async cancelSubscription(utilisateurId: string, user: AuthenticatedUser): Promise<void> {
+  async cancelSubscription(
+    utilisateurId: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertOwnerOrAdmin(currentUser, utilisateurId);
 
-    const active = await this.repository.findActiveSubscription(utilisateurId, new Date());
+    const active = await this.repository.findActiveSubscription(
+      utilisateurId,
+      new Date(),
+    );
     if (!active) {
-      throw new DomainException('Aucun abonnement actif', 404, 'NO_ACTIVE_SUBSCRIPTION');
+      throw new DomainException(
+        "Aucun abonnement actif",
+        404,
+        "NO_ACTIVE_SUBSCRIPTION",
+      );
     }
 
     await this.repository.updateUtilisateurAbonnement(active.id, {
-      statut: 'ANNULE',
+      statut: "ANNULE",
     });
   }
 
@@ -172,7 +280,10 @@ export class AbonnementService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertOwnerOrAdmin(currentUser, utilisateurId);
 
-    const active = await this.repository.findActiveSubscription(utilisateurId, new Date());
+    const active = await this.repository.findActiveSubscription(
+      utilisateurId,
+      new Date(),
+    );
     if (!active) {
       return null;
     }
@@ -189,13 +300,18 @@ export class AbonnementService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertOwnerOrAdmin(currentUser, utilisateurId);
 
-    const { page: safePage, size: safeSize } = parsePaginationParams(page, size, { defaultSize: 10 });
-
-    const { items, total } = await this.repository.findSubscriptionsByUtilisateurPaged(
-      utilisateurId,
-      safePage,
-      safeSize,
+    const { page: safePage, size: safeSize } = parsePaginationParams(
+      page,
+      size,
+      { defaultSize: 10 },
     );
+
+    const { items, total } =
+      await this.repository.findSubscriptionsByUtilisateurPaged(
+        utilisateurId,
+        safePage,
+        safeSize,
+      );
 
     return buildPaged(
       items.map((item) => this.mapper.toUtilisateurAbonnementResponse(item)),
@@ -205,28 +321,120 @@ export class AbonnementService {
     );
   }
 
-  async createBoost(request: CreateBoostRequestDto, user: AuthenticatedUser): Promise<BoostAnnonceResponseDto> {
+  async createBoost(
+    request: CreateBoostRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<BoostAnnonceResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertCanManageBoost(currentUser.typeUtilisateur?.nom);
-    const [dateDebut, dateFin] = this.inputValidator.parseBoostDates(request.dateDebut, request.dateFin);
-    const niveauBoost = normalizeRequiredField(request.niveauBoost, 'niveauBoost', 'ABONNEMENT_INVALID_FIELD');
+    const [dateDebut, dateFin] = this.inputValidator.parseBoostDates(
+      request.dateDebut,
+      request.dateFin,
+    );
+    const niveauBoost = normalizeRequiredField(
+      request.niveauBoost,
+      "niveauBoost",
+      "ABONNEMENT_INVALID_FIELD",
+    );
+
+    // If paymentId is provided, create boost with EN_ATTENTE status
+    // Otherwise, create with ACTIF status (free boost or no payment required)
+    const statut = request.paymentId ? "EN_ATTENTE" : "ACTIF";
 
     const created = await this.repository.createBoost({
       id: this.repository.newId(),
-      annonceLocation: { connect: { id: request.annonceLocationId } },
+      annonce_location: { connect: { id: request.annonceLocationId } },
       dateDebut,
       dateFin,
       niveauBoost,
+      statut,
+      payment_id: request.paymentId,
     });
 
     return this.mapper.toBoostResponse(created);
   }
 
-  async updateBoost(id: string, request: CreateBoostRequestDto, user: AuthenticatedUser): Promise<BoostAnnonceResponseDto> {
+  async activateBoost(
+    boostId: string,
+    paymentId: string,
+    user: AuthenticatedUser,
+  ): Promise<BoostAnnonceResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertCanManageBoost(currentUser.typeUtilisateur?.nom);
-    const [dateDebut, dateFin] = this.inputValidator.parseBoostDates(request.dateDebut, request.dateFin);
-    const niveauBoost = normalizeRequiredField(request.niveauBoost, 'niveauBoost', 'ABONNEMENT_INVALID_FIELD');
+
+    const boost = await this.mustFindBoost(boostId);
+
+    // Verify boost is in EN_ATTENTE status
+    if (boost.statut !== "EN_ATTENTE") {
+      throw new DomainException(
+        "Le boost doit être en statut EN_ATTENTE pour être activé",
+        400,
+        "BOOST_NOT_PENDING",
+      );
+    }
+
+    // Verify the payment exists and is CONFIRME
+    const payment = await this.repository.findPaymentById(paymentId);
+    if (!payment) {
+      throw new DomainException(
+        "Paiement non trouvé",
+        404,
+        "PAYMENT_NOT_FOUND",
+      );
+    }
+
+    if (payment.statut !== "CONFIRME") {
+      throw new DomainException(
+        "Le paiement doit être confirmé pour activer le boost",
+        400,
+        "PAYMENT_NOT_CONFIRMED",
+      );
+    }
+
+    // Verify the paymentId matches the boost's payment_id
+    if (boost.paymentId !== paymentId) {
+      throw new DomainException(
+        "Le paiement ne correspond pas au boost",
+        400,
+        "PAYMENT_MISMATCH",
+      );
+    }
+
+    // Calculate dates based on current date and original duration
+    const now = new Date();
+    const originalDateDebut = boost.dateDebut ?? now;
+    const originalDateFin =
+      boost.dateFin ?? new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // Default 14 days
+
+    const durationMs = originalDateFin.getTime() - originalDateDebut.getTime();
+    const newDateFin = new Date(now.getTime() + durationMs);
+
+    // Update boost status to ACTIF with new dates
+    const updated = await this.repository.updateBoost(boostId, {
+      statut: "ACTIF",
+      dateDebut: now,
+      dateFin: newDateFin,
+    });
+
+    return this.mapper.toBoostResponse(updated);
+  }
+
+  async updateBoost(
+    id: string,
+    request: CreateBoostRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<BoostAnnonceResponseDto> {
+    const currentUser = await this.mustFindCurrentUser(user.email);
+    this.accessPolicy.assertCanManageBoost(currentUser.typeUtilisateur?.nom);
+    const [dateDebut, dateFin] = this.inputValidator.parseBoostDates(
+      request.dateDebut,
+      request.dateFin,
+    );
+    const niveauBoost = normalizeRequiredField(
+      request.niveauBoost,
+      "niveauBoost",
+      "ABONNEMENT_INVALID_FIELD",
+    );
 
     await this.mustFindBoost(id);
     const updated = await this.repository.updateBoost(id, {
@@ -249,10 +457,15 @@ export class AbonnementService {
     return this.mapper.toBoostResponse(await this.mustFindBoost(id));
   }
 
-  async getBoostsByVehicule(vehiculeId: string): Promise<BoostAnnonceResponseDto[]> {
+  async getBoostsByVehicule(
+    vehiculeId: string,
+  ): Promise<BoostAnnonceResponseDto[]> {
     // Alignement Spring: le controller expose /vehicules/{vehiculeId}/boosts
     // mais la recherche est faite par annonceLocationId.
-    const boosts = await this.repository.findBoostsByAnnonceLocationId(vehiculeId, new Date());
+    const boosts = await this.repository.findBoostsByAnnonceLocationId(
+      vehiculeId,
+      new Date(),
+    );
     return boosts.map((item) => this.mapper.toBoostResponse(item));
   }
 
@@ -273,19 +486,27 @@ export class AbonnementService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     this.accessPolicy.assertOwnerOrAdmin(currentUser, utilisateurId);
 
-    const pending = await this.repository.findPendingSubscription(utilisateurId);
+    const pending =
+      await this.repository.findPendingSubscription(utilisateurId);
     if (!pending) {
-      throw new DomainException('Aucun abonnement en attente', 404, 'NO_PENDING_SUBSCRIPTION');
+      throw new DomainException(
+        "Aucun abonnement en attente",
+        404,
+        "NO_PENDING_SUBSCRIPTION",
+      );
     }
 
     const plan = await this.mustFindAbonnement(pending.abonnementId);
     const newDateFin = new Date();
     newDateFin.setDate(newDateFin.getDate() + (plan.dureeJours ?? 0));
 
-    const saved = await this.repository.updateUtilisateurAbonnement(pending.id, {
-      statut: 'ACTIF',
-      dateFin: newDateFin,
-    });
+    const saved = await this.repository.updateUtilisateurAbonnement(
+      pending.id,
+      {
+        statut: "ACTIF",
+        dateFin: newDateFin,
+      },
+    );
 
     return this.mapper.toUtilisateurAbonnementResponse(saved);
   }
@@ -293,7 +514,11 @@ export class AbonnementService {
   private async mustFindCurrentUser(email: string): Promise<UserRecord> {
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-      throw new DomainException('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+      throw new DomainException(
+        "Utilisateur non trouvé",
+        404,
+        "USER_NOT_FOUND",
+      );
     }
     return user;
   }
@@ -301,7 +526,11 @@ export class AbonnementService {
   private async mustFindAbonnement(id: string): Promise<AbonnementRecord> {
     const plan = await this.repository.findAbonnementById(id);
     if (!plan) {
-      throw new DomainException('Abonnement non trouvé', 404, 'ABONNEMENT_NOT_FOUND');
+      throw new DomainException(
+        "Abonnement non trouvé",
+        404,
+        "ABONNEMENT_NOT_FOUND",
+      );
     }
     return plan;
   }
@@ -309,12 +538,30 @@ export class AbonnementService {
   private async mustFindBoost(id: string): Promise<BoostAnnonceRecord> {
     const boost = await this.repository.findBoostById(id);
     if (!boost) {
-      throw new DomainException('Boost non trouvé', 404, 'BOOST_NOT_FOUND');
+      throw new DomainException("Boost non trouvé", 404, "BOOST_NOT_FOUND");
     }
     return boost;
   }
 
-  private resolveTargetUtilisateurId(requestedId: string | undefined, currentUser: UserRecord): string {
+  private async mustFindUtilisateurAbonnement(
+    id: string,
+  ): Promise<UtilisateurAbonnementRecord> {
+    const subscription =
+      await this.repository.findUtilisateurAbonnementById(id);
+    if (!subscription) {
+      throw new DomainException(
+        "Abonnement non trouvé",
+        404,
+        "SUBSCRIPTION_NOT_FOUND",
+      );
+    }
+    return subscription;
+  }
+
+  private resolveTargetUtilisateurId(
+    requestedId: string | undefined,
+    currentUser: UserRecord,
+  ): string {
     if (!requestedId) {
       return currentUser.id;
     }

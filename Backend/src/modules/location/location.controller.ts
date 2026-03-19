@@ -177,6 +177,23 @@ export class LocationController {
     return this.service.updateStatutReservation(id, statut, user);
   }
 
+  @Post('reservations/:id/process-payment')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Traiter le paiement et confirmer la réservation' })
+  @ApiResponse({ status: 200, type: ReservationLocationResponseDto, description: 'Réservation confirmée avec succès' })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Paiement non confirmé' })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Réservation ou paiement non trouvé' })
+  @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
+  processPayment(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ReservationLocationResponseDto> {
+    return this.service.processPayment(id, user);
+  }
+
   @Post('reservations/:id/annuler')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)

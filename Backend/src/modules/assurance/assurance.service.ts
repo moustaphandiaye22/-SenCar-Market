@@ -37,14 +37,14 @@ export class AssuranceService {
     const created = await this.repository.createProduit({
       id: this.repository.newId(),
       nom: request.nom,
-      ...(request.description ? { description: request.description } : {}),
-      prixBase: request.prixBase,
-      typeAssurance: request.typeAssurance,
-      ...(request.dureeMois != null ? { dureeMois: request.dureeMois } : {}),
-      estActif: true,
-      createdAt: now,
-      updatedAt: now,
-    });
+      description: request.description ?? undefined,
+      prix_base: request.prixBase,
+      type_assurance: request.typeAssurance,
+      duree_mois: request.dureeMois ?? undefined,
+      est_actif: true,
+      created_at: now,
+      updated_at: now,
+    } as any);
 
     return this.mapper.toProduitResponse(created);
   }
@@ -83,11 +83,11 @@ export class AssuranceService {
     const updated = await this.repository.updateProduit(id, {
       nom: request.nom,
       description: request.description,
-      prixBase: request.prixBase,
-      typeAssurance: request.typeAssurance,
-      dureeMois: request.dureeMois,
-      updatedAt: new Date(),
-    });
+      prix_base: request.prixBase,
+      type_assurance: request.typeAssurance,
+      duree_mois: request.dureeMois,
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toProduitResponse(updated);
   }
@@ -95,7 +95,7 @@ export class AssuranceService {
   async deleteProduitAssurance(id: string, user: AuthenticatedUser): Promise<void> {
     await this.ensureAssuranceManager(user);
     await this.requireProduit(id);
-    await this.repository.updateProduit(id, { estActif: false, updatedAt: new Date() });
+    await this.repository.updateProduit(id, { est_actif: false, updated_at: new Date() } as any);
   }
 
   async createOptionAssurance(request: CreateOptionAssuranceRequestDto, user: AuthenticatedUser): Promise<OptionAssuranceResponseDto> {
@@ -105,14 +105,14 @@ export class AssuranceService {
     const now = new Date();
     const created = await this.repository.createOption({
       id: this.repository.newId(),
-      produitAssurance: { connect: { id: request.produitAssuranceId } },
+      produit_assurance_id: request.produitAssuranceId,
       nom: request.nom,
-      ...(request.description ? { description: request.description } : {}),
-      prixSupplementaire: request.prixSupplementaire,
-      estActif: true,
-      createdAt: now,
-      updatedAt: now,
-    });
+      description: request.description ?? undefined,
+      prix_supplementaire: request.prixSupplementaire,
+      est_actif: true,
+      created_at: now,
+      updated_at: now,
+    } as any);
 
     return this.mapper.toOptionResponse(created);
   }
@@ -136,17 +136,17 @@ export class AssuranceService {
     await this.ensureAssuranceManager(user);
     const option = await this.requireOption(id);
 
-    if (option.produitAssuranceId !== request.produitAssuranceId) {
+    if (option.produit_assurance_id !== request.produitAssuranceId) {
       await this.requireProduit(request.produitAssuranceId);
     }
 
     const updated = await this.repository.updateOption(id, {
-      produitAssurance: { connect: { id: request.produitAssuranceId } },
+      produit_assurance_id: request.produitAssuranceId,
       nom: request.nom,
       description: request.description,
-      prixSupplementaire: request.prixSupplementaire,
-      updatedAt: new Date(),
-    });
+      prix_supplementaire: request.prixSupplementaire,
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toOptionResponse(updated);
   }
@@ -154,7 +154,7 @@ export class AssuranceService {
   async deleteOptionAssurance(id: string, user: AuthenticatedUser): Promise<void> {
     await this.ensureAssuranceManager(user);
     await this.requireOption(id);
-    await this.repository.updateOption(id, { estActif: false, updatedAt: new Date() });
+    await this.repository.updateOption(id, { est_actif: false, updated_at: new Date() } as any);
   }
 
   async createSouscription(utilisateurId: string, request: CreateSouscriptionAssuranceRequestDto): Promise<SouscriptionAssuranceResponseDto> {
@@ -167,36 +167,34 @@ export class AssuranceService {
     this.assertFound(utilisateur, 'Utilisateur non trouvé', 'USER_NOT_FOUND');
     this.assertFound(vehicule, 'Véhicule non trouvé', 'VEHICULE_NOT_FOUND');
 
-    if (!produit || !produit.estActif) {
+    if (!produit || !produit.est_actif) {
       throw new DomainException('Produit assurance non trouvé', 404, 'ASSURANCE_PRODUCT_NOT_FOUND');
     }
 
     const selectedOptions = await this.getSelectedOptions(request.optionIds ?? [], produit.id);
-    const montantTotal = this.pricingService.calculateTotalPrice(toNullableNumber(produit.prixBase) ?? 0, selectedOptions);
+    const montantTotal = this.pricingService.calculateTotalPrice(toNullableNumber(produit.prix_base) ?? 0, selectedOptions);
 
     const now = new Date();
-    const dateFin = this.pricingService.resolveDateFin(now, produit.dureeMois);
+    const dateFin = this.pricingService.resolveDateFin(now, produit.duree_mois);
 
     const created = await this.repository.createSouscription({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: utilisateurId } },
-      produitAssurance: { connect: { id: request.produitAssuranceId } },
-      vehicule: { connect: { id: request.vehiculeId } },
+      utilisateur_id: utilisateurId,
+      produit_assurance_id: request.produitAssuranceId,
+      vehicule_id: request.vehiculeId,
       statut: 'EN_ATTENTE',
-      montantTotal,
-      dateDebut: now,
-      dateFin,
-      numeroContrat: this.pricingService.generateContractNumber(now),
-      createdAt: now,
-      updatedAt: now,
-      ...(selectedOptions.length > 0
+      montant_total: montantTotal,
+      date_debut: now,
+      date_fin: dateFin,
+      numero_contrat: this.pricingService.generateContractNumber(now),
+      created_at: now,
+      updated_at: now,
+      optionsSelectionnees: selectedOptions.length > 0
         ? {
-            optionsSelectionnees: {
-              create: selectedOptions.map((opt) => ({ option: { connect: { id: opt.id } } })),
-            },
+            create: selectedOptions.map((opt) => ({ option_id: opt.id })),
           }
-        : {}),
-    });
+        : undefined,
+    } as any);
 
     return this.mapper.toSouscriptionResponse(created);
   }
@@ -213,12 +211,12 @@ export class AssuranceService {
 
   async calculatePrix(produitAssuranceId: string, optionIds?: string[]): Promise<SouscriptionAssuranceResponseDto> {
     const produit = await this.repository.findProduitById(produitAssuranceId);
-    if (!produit || !produit.estActif) {
+    if (!produit || !produit.est_actif) {
       throw new DomainException('Produit assurance non trouvé', 404, 'ASSURANCE_PRODUCT_NOT_FOUND');
     }
 
     const selectedOptions = await this.getSelectedOptions(optionIds ?? [], produit.id);
-    const montantTotal = this.pricingService.calculateTotalPrice(toNullableNumber(produit.prixBase) ?? 0, selectedOptions);
+    const montantTotal = this.pricingService.calculateTotalPrice(toNullableNumber(produit.prix_base) ?? 0, selectedOptions);
 
     return this.mapper.toPricingPreview(produit.id, produit.nom, selectedOptions, montantTotal);
   }
@@ -243,10 +241,10 @@ export class AssuranceService {
     }
 
     const updated = await this.repository.updateSouscription(subscriptionId, {
-      paiementId,
+      paiement_id: paiementId,
       statut: 'PAYEE',
-      updatedAt: new Date(),
-    });
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toSouscriptionResponse(updated);
   }
@@ -259,10 +257,10 @@ export class AssuranceService {
     }
 
     const updated = await this.repository.updateSouscription(subscriptionId, {
-      documentUrl: this.pricingService.buildContractUrl(subscription.numeroContrat),
+      document_url: this.pricingService.buildContractUrl(subscription.numero_contrat ?? ''),
       statut: 'ACTIVE',
-      updatedAt: new Date(),
-    });
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toSouscriptionResponse(updated);
   }
@@ -281,9 +279,9 @@ export class AssuranceService {
     }
 
     const updated = await this.repository.updateSouscription(subscription.id, {
-      documentUrl: normalizedDocumentUrl,
-      updatedAt: new Date(),
-    });
+      document_url: normalizedDocumentUrl,
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toSouscriptionResponse(updated);
   }
@@ -291,7 +289,7 @@ export class AssuranceService {
   async canAccessSouscription(subscriptionId: string, user: AuthenticatedUser): Promise<boolean> {
     const current = await this.requireCurrentUser(user);
     const subscription = await this.requireSouscription(subscriptionId);
-    return this.accessPolicy.canAccessSouscription(current, subscription.utilisateurId);
+    return this.accessPolicy.canAccessSouscription(current, subscription.utilisateur_id);
   }
 
   async canAccessUserSouscriptions(utilisateurId: string, user: AuthenticatedUser): Promise<boolean> {
@@ -302,7 +300,7 @@ export class AssuranceService {
   async getSouscriptionByIdAuthorized(id: string, user: AuthenticatedUser): Promise<SouscriptionAssuranceResponseDto> {
     const current = await this.requireCurrentUser(user);
     const subscription = await this.requireSouscription(id);
-    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateurId);
+    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateur_id);
     return this.mapper.toSouscriptionResponse(subscription);
   }
 
@@ -322,14 +320,14 @@ export class AssuranceService {
   ): Promise<SouscriptionAssuranceResponseDto> {
     const current = await this.requireCurrentUser(user);
     const subscription = await this.requireSouscription(id);
-    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateurId);
+    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateur_id);
     return this.processPayment(id, paiementId);
   }
 
   async generateContractAuthorized(id: string, user: AuthenticatedUser): Promise<SouscriptionAssuranceResponseDto> {
     const current = await this.requireCurrentUser(user);
     const subscription = await this.requireSouscription(id);
-    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateurId);
+    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateur_id);
     return this.generateContract(id);
   }
 
@@ -341,7 +339,7 @@ export class AssuranceService {
   ): Promise<SouscriptionAssuranceResponseDto> {
     const current = await this.requireCurrentUser(user);
     const subscription = await this.requireSouscription(id);
-    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateurId);
+    this.accessPolicy.assertCanAccessSouscription(current, subscription.utilisateur_id);
     return this.uploadDocument(id, documentType, documentUrl);
   }
 
@@ -362,7 +360,7 @@ export class AssuranceService {
       'ASSURANCE_PRODUCT_NOT_FOUND',
     );
 
-    if (!TYPE_ASSURANCE_VALUES.includes(produit.typeAssurance as (typeof TYPE_ASSURANCE_VALUES)[number])) {
+    if (!TYPE_ASSURANCE_VALUES.includes(produit.type_assurance as (typeof TYPE_ASSURANCE_VALUES)[number])) {
       throw new DomainException('Type assurance invalide', 500, 'ASSURANCE_TYPE_INVALID_STORED');
     }
 
@@ -402,12 +400,12 @@ export class AssuranceService {
       throw new DomainException('Certaines options assurance sont introuvables', 404, 'ASSURANCE_OPTION_NOT_FOUND');
     }
 
-    const inactives = options.filter((option) => option.estActif === false);
+    const inactives = options.filter((option) => option.est_actif === false);
     if (inactives.length > 0) {
       throw new DomainException('Une ou plusieurs options ne sont pas actives', 400, 'ASSURANCE_OPTION_INACTIVE');
     }
 
-    const invalidProductOptions = options.filter((option) => option.produitAssuranceId !== produitAssuranceId);
+    const invalidProductOptions = options.filter((option) => option.produit_assurance_id !== produitAssuranceId);
     if (invalidProductOptions.length > 0) {
       throw new DomainException(
         "Une ou plusieurs options ne correspondent pas au produit d'assurance",

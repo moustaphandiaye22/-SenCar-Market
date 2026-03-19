@@ -17,6 +17,6 @@ export class TradeInSecurityService {
     if (current.id === ownerId) {
       return;
     }
-    this.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.ensureAdminOrModerator(current.type_utilisateur?.nom);
   }
 }

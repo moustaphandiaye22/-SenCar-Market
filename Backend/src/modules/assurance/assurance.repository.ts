@@ -9,6 +9,7 @@ import {
   CreateProduitInput,
   CreateSouscriptionInput,
   OptionRecord,
+  PaiementRecord,
   ProduitRecord,
   SouscriptionRecord,
   UpdateOptionInput,
@@ -44,6 +45,12 @@ export class AssuranceRepository implements AssuranceRepositoryPort {
         marque: { select: { nom: true } },
         modele: { select: { nom: true } },
       },
+    });
+  }
+
+  findPaiementById(id: string): Promise<PaiementRecord | null> {
+    return this.prisma.paiement.findUnique({
+      where: { id },
     });
   }
 
@@ -124,12 +131,11 @@ export class AssuranceRepository implements AssuranceRepositoryPort {
   createSouscription(
     data: CreateSouscriptionInput,
   ): Promise<SouscriptionRecord> {
-    // Transform optionsSelectionnees to snake_case for Prisma
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prismaData: any = {
       ...data,
-      subscription_options: data.optionsSelectionnees,
+      souscription_options: data.optionsSelectionnees,
     };
+    delete prismaData.optionsSelectionnees;
     return this.prisma.souscription_assurance.create({
       data: prismaData,
       include: {

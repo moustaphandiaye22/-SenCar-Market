@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
 import { DomainException } from "../../common/exceptions/domain.exception";
+import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user.type";
 
 import { AnnonceLocationResponseDto } from "./dto/annonce-location-response.dto";
@@ -139,6 +140,23 @@ export class LocationService {
   async getAllAnnoncesLocation(): Promise<AnnonceLocationResponseDto[]> {
     const annonces = await this.repository.findAnnoncesAll();
     return annonces.map((annonce) => this.mapper.toAnnonceResponse(annonce));
+  }
+
+  async getAllAnnoncesLocationPaginated(
+    page: number,
+    size: number,
+  ): Promise<PaginatedResponseDto<AnnonceLocationResponseDto>> {
+    const { items, total } = await this.repository.findAnnoncesAllPaginated(page, size);
+    const totalPages = Math.ceil(total / size);
+    return {
+      content: items.map((a) => this.mapper.toAnnonceResponse(a)),
+      page,
+      size,
+      totalElements: total,
+      totalPages,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    };
   }
 
   async getMesAnnoncesLocation(

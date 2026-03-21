@@ -58,6 +58,9 @@ export class DemandeTradeInResponseDto {
   @ApiProperty({ nullable: true })
   createdAt!: Date | null;
 
+  @ApiProperty({ type: [String], nullable: true })
+  photosUrls?: string[];
+
   @ApiProperty({ nullable: true })
   updatedAt!: Date | null;
 }

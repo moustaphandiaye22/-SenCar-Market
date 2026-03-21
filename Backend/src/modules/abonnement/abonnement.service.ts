@@ -148,10 +148,10 @@ export class AbonnementService {
       id: this.repository.newId(),
       utilisateur: { connect: { id: utilisateurId } },
       abonnement: { connect: { id: plan.id } },
-      dateDebut,
-      dateFin,
+      date_debut: dateDebut,
+      date_fin: dateFin,
       statut,
-      nombreAnnoncesUtilisees: 0,
+      nombre_annonces_utilisees: 0,
     });
 
     return this.mapper.toUtilisateurAbonnementResponse(created);
@@ -206,8 +206,8 @@ export class AbonnementService {
       subscriptionId,
       {
         statut: "ACTIF",
-        dateDebut: now,
-        dateFin: newDateFin,
+        date_debut: now,
+        date_fin: newDateFin,
       },
     );
 
@@ -241,7 +241,7 @@ export class AbonnementService {
     const updated = await this.repository.updateUtilisateurAbonnement(
       active.id,
       {
-        dateFin: newDateFin,
+        date_fin: newDateFin,
         statut: "ACTIF",
       },
     );
@@ -504,7 +504,7 @@ export class AbonnementService {
       pending.id,
       {
         statut: "ACTIF",
-        dateFin: newDateFin,
+        date_fin: newDateFin,
       },
     );
 

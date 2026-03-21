@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { LucideAngularModule, Calendar, MapPin, Shield, CheckCircle, Info, ChevronLeft, Star, Fuel, Gauge, Clock, Armchair, Edit, Trash2, Power, PowerOff } from 'lucide-angular';
+import { LucideAngularModule, Calendar, MapPin, Shield, CheckCircle, Info, ChevronLeft, Star, Fuel, Gauge, Clock, Armchair, Edit, Trash2, Power, PowerOff, MessageCircle } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
 import { RentalService } from '../services/rental.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -51,7 +51,8 @@ export class RentalDetailComponent implements OnInit {
     Edit,
     Trash2,
     Power,
-    PowerOff
+    PowerOff,
+    MessageCircle
   };
 
   constructor(
@@ -233,6 +234,16 @@ export class RentalDetailComponent implements OnInit {
         },
         error: () => this.toastService.error('Impossible de créer la conversation.')
       });
+    }
+  }
+
+  onWhatsAppContact(): void {
+    const phone = this.annonce?.proprietaireTelephone;
+    if (phone) {
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const formattedPhone = cleanPhone.length === 9 ? '221' + cleanPhone : cleanPhone;
+      const message = encodeURIComponent(`Bonjour, je vous contacte via Sen-Car Market pour votre annonce de location : ${this.annonce?.vehiculeMarque} ${this.annonce?.vehiculeModele}.`);
+      window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank');
     }
   }
 }

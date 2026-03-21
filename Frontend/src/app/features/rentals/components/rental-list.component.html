@@ -1,28 +1,25 @@
 <div class="min-h-screen bg-neutral-50 pb-20">
   <!-- Hero Section -->
-  <div class="bg-primary-950 text-white py-16 px-4 relative overflow-hidden">
-    <div class="absolute inset-0 opacity-10">
-      <div class="absolute -top-24 -left-24 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
-    </div>
-    
+  <div class="bg-white border-b border-neutral-200 py-16 px-4 relative overflow-hidden">
     <div class="max-w-7xl mx-auto relative z-10 text-center">
-      <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-        Louez la voiture <span class="text-primary-400">parfaite</span>
+      <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight text-neutral-900">
+        Louez la voiture <span class="text-primary-600">parfaite</span>
       </h1>
-      <p class="text-xl text-primary-200 mb-12 max-w-2xl mx-auto">
+      <p class="text-xl text-neutral-500 mb-12 max-w-2xl mx-auto">
         Des centaines de véhicules disponibles à la location partout au Sénégal. Pour un jour, une semaine ou un mois.
       </p>
 
       <!-- Horizontal Search Bar -->
-      <div class="max-w-4xl mx-auto bg-white rounded-3xl p-3 shadow-2xl flex flex-col md:flex-row items-center gap-2">
+      <div class="max-w-4xl mx-auto bg-white rounded-3xl p-3 shadow-xl border border-neutral-100 flex flex-col md:flex-row items-center gap-2">
         <div class="flex-1 w-full relative">
-          <input type="text" [(ngModel)]="filters.q" (input)="applyFilter()" placeholder="Où allez-vous ?" class="w-full pl-12 pr-4 py-4 bg-neutral-50 rounded-2xl text-neutral-900 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all font-medium">
+          <lucide-angular [img]="icons.Search" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></lucide-angular>
+          <input type="text" [(ngModel)]="filters.q" (input)="applyFilter()" placeholder="Où allez-vous ?" class="w-full pl-12 pr-4 py-4 bg-white border border-neutral-200 rounded-2xl text-neutral-900 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all font-medium">
         </div>
-        <div class="flex-1 w-full relative">
-          <input type="date" [(ngModel)]="filters.dateDebut" (change)="applyFilter()" placeholder="Dates de location" class="w-full pl-12 pr-4 py-4 bg-neutral-50 rounded-2xl text-neutral-900 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all font-medium">
+        <div class="flex-1 w-full relative border-l border-neutral-100 pl-2">
+          <lucide-angular [img]="icons.Calendar" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></lucide-angular>
+          <input type="date" [(ngModel)]="filters.dateDebut" (change)="applyFilter()" placeholder="Dates de location" class="w-full pl-12 pr-4 py-4 bg-white border border-neutral-200 rounded-2xl text-neutral-900 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all font-medium">
         </div>
-        <button class="w-full md:w-auto px-10 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-primary-600/30">
+        <button (click)="applyFilter()" class="w-full md:w-auto px-10 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-primary-600/30">
           Rechercher
         </button>
         <button routerLink="/locations/new" *ngIf="authService.isAuthenticated" class="w-full md:w-auto px-8 py-4 bg-neutral-900 hover:bg-black text-white font-bold rounded-2xl transition-all shadow-lg whitespace-nowrap">
@@ -112,6 +109,42 @@
 
       <!-- Skeleton when empty -->
       <div *ngIf="isLoading" class="animate-pulse bg-white rounded-[2rem] h-[450px] border border-neutral-100"></div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!isLoading && totalPages > 1" class="mt-12 flex justify-center">
+      <nav class="flex items-center gap-2">
+        <button 
+          (click)="previousPage()" 
+          [disabled]="filters.page === 0"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          <lucide-angular [img]="icons.ChevronLeft" size="20"></lucide-angular>
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <button 
+            *ngFor="let p of [].constructor(totalPages); let i = index"
+            (click)="goToPage(i)"
+            [class.bg-primary-600]="filters.page === i"
+            [class.text-white]="filters.page === i"
+            [class.border-primary-600]="filters.page === i"
+            class="flex items-center justify-center min-w-10 h-10 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-medium text-sm hover:bg-gray-50 transition-all">
+            {{ i + 1 }}
+          </button>
+        </div>
+        
+        <button 
+          (click)="nextPage()" 
+          [disabled]="filters.page >= totalPages - 1"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          <lucide-angular [img]="icons.ChevronRight" size="20"></lucide-angular>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Results info -->
+    <div *ngIf="!isLoading && totalElements > 0" class="mt-8 text-center text-sm text-gray-500">
+      Affichage de {{ startItem }} à {{ endItem }} sur {{ totalElements }} véhicules
     </div>
   </div>
 </div>

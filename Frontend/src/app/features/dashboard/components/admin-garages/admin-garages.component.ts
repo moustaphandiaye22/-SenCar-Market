@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GarageService } from '../../../garages/services/garage.service';
 import { Garage } from '../../../garages/models/garage.model';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, Check, X, ShieldAlert, Building } from 'lucide-angular';
 import { RouterModule } from '@angular/router';
 import { ConfirmService } from '../../../../core/services/confirm.service';
@@ -15,6 +16,7 @@ import { PromptService } from '../../../../core/services/prompt.service';
 })
 export class AdminGaragesComponent implements OnInit {
   private garageService = inject(GarageService);
+  private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
   private promptService = inject(PromptService);
   garages: Garage[] = [];
@@ -45,6 +47,7 @@ export class AdminGaragesComponent implements OnInit {
       cancelText: 'Plus tard',
       onConfirm: () => {
         this.garageService.validerGarage(id, { nouveauStatut: 'ACTIF' }).subscribe(() => {
+          this.toastService.success('Garage validé avec succès !');
           this.loadGaragesEnAttente();
         });
       }
@@ -61,6 +64,7 @@ export class AdminGaragesComponent implements OnInit {
       onConfirm: (reason) => {
         if (reason) {
           this.garageService.validerGarage(id, { nouveauStatut: 'REJET', commentaireAdmin: reason }).subscribe(() => {
+            this.toastService.warning('Inscription du garage refusée');
             this.loadGaragesEnAttente();
           });
         }

@@ -8,70 +8,118 @@
     <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
   </div>
 
-  <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div *ngFor="let plan of plans" 
          [class.border-primary-500]="plan.estVedette"
          [class.shadow-2xl]="plan.estVedette"
          [class.scale-105]="plan.estVedette"
-         class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm relative flex flex-col transition-all hover:shadow-xl">
+         class="bg-white rounded-3xl p-6 border-2 transition-all hover:shadow-xl relative flex flex-col"
+         [class.border-gray-200]="!plan.estVedette"
+         [class.border-primary-500]="plan.estVedette">
       
-      <div *ngIf="plan.estVedette" class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+      <!-- Badge popular -->
+      <div *ngIf="plan.estVedette" class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest z-10">
         Le plus populaire
       </div>
 
-      <div class="mb-8">
-        <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-6">
-          <lucide-angular [img]="plan.nom.includes('Pro') ? icons.Crown : icons.Zap" size="24"></lucide-angular>
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+             [class.bg-primary-100]="plan.estVedette"
+             [class.text-primary-600]="plan.estVedette"
+             [class.bg-gray-100]="!plan.estVedette"
+             [class.text-gray-600]="!plan.estVedette">
+          <lucide-angular [img]="plan.type === 'PROFESSIONNEL' || plan.type === 'ENTREPRISE' ? icons.Crown : icons.Zap" size="28"></lucide-angular>
         </div>
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ plan.nom }}</h3>
-        <p class="text-gray-500 text-sm h-12">{{ plan.description }}</p>
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2"
+              [class.bg-primary-100]="plan.estVedette"
+              [class.text-primary-700]="plan.estVedette"
+              [class.bg-gray-100]="!plan.estVedette"
+              [class.text-gray-600]="!plan.estVedette">
+          {{ getTypeLabel(plan.type) }}
+        </span>
+        <h3 class="text-2xl font-bold text-gray-900">{{ plan.nom }}</h3>
       </div>
 
-      <div class="mb-8">
-        <div class="flex items-baseline gap-1">
-          <span class="text-4xl font-extrabold text-gray-900">{{ plan.prixMensuel | number }}</span>
-          <span class="text-gray-500">FCFA / mois</span>
+      <!-- Prix -->
+      <div class="text-center mb-6 pb-6 border-b border-gray-100">
+        <div class="flex items-baseline justify-center gap-1">
+          <span class="text-5xl font-extrabold text-gray-900">{{ plan.prixMensuel | number }}</span>
+          <span class="text-gray-500">FCFA<span class="text-sm">/mois</span></span>
         </div>
+        <p *ngIf="plan.prixAnnuel" class="text-sm text-gray-500 mt-1">
+          ou {{ plan.prixAnnuel | number }} FCA/mois facturé annuellement
+        </p>
       </div>
 
-      <ul class="space-y-4 mb-10 flex-1">
-        <li class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
-          <span class="font-bold text-gray-900">{{ plan.nombreAnnonces }}</span> annonces incluses
+      <!-- Avantages -->
+      <ul class="space-y-3 mb-8 flex-1">
+        <!-- Nombre d'annonces -->
+        <li class="flex items-start gap-3 text-sm">
+          <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5"
+                         [class.text-primary-500]="plan.estVedette"></lucide-angular>
+          <span class="font-bold text-gray-900 text-base">{{ plan.nombreAnnonces }}</span>
+          <span class="text-gray-600">annonces</span>
         </li>
-        <li *ngIf="plan.nombreBoostsGratuits > 0" class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
-          <span class="font-bold text-gray-900">{{ plan.nombreBoostsGratuits }}</span> boosts offerts
+        
+        <!-- Boost gratuits -->
+        <li *ngIf="plan.nombreBoostsGratuits > 0" class="flex items-start gap-3 text-sm">
+          <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5"
+                         [class.text-primary-500]="plan.estVedette"></lucide-angular>
+          <span class="font-bold text-gray-900 text-base">{{ plan.nombreBoostsGratuits }}</span>
+          <span class="text-gray-600">boosts gratuits</span>
         </li>
-        <li *ngIf="plan.estCertifie" class="flex items-center gap-3 text-sm text-gray-600">
-          <lucide-angular [img]="icons.Check" size="18" class="text-primary-500 flex-shrink-0"></lucide-angular>
-          <span>Badge "Vendeur Certifié"</span>
+        
+        <!-- Badge certifié -->
+        <li *ngIf="plan.estCertifie" class="flex items-start gap-3 text-sm">
+          <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5"
+                         [class.text-primary-500]="plan.estVedette"></lucide-angular>
+          <span class="text-gray-600">Badge</span>
+          <span class="font-bold text-gray-900">"Vendeur Certifié"</span>
         </li>
-        <!-- Only show extra advantages that aren't already mentioned -->
+        
+        <!-- Accès prioritaire -->
+        <li *ngIf="plan.type === 'PROFESSIONNEL' || plan.type === 'ENTREPRISE'" class="flex items-start gap-3 text-sm">
+          <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5 text-primary-500"></lucide-angular>
+          <span class="text-gray-600">Accès</span>
+          <span class="font-bold text-gray-900">prioritaire</span>
+        </li>
+        
+        <!-- Support prioritaire -->
+        <li *ngIf="plan.type === 'PROFESSIONNEL' || plan.type === 'ENTREPRISE'" class="flex items-start gap-3 text-sm">
+          <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5 text-primary-500"></lucide-angular>
+          <span class="text-gray-600">Support</span>
+          <span class="font-bold text-gray-900">prioritaire</span>
+        </li>
+
+        <!-- Autres avantages du backend -->
         <ng-container *ngFor="let item of plan.avantages?.split(',')">
-          <li *ngIf="item.trim() && !item.toLowerCase().includes('boost') && !item.toLowerCase().includes('annonce')" 
-              class="flex items-center gap-3 text-sm text-gray-600">
-            <lucide-angular [img]="icons.Check" size="18" class="text-gray-400 flex-shrink-0"></lucide-angular>
-            <span>{{ item.trim() }}</span>
+          <li *ngIf="item.trim()" class="flex items-start gap-3 text-sm">
+            <lucide-angular [img]="icons.Check" size="20" class="text-green-500 flex-shrink-0 mt-0.5"
+                           [class.text-primary-500]="plan.estVedette"></lucide-angular>
+            <span class="text-gray-600">{{ item.trim() }}</span>
           </li>
         </ng-container>
       </ul>
 
+      <!-- Bouton -->
       <button 
         (click)="subscribe(plan)"
+        class="w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
         [class.bg-primary-600]="plan.estVedette"
         [class.text-white]="plan.estVedette"
-        [class.bg-gray-100]="!plan.estVedette"
-        [class.text-gray-900]="!plan.estVedette"
         [class.hover:bg-primary-700]="plan.estVedette"
-        [class.hover:bg-gray-200]="!plan.estVedette"
-        class="w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-        {{ currentSub?.abonnementId === plan.id ? 'Plan actuel' : 'Souscrire maintenant' }}
+        [class.bg-gray-900]="!plan.estVedette"
+        [class.text-white]="!plan.estVedette"
+        [class.hover:bg-gray-800]="!plan.estVedette"
+        [disabled]="isLoading || currentSub?.abonnementId === plan.id">
+        <span *ngIf="isLoading" class="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent"></span>
+        {{ currentSub?.abonnementId === plan.id ? 'Plan actuel' : 'Choisir ce plan' }}
       </button>
     </div>
   </div>
 
-  <!-- Help section simplified -->
+  <!-- Help section -->
   <div class="mt-20 flex flex-col md:flex-row items-center justify-between gap-8 bg-gray-900 rounded-[2.5rem] p-10 text-white overflow-hidden relative">
     <div class="relative z-10">
       <h2 class="text-3xl font-extrabold mb-4">Besoin d'une solution Enterprise ?</h2>
@@ -80,7 +128,6 @@
     <button class="relative z-10 px-8 py-4 bg-primary-600 rounded-2xl font-bold hover:bg-primary-500 transition-all whitespace-nowrap">
       Parler à un expert
     </button>
-    <!-- Decoration -->
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
   </div>
 </div>

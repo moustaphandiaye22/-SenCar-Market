@@ -40,6 +40,7 @@ export interface LocationRepositoryPort {
   createAnnonce(data: CreateAnnonceInput): Promise<AnnonceRecord>;
   findAnnonceById(id: string): Promise<AnnonceRecord | null>;
   findAnnoncesAll(): Promise<AnnonceRecord[]>;
+  findAnnoncesAllPaginated(page: number, size: number): Promise<{ items: AnnonceRecord[]; total: number }>;
   findAnnoncesByProprietaireId(
     proprietaireId: string,
   ): Promise<AnnonceRecord[]>;

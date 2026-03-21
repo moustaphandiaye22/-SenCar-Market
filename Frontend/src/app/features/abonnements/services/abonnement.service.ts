@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Observable } from 'rxjs';
 import { HttpParams } from '@angular/common/http';
+import { TypeAbonnement } from '../../../core/models/enums.model';
 
 export interface PlanAbonnement {
   id: string;
@@ -14,7 +15,7 @@ export interface PlanAbonnement {
   estVedette: boolean;
   estCertifie: boolean;
   nombreBoostsGratuits: number;
-  type: string;
+  type: TypeAbonnement;
   avantages?: string;
 }
 
@@ -29,7 +30,7 @@ export interface UtilisateurAbonnement {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AbonnementService {
   private api = inject(ApiService);
@@ -42,7 +43,11 @@ export class AbonnementService {
     return this.api.get(`/abonnements/utilisateurs/${userId}/actif`);
   }
 
-  subscribe(data: { abonnementId: string; utilisateurId?: string; paiementId?: string }): Observable<UtilisateurAbonnement> {
+  subscribe(data: {
+    abonnementId: string;
+    utilisateurId?: string;
+    paiementId?: string;
+  }): Observable<UtilisateurAbonnement> {
     return this.api.post('/abonnements/souscription', data);
   }
 
@@ -51,14 +56,21 @@ export class AbonnementService {
   }
 
   boostVehicle(vehicleId: string, niveauBoost: string): Observable<any> {
-    return this.api.post('/abonnements/boosts', { vehiculeId: vehicleId, niveauBoost });
+    return this.api.post('/abonnements/boosts', {
+      vehiculeId: vehicleId,
+      niveauBoost,
+    });
   }
 
   renewSubscription(userId: string): Observable<UtilisateurAbonnement> {
     return this.api.post(`/abonnements/utilisateurs/${userId}/renew`, {});
   }
 
-  getSubscriptionsHistory(userId: string, page = 0, size = 10): Observable<any> {
+  getSubscriptionsHistory(
+    userId: string,
+    page = 0,
+    size = 10,
+  ): Observable<any> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -83,5 +95,15 @@ export class AbonnementService {
 
   updateBoost(id: string, data: { niveauBoost: string }): Observable<any> {
     return this.api.put(`/abonnements/boosts/${id}`, data);
+  }
+
+  activateSubscription(
+    subscriptionId: string,
+    paiementId: string,
+  ): Observable<UtilisateurAbonnement> {
+    return this.api.post(
+      `/abonnements/souscriptions/${subscriptionId}/activate`,
+      { paymentId: paiementId },
+    );
   }
 }

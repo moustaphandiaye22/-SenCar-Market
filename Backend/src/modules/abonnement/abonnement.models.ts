@@ -82,17 +82,17 @@ export type CreateUtilisateurAbonnementInput = {
   id: string;
   utilisateur: ConnectById;
   abonnement: ConnectById;
-  dateDebut: Date;
-  dateFin: Date;
+  date_debut: Date;
+  date_fin: Date;
   statut: StatutAbonnement;
-  nombreAnnoncesUtilisees: number;
+  nombre_annonces_utilisees: number;
 };
 
 export type UpdateUtilisateurAbonnementInput = Partial<{
-  dateDebut: Date;
-  dateFin: Date;
+  date_debut: Date;
+  date_fin: Date;
   statut: StatutAbonnement;
-  nombreAnnoncesUtilisees: number;
+  nombre_annonces_utilisees: number;
 }>;
 
 export type CreateBoostInput = {

@@ -13,6 +13,8 @@ import {
   ServiceGarageRecord,
   UpdateGarageInput,
   UserRecord,
+  CreateRendezVousInput,
+  RendezVousServiceRecord,
 } from './garage.models';
 import { GarageRepositoryPort } from './garage.repository.port';
 import { StatutValidationGarage } from './types/garage.types';
@@ -198,6 +200,64 @@ export class GarageRepository implements GarageRepositoryPort {
       return Promise.resolve();
     }
     return this.prisma.garage_service_association.deleteMany({ where: { id: { in: ids } } }).then(() => undefined);
+  }
+
+  createRendezVous(data: CreateRendezVousInput): Promise<RendezVousServiceRecord> {
+    return (this.prisma as any).rendez_vous_service.create({
+      data,
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord>;
+  }
+
+  findRendezVousById(id: string): Promise<RendezVousServiceRecord | null> {
+    return (this.prisma as any).rendez_vous_service.findUnique({
+      where: { id },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord | null>;
+  }
+
+  findRendezVousByClient(clientId: string): Promise<RendezVousServiceRecord[]> {
+    return (this.prisma as any).rendez_vous_service.findMany({
+      where: { client_id: clientId },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+      orderBy: { date_rendez_vous: 'desc' },
+    }) as unknown as Promise<RendezVousServiceRecord[]>;
+  }
+
+  findRendezVousByGarage(garageId: string): Promise<RendezVousServiceRecord[]> {
+    return (this.prisma as any).rendez_vous_service.findMany({
+      where: { garage_id: garageId },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+      orderBy: { date_rendez_vous: 'desc' },
+    }) as unknown as Promise<RendezVousServiceRecord[]>;
+  }
+
+  updateRendezVousStatut(id: string, statut: string): Promise<RendezVousServiceRecord> {
+    return (this.prisma as any).rendez_vous_service.update({
+      where: { id },
+      data: { statut: statut as any },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord>;
   }
 
   newId(): string {

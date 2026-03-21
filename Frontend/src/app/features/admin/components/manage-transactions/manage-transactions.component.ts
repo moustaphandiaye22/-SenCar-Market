@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, CreditCard, RotateCcw, Search, Filter } from 'lucide-angular';
 import { PromptService } from '../../../../core/services/prompt.service';
 import { FormsModule } from '@angular/forms';
@@ -66,12 +67,12 @@ import { FormsModule } from '@angular/forms';
                     </div>
                     <div>
                       <div class="font-black text-gray-900 text-sm tracking-tight">{{ t.utilisateur?.prenom }} {{ t.utilisateur?.nom }}</div>
-                      <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 opacity-60">{{ t.utilisateur?.email || 'ID: ' + t.utilisateurId.substring(0,8) }}</div>
+                      <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 opacity-60">{{ t.utilisateur?.email || (t.utilisateurId ? 'ID: ' + t.utilisateurId.substring(0,8) : 'N/A') }}</div>
                     </div>
                   </div>
                 </td>
                 <td class="px-8 py-6">
-                  <div class="text-[10px] font-black text-gray-900 uppercase tracking-wide px-2 py-0.5 bg-gray-100 rounded-md inline-block mb-1">{{ t.type }}</div>
+                  <div class="text-[10px] font-black text-gray-900 uppercase tracking-wide px-2 py-0.5 bg-gray-100 rounded-md inline-block mb-1">{{ t.typeTransaction }}</div>
                   <div class="text-[10px] font-medium text-gray-400 line-clamp-1 italic max-w-[200px]">{{ t.description }}</div>
                 </td>
                 <td class="px-8 py-6 text-right font-black text-gray-900 tracking-tight">
@@ -84,7 +85,7 @@ import { FormsModule } from '@angular/forms';
                   </span>
                 </td>
                 <td class="px-8 py-6 text-right">
-                  <button *ngIf="t.statut === 'COMPLETED' || t.statut === 'EFFECTUEE'" 
+                  <button *ngIf="t.statut === 'CONFIRMEE' || t.statut === 'COMPLETED' || t.statut === 'EFFECTUEE'" 
                           (click)="rembourser(t)"
                           class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-[1rem] text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95 shadow-sm shadow-red-100">
                     <lucide-angular [img]="icons.RotateCcw" size="14"></lucide-angular>
@@ -110,6 +111,7 @@ import { FormsModule } from '@angular/forms';
 export class ManageTransactionsComponent implements OnInit {
   private adminService = inject(AdminService);
   private promptService = inject(PromptService);
+  private toastService = inject(ToastService);
   transactions: any[] = [];
   filteredTransactions: any[] = [];
   searchQuery = '';
@@ -123,8 +125,8 @@ export class ManageTransactionsComponent implements OnInit {
 
   loadTransactions() {
     this.adminService.getTransactions().subscribe({
-      next: (res) => {
-        this.transactions = res.content;
+      next: (res: any) => {
+        this.transactions = res?.content || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
         this.filterTransactions();
       },
       error: (err) => console.error('Error loading transactions', err)
@@ -138,7 +140,7 @@ export class ManageTransactionsComponent implements OnInit {
       const q = this.searchQuery.toLowerCase();
       this.filteredTransactions = this.transactions.filter(t => 
         (t.description && t.description.toLowerCase().includes(q)) ||
-        (t.type && t.type.toLowerCase().includes(q)) ||
+        (t.typeTransaction && t.typeTransaction.toLowerCase().includes(q)) ||
         (t.utilisateur?.email && t.utilisateur.email.toLowerCase().includes(q)) ||
         (t.utilisateur?.nom && t.utilisateur.nom.toLowerCase().includes(q)) ||
         (t.utilisateur?.prenom && t.utilisateur.prenom.toLowerCase().includes(q))
@@ -150,10 +152,14 @@ export class ManageTransactionsComponent implements OnInit {
     this.promptService.show({
       title: 'Remboursement',
       message: 'Veuillez indiquer la raison de ce remboursement.',
+      confirmText: 'Rembourser',
       placeholder: 'Ex: Annulation client, erreur de paiement...',
       onConfirm: (reason) => {
         if (reason) {
-          this.adminService.effectuerRemboursement(t.id, reason).subscribe(() => this.loadTransactions());
+          this.adminService.effectuerRemboursement(t.id, reason).subscribe(() => {
+            this.toastService.success('Transaction remboursée avec succès');
+            this.loadTransactions();
+          });
         }
       }
     });
@@ -161,15 +167,20 @@ export class ManageTransactionsComponent implements OnInit {
 
   getStatusClass(status: string) {
     switch(status) {
+      case 'CONFIRMEE':
       case 'COMPLETED':
       case 'EFFECTUEE': return 'bg-green-50 text-green-600';
       case 'PENDING':
+      case 'EN_COURS':
       case 'EN_ATTENTE': return 'bg-amber-50 text-amber-600';
       case 'FAILED':
-      case 'ECHOUEE': return 'bg-red-50 text-red-600';
+      case 'ECHOUEE':
+      case 'ANNULEE': return 'bg-red-50 text-red-600';
       case 'REFUNDED':
-      case 'REMBOURSEE': return 'bg-gray-50 text-gray-500';
+      case 'REMBOURSEE':
+      case 'REMBOURSEMENT': return 'bg-gray-50 text-gray-500';
       default: return 'bg-gray-50 text-gray-500';
     }
   }
 }
+

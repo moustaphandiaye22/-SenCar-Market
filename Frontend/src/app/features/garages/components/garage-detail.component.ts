@@ -6,6 +6,7 @@ import { GarageService } from '../services/garage.service';
 import { Garage, GarageServiceAssociation } from '../models/garage.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -41,7 +42,8 @@ export class GarageDetailComponent implements OnInit {
     private router: Router,
     private garageService: GarageService,
     private authService: AuthService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private toastService: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -103,6 +105,52 @@ export class GarageDetailComponent implements OnInit {
         this.garageService.deleteGarage(this.garage.id).subscribe({
           next: () => this.router.navigate(['/garages']),
           error: (err) => console.error('Error deleting garage', err)
+        });
+      }
+    });
+  }
+
+  onWhatsAppContact(): void {
+    const phone = this.garage?.telephone;
+    if (phone) {
+      // Nettoyage du numéro : garder uniquement les chiffres
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      // Ajout de l'indicatif Sénégal si absent (si numéro à 9 chiffres)
+      const formattedPhone = cleanPhone.length === 9 ? '221' + cleanPhone : cleanPhone;
+      
+      const message = encodeURIComponent(`Bonjour, je vous contacte via Sen-Car Market pour une demande de service dans votre garage ${this.garage?.nom}.`);
+      window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank');
+    }
+  }
+
+  onReserveService(service?: GarageServiceAssociation): void {
+    if (!this.authService.currentUserValue) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    
+    const serviceName = service ? service.serviceNom : 'un service';
+    this.confirmService.show({
+      title: 'Réserver un service',
+      message: `Souhaitez-vous prendre rendez-vous pour ${serviceName} ? Le garage vous recontactera pour confirmer le créneau.`,
+      confirmText: 'Confirmer la demande',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        const request = {
+          garageId: this.garage?.id,
+          serviceId: service?.serviceId,
+          dateRendezVous: new Date().toISOString(),
+          commentaire: `Demande de rendez-vous pour ${serviceName}`
+        };
+
+        this.garageService.createRendezVous(request).subscribe({
+          next: () => {
+             this.toastService.success('Votre demande de rendez-vous a été envoyée ! Vous recevrez une notification prochainement.');
+          },
+          error: (err) => {
+            console.error('Error creating rendez-vous', err);
+            this.toastService.error('Erreur lors de l\'envoi de la demande.');
+          }
         });
       }
     });

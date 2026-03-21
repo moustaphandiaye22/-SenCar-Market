@@ -56,10 +56,10 @@ import { PromptService } from '../../../../core/services/prompt.service';
               <lucide-angular [img]="icons.Send" size="16"></lucide-angular>
             </button>
           </div>
-
           <div class="flex gap-6">
             <div class="w-24 h-24 rounded-3xl bg-gray-50 flex items-center justify-center text-gray-200 group-hover:scale-105 transition-transform duration-500 overflow-hidden shadow-inner">
-              <lucide-angular [img]="icons.Car" size="40"></lucide-angular>
+              <img *ngIf="demande.photosUrls && demande.photosUrls.length > 0" [src]="getImageUrl(demande.photosUrls[0]!)" class="w-full h-full object-cover">
+              <lucide-angular *ngIf="!demande.photosUrls?.length" [img]="icons.Car" size="40"></lucide-angular>
             </div>
             <div class="flex-1">
               <h3 class="text-xl font-black text-gray-900 group-hover:text-primary-600 transition-colors">
@@ -86,17 +86,29 @@ import { PromptService } from '../../../../core/services/prompt.service';
               <p class="text-2xl font-black text-primary-600 tracking-tight">{{ demande.prixEstime | number }} <span class="text-xs">FCFA</span></p>
             </div>
             
-            <div class="flex gap-2" *ngIf="demande.statut === 'EN_ATTENTE'">
-              <button (click)="valider(demande)"
-                      title="Valider la demande"
-                      class="w-12 h-12 bg-white text-green-600 border border-green-100 rounded-2xl flex items-center justify-center hover:bg-green-600 hover:text-white transition-all shadow-sm active:scale-95">
-                <lucide-angular [img]="icons.Check" size="20"></lucide-angular>
+            <div class="flex flex-wrap gap-2">
+              <!-- Bouton Valider / Accepter -->
+              <button *ngIf="['EN_ATTENTE', 'EN_COURS_EVALUATION', 'EVALUATION_TERMINEE', 'OFFRE_PROPOSEE', 'VALIDEE'].includes(demande.statut)"
+                      (click)="valider(demande)"
+                      class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-sm active:scale-95 font-bold text-xs whitespace-nowrap">
+                <lucide-angular [img]="icons.Check" size="16"></lucide-angular>
+                <span>Valider l'offre</span>
               </button>
-              <button (click)="rejeter(demande)"
-                      title="Rejeter la demande"
-                      class="w-12 h-12 bg-white text-red-600 border border-red-100 rounded-2xl flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95">
-                <lucide-angular [img]="icons.X" size="20"></lucide-angular>
+
+              <!-- Bouton Rejeter -->
+              <button *ngIf="!['ACCEPTE', 'REJETEE', 'ANNULEE', 'TERMINEE'].includes(demande.statut)"
+                      (click)="rejeter(demande)"
+                      class="flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-100 rounded-xl hover:bg-red-50 transition shadow-sm active:scale-95 font-bold text-xs whitespace-nowrap">
+                <lucide-angular [img]="icons.X" size="16"></lucide-angular>
+                <span>Rejeter</span>
               </button>
+
+              <!-- Badge final pour les états terminés -->
+              <div *ngIf="['ACCEPTE', 'REJETEE', 'ANNULEE', 'TERMINEE'].includes(demande.statut)" 
+                   class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-gray-100"
+                   [ngClass]="getStatusClass(demande.statut)">
+                {{ (demande.statut === 'REJETEE' ? 'REJETÉE' : 'FINALISÉ') }}
+              </div>
             </div>
           </div>
         </div>
@@ -117,7 +129,7 @@ export class ManageTradeInComponent implements OnInit {
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
   private promptService = inject(PromptService);
-  demandes: DemandeTradeIn[] = [];
+  demandes: any[] = [];
   filteredDemandes: DemandeTradeIn[] = [];
   searchQuery = '';
   isLoading = true;
@@ -127,11 +139,18 @@ export class ManageTradeInComponent implements OnInit {
     this.loadDemandes();
   }
 
+  getImageUrl(url: string | null): string {
+    if (!url) return 'assets/placeholder-car.jpg';
+    if (url.startsWith('http')) return url;
+    const base = 'http://localhost:8082';
+    return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
+  }
+
   loadDemandes() {
     this.isLoading = true;
     this.tradeInService.getMesDemandes(0, 50).subscribe({
-      next: (res) => {
-        this.demandes = res.content;
+      next: (res: any) => {
+        this.demandes = res?.content || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
         this.filterDemandes();
         this.isLoading = false;
       },
@@ -150,40 +169,49 @@ export class ManageTradeInComponent implements OnInit {
       this.filteredDemandes = this.demandes.filter(d => 
         (d.vehiculeActuelDescription && d.vehiculeActuelDescription.toLowerCase().includes(q)) || 
         (d.utilisateurNom && d.utilisateurNom.toLowerCase().includes(q)) ||
-        d.utilisateurId.toLowerCase().includes(q)
+        (d.utilisateurId && d.utilisateurId.toLowerCase().includes(q))
       );
     }
   }
 
-  valider(demande: DemandeTradeIn) {
+  valider(demande: any) {
     this.confirmService.show({
-      title: 'Valider l\'estimation ?',
-      message: `Confirmer l'offre de ${new Intl.NumberFormat('fr-FR').format(demande.prixEstime || 0)} FCFA pour ce véhicule ?`,
-      confirmText: 'Valider',
+      title: 'Valider l\'offre de reprise ?',
+      message: `Souhaitez-vous confirmer l'offre de ${new Intl.NumberFormat('fr-FR').format(demande.prixEstime || 0)} FCFA ? Cela finalisera la proposition pour le client.`,
+      confirmText: 'Valider l\'offre',
       cancelText: 'Annuler',
       onConfirm: () => {
         const valObj = {
-          nouveauStatut: 'VALIDEE',
+          nouveauStatut: 'ACCEPTE',
           prixPropose: demande.prixEstime || 0,
-          commentaireAdmin: 'Estimation validée par l\'administrateur'
+          commentaireAdmin: 'Offre de reprise acceptée par la plateforme.'
         };
-        this.tradeInService.validerDemande(demande.id, valObj).subscribe(() => this.loadDemandes());
+        this.tradeInService.validerDemande(demande.id, valObj).subscribe(() => {
+          this.toastService.success('Offre de reprise validée avec succès !');
+          this.loadDemandes();
+        });
       }
     });
   }
 
-  rejeter(demande: DemandeTradeIn) {
+  rejeter(demande: any) {
     this.promptService.show({
       title: 'Rejeter la demande',
-      message: 'Veuillez indiquer une raison pour ce rejet (facultatif).',
-      placeholder: 'Raison du rejet...',
+      message: 'Indiquez la raison du rejet pour informer le client.',
+      confirmText: 'Rejeter',
+      placeholder: 'Ex: Véhicule non conforme, prix trop bas...',
       onConfirm: (reason) => {
-        this.tradeInService.updateStatut(demande.id, 'REJETEE').subscribe(() => this.loadDemandes());
+        if (reason) {
+          this.tradeInService.updateStatut(demande.id, 'REJETEE').subscribe(() => {
+            this.toastService.warning('Demande de reprise rejetée');
+            this.loadDemandes();
+          });
+        }
       }
     });
   }
 
-  notifier(demande: DemandeTradeIn) {
+  notifier(demande: any) {
     this.tradeInService.notifierUtilisateur(demande.id).subscribe({
       next: () => this.toastService.success('Rappel envoyé au vendeur !'),
       error: () => this.toastService.error('Erreur lors de l\'envoi de la notification')
@@ -192,10 +220,16 @@ export class ManageTradeInComponent implements OnInit {
 
   getStatusClass(status: string) {
     switch(status) {
+      case 'ACCEPTE':
       case 'VALIDEE': return 'bg-green-50 text-green-600';
-      case 'EN_ATTENTE': return 'bg-amber-50 text-amber-600';
-      case 'REJETEE': return 'bg-red-50 text-red-600';
+      case 'EN_ATTENTE':
+      case 'EN_COURS_EVALUATION':
+      case 'EVALUATION_TERMINEE':
+      case 'OFFRE_PROPOSEE': return 'bg-amber-50 text-amber-600';
+      case 'REJETEE':
+      case 'REFUSE': return 'bg-red-50 text-red-600';
       case 'TERMINEE': return 'bg-blue-50 text-blue-600';
+      case 'ANNULEE': return 'bg-gray-50 text-gray-400';
       default: return 'bg-gray-50 text-gray-500';
     }
   }

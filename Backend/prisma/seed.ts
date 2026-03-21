@@ -1,6 +1,8 @@
+import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
-import { PrismaClient } from '@prisma/client';
+
+declare const process: any;
 
 const prisma = new PrismaClient();
 
@@ -63,8 +65,8 @@ const IDS = {
   signalement: '91000000-0000-4000-8000-000000000001',
   otpCode: '92000000-0000-4000-8000-000000000001',
   conversation: '93000000-0000-4000-8000-000000000001',
-  conversationParticipant1: '94000000-0000-4000-8000-000000000001',
-  conversationParticipant2: '94000000-0000-4000-8000-000000000002',
+  conversation_participant1: '94000000-0000-4000-8000-000000000001',
+  conversation_participant2: '94000000-0000-4000-8000-000000000002',
   message: '95000000-0000-4000-8000-000000000001',
 } as const;
 
@@ -86,7 +88,7 @@ async function main(): Promise<void> {
   ];
 
   for (const role of roleEntries) {
-    await prisma.typeUtilisateur.upsert({
+    await prisma.type_utilisateur.upsert({
       where: { id: role.id },
       update: { nom: role.nom, description: role.description },
       create: role,
@@ -219,8 +221,8 @@ async function main(): Promise<void> {
 
   await prisma.carburant.upsert({ where: { id: IDS.carburantEssence }, update: { nom: 'Essence' }, create: { id: IDS.carburantEssence, nom: 'Essence' } });
   await prisma.carburant.upsert({ where: { id: IDS.carburantDiesel }, update: { nom: 'Diesel' }, create: { id: IDS.carburantDiesel, nom: 'Diesel' } });
-  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteManuelle }, update: { nom: 'Manuelle' }, create: { id: IDS.boiteManuelle, nom: 'Manuelle' } });
-  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteAuto }, update: { nom: 'Automatique' }, create: { id: IDS.boiteAuto, nom: 'Automatique' } });
+  await prisma.boite_vitesse.upsert({ where: { id: IDS.boiteManuelle }, update: { nom: 'Manuelle' }, create: { id: IDS.boiteManuelle, nom: 'Manuelle' } });
+  await prisma.boite_vitesse.upsert({ where: { id: IDS.boiteAuto }, update: { nom: 'Automatique' }, create: { id: IDS.boiteAuto, nom: 'Automatique' } });
 
   await prisma.vehicule.upsert({
     where: { id: IDS.vehiculeVendeur },
@@ -947,10 +949,10 @@ async function main(): Promise<void> {
     },
   });
 
-  await prisma.conversationParticipant.upsert({
-    where: { id: IDS.conversationParticipant1 },
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant1 },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       dateJoin: now,
       estAdmin: true,
@@ -959,8 +961,8 @@ async function main(): Promise<void> {
       aRejointLe: now,
     },
     create: {
-      id: IDS.conversationParticipant1,
-      conversationId: IDS.conversation,
+      id: IDS.conversation_participant1,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       dateJoin: now,
       estAdmin: true,
@@ -970,10 +972,10 @@ async function main(): Promise<void> {
     },
   });
 
-  await prisma.conversationParticipant.upsert({
-    where: { id: IDS.conversationParticipant2 },
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant2 },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.proprioLoueur,
       dateJoin: now,
       estAdmin: false,
@@ -982,8 +984,8 @@ async function main(): Promise<void> {
       aRejointLe: now,
     },
     create: {
-      id: IDS.conversationParticipant2,
-      conversationId: IDS.conversation,
+      id: IDS.conversation_participant2,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.proprioLoueur,
       dateJoin: now,
       estAdmin: false,
@@ -996,7 +998,7 @@ async function main(): Promise<void> {
   await prisma.message.upsert({
     where: { id: IDS.message },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
       dateEnvoi: now,
@@ -1007,7 +1009,7 @@ async function main(): Promise<void> {
     },
     create: {
       id: IDS.message,
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
       dateEnvoi: now,
@@ -1020,13 +1022,13 @@ async function main(): Promise<void> {
 
   await prisma.conversation.update({
     where: { id: IDS.conversation },
-    data: { messageEpingleId: IDS.message },
+    data: { message_epingle_id: IDS.message },
   });
 
   await prisma.avis.upsert({
     where: { id: IDS.avisVehicule },
     update: {
-      auteurId: IDS.users.acheteur,
+      auteur_id: IDS.users.acheteur,
       cibleUtilisateurId: IDS.users.vendeur,
       vehiculeId: IDS.vehiculeVendeur,
       garageId: null,
@@ -1039,7 +1041,7 @@ async function main(): Promise<void> {
     },
     create: {
       id: IDS.avisVehicule,
-      auteurId: IDS.users.acheteur,
+      auteur_id: IDS.users.acheteur,
       cibleUtilisateurId: IDS.users.vendeur,
       vehiculeId: IDS.vehiculeVendeur,
       garageId: null,

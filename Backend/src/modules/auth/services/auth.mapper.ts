@@ -19,6 +19,7 @@ export class AuthMapper {
       typeUtilisateur: user.type_utilisateur?.nom ?? null,
       statutVerification: user.statut_verification ?? null,
       createdAt: user.created_at ?? null,
+      estActif: !user.deleted_at,
     };
   }
 }

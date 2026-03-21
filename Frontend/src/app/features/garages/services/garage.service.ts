@@ -98,4 +98,26 @@ export class GarageService {
   disassociateService(garageId: string, serviceId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${garageId}/services/${serviceId}`);
   }
+
+  uploadLogo(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/upload-logo`, formData);
+  }
+
+  createRendezVous(request: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/rendez-vous`, request);
+  }
+
+  getMyRendezVous(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/rendez-vous/my`);
+  }
+
+  getGarageRendezVous(garageId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/rendez-vous/garage/${garageId}`);
+  }
+
+  updateRendezVousStatut(id: string, statut: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/rendez-vous/${id}/statut`, { statut });
+  }
 }

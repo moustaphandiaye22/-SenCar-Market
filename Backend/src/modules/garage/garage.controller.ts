@@ -13,7 +13,10 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -36,6 +39,18 @@ import { GarageService } from './garage.service';
 @Controller('garages')
 export class GarageController {
   constructor(private readonly service: GarageService) {}
+
+  @Post('upload-logo')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('logo'))
+  @ApiOperation({ summary: 'Uploader le logo d\'un garage' })
+  @ApiResponse({ status: 200, description: 'Logo uploade avec succès' })
+  async uploadLogo(
+    @UploadedFile() file: { originalname?: string; buffer: Buffer },
+  ): Promise<{ url: string }> {
+    const url = await this.service.uploadLogo(file);
+    return { url };
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

@@ -117,3 +117,30 @@ export type CreateGarageServiceAssociationInput = {
   created_at: Date;
   updated_at: Date;
 };
+
+export type RendezVousServiceRecord = {
+  id: string;
+  garage_id: string;
+  client_id: string;
+  service_id: string | null;
+  date_rendez_vous: Date;
+  statut: string | null;
+  commentaire: string | null;
+  created_at: Date;
+  updated_at: Date;
+  garage: { id: string; nom: string; utilisateur_id: string | null };
+  client: { id: string; nom: string | null; prenom: string | null; email: string };
+  service: { id: string; nom: string } | null;
+};
+
+export type CreateRendezVousInput = {
+  id: string;
+  garage: { connect: { id: string } };
+  client: { connect: { id: string } };
+  service?: { connect: { id: string } };
+  date_rendez_vous: Date;
+  statut: any;
+  commentaire?: string;
+  created_at: Date;
+  updated_at: Date;
+};

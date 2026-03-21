@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 import { LucideAngularModule, User, MoreVertical, ShieldAlert, UserCheck, UserX, Search } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 
@@ -56,7 +58,7 @@ import { FormsModule } from '@angular/forms';
                 </td>
                 <td class="px-8 py-6">
                   <div class="relative inline-block">
-                    <select [ngModel]="u.role" 
+                    <select [ngModel]="u.typeUtilisateur" 
                             (ngModelChange)="changerRole(u, $event)"
                             class="appearance-none bg-gray-50 border border-transparent text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 pr-8 outline-none cursor-pointer hover:bg-white hover:border-gray-200 transition-all focus:ring-4 focus:ring-primary-50">
                       <option value="UTILISATEUR">Utilisateur</option>
@@ -116,6 +118,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageUsersComponent implements OnInit {
   private adminService = inject(AdminService);
+  private toastService = inject(ToastService);
+  private confirmService = inject(ConfirmService);
   users: any[] = [];
   filteredUsers: any[] = [];
   searchQuery = '';
@@ -149,18 +153,44 @@ export class ManageUsersComponent implements OnInit {
   }
 
   changerRole(user: any, newRole: string) {
-    this.adminService.modifierRole(user.id, newRole).subscribe(() => this.loadUsers());
+    this.adminService.modifierRole(user.id, newRole).subscribe(() => {
+      this.toastService.success(`Rôle de ${user.prenom} mis à jour en ${newRole}`);
+      this.loadUsers();
+    });
   }
 
   suspendre(user: any) {
-    this.adminService.suspendreUtilisateur(user.id, 'Suspendu par administrateur').subscribe(() => this.loadUsers());
+    this.confirmService.show({
+      title: 'Suspendre l\'utilisateur',
+      message: `Êtes-vous sûr de vouloir suspendre le compte de ${user.prenom} ${user.nom} ?`,
+      confirmText: 'Suspendre',
+      onConfirm: () => {
+        this.adminService.suspendreUtilisateur(user.id, 'Suspendu par administrateur').subscribe(() => {
+          this.toastService.success('Utilisateur suspendu avec succès');
+          this.loadUsers();
+        });
+      }
+    });
   }
 
   reactiver(user: any) {
-    this.adminService.reactiverUtilisateur(user.id).subscribe(() => this.loadUsers());
+    this.adminService.reactiverUtilisateur(user.id).subscribe(() => {
+      this.toastService.success('Compte réactivé avec succès');
+      this.loadUsers();
+    });
   }
 
   bannir(user: any) {
-    this.adminService.bannirUtilisateur(user.id, 'Banni par administrateur').subscribe(() => this.loadUsers());
+    this.confirmService.show({
+      title: 'Bannir l\'utilisateur',
+      message: `Attention : Êtes-vous sûr de vouloir bannir définitivement ${user.prenom} ${user.nom} ? Cette action est très restrictive.`,
+      confirmText: 'Bannir',
+      onConfirm: () => {
+        this.adminService.bannirUtilisateur(user.id, 'Banni par administrateur').subscribe(() => {
+          this.toastService.success('Utilisateur banni définitivement');
+          this.loadUsers();
+        });
+      }
+    });
   }
 }

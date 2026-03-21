@@ -23,7 +23,7 @@
             <lucide-angular [img]="getIcon(produit.typeAssurance)" size="28"></lucide-angular>
           </div>
           <span class="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg">
-            {{ produit.typeAssurance.replace('_', ' ') }}
+            {{ getTypeLabel(produit.typeAssurance) }}
           </span>
         </div>
 
@@ -56,7 +56,8 @@
           </div>
         </div>
 
-        <button class="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20">
+        <button (click)="openSubscription(produit)"
+                class="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20">
           Choisir cette offre
           <lucide-angular [img]="icons.ArrowRight" size="18"></lucide-angular>
         </button>
@@ -70,6 +71,43 @@
       </div>
       <h3 class="text-xl font-bold text-gray-900">Aucun produit disponible</h3>
       <p class="text-gray-500 mt-2">Nos partenaires travaillent sur de nouvelles offres. Revenez bientôt !</p>
+    </div>
+  </div>
+
+  <!-- Modal de sélection de véhicule -->
+  <div *ngIf="showVehicleSelection" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div class="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+      <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div>
+          <h2 class="text-2xl font-black text-gray-900">Sélectionnez un véhicule</h2>
+          <p class="text-sm text-gray-500 mt-1 font-medium">Pour le produit: {{ selectedProduit?.nom }}</p>
+        </div>
+        <button (click)="showVehicleSelection = false" class="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-100">
+          <lucide-angular [img]="icons.X" size="24" class="text-gray-400"></lucide-angular>
+        </button>
+      </div>
+      
+      <div class="p-8 max-h-[60vh] overflow-y-auto space-y-4">
+        <div *ngFor="let vehicule of mesVehicules" 
+             (click)="confirmSubscription(vehicule.id)"
+             class="group p-4 border-2 border-gray-100 rounded-2xl hover:border-primary-500 hover:bg-primary-50/30 transition-all cursor-pointer flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-primary-500 group-hover:text-white transition-colors">
+            <lucide-angular [img]="icons.Car" size="24"></lucide-angular>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-900 leading-tight">{{ vehicule.marque }} {{ vehicule.modele }}</p>
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">{{ vehicule.anneeFabrication }} • {{ vehicule.immatriculation || 'Sans plaque' }}</p>
+          </div>
+          <lucide-angular [img]="icons.ArrowRight" size="18" class="text-gray-300 group-hover:text-primary-500 transition-colors"></lucide-angular>
+        </div>
+      </div>
+
+      <div *ngIf="isSubscribing" class="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex items-center justify-center z-10">
+        <div class="text-center">
+          <lucide-angular [img]="icons.Loader2" size="48" class="text-primary-600 animate-spin mx-auto mb-4"></lucide-angular>
+          <p class="font-black text-gray-900">Création de votre souscription...</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>

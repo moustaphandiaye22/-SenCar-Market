@@ -30,10 +30,13 @@ export class TradeInMapper {
       estNotifie: demande.est_notifie ?? false,
       createdAt: demande.created_at ?? null,
       updatedAt: demande.updated_at ?? null,
+      photosUrls: (demande.vehicule_actuel as any)?.photo_vehicule?.map((p: any) => p.url) || 
+                  (demande.vehicule_actuel as any)?.photos?.map((p: any) => p.url) || []
     };
   }
 
-  private vehiculeDescription(vehicule: Pick<VehiculeMini, 'marque' | 'modele'>): string {
+  private vehiculeDescription(vehicule: Pick<VehiculeMini, 'marque' | 'modele'> | null): string {
+    if (!vehicule) return 'Vehicule';
     const desc = `${vehicule.marque?.nom ?? ''} ${vehicule.modele?.nom ?? ''}`.trim();
     return desc || 'Vehicule';
   }

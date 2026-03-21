@@ -36,4 +36,7 @@ export class UtilisateurResponseDto {
 
   @ApiProperty()
   createdAt!: Date | null;
+
+  @ApiProperty()
+  estActif!: boolean;
 }

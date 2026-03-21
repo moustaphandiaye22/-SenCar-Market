@@ -27,6 +27,10 @@ export class AdminService {
     private readonly mapper: AdminMapper,
   ) {}
 
+  /**
+   * Get dashboard statistics - REFRESHED
+   * Returns comprehensive metrics for the admin dashboard
+   */
   async getDashboardStats(user: AuthenticatedUser): Promise<DashboardStatsResponseDto> {
     await this.ensureAdmin(user);
 
@@ -44,6 +48,7 @@ export class AdminService {
       totalAbonnements,
       abonnementsActifs,
       transactionsConfirmees,
+      reprisesEnAttente,
     ] = await Promise.all([
       this.repository.countUtilisateurs(),
       this.repository.countVehicules(),
@@ -55,6 +60,7 @@ export class AdminService {
       this.repository.countAbonnements(),
       this.repository.countAbonnementsActifs(now),
       this.repository.findTransactionsByStatut('CONFIRMEE'),
+      this.repository.countTradeInByStatut(['EN_ATTENTE', 'EN_COURS_EVALUATION']),
     ]);
 
     const revenusTotaux = transactionsConfirmees.reduce((sum, t) => sum + toNumberOrZero(t.montant), 0);
@@ -74,7 +80,9 @@ export class AdminService {
       revenusTotaux,
       revenusCeMois,
       totalPaiements,
+      totalTransactions: transactionsConfirmees.length,
       paiementsEnAttente,
+      reprisesEnAttente,
       totalAbonnements,
       abonnementsActifs,
     };
@@ -203,7 +211,7 @@ export class AdminService {
     const found = await this.repository.findVehiculeById(annonceId);
     if (!found) throw new DomainException('Annonce non trouvée', 404, 'ANNONCE_NOT_FOUND');
 
-    const saved = await this.repository.updateVehicule(annonceId, { statut: 'SUPPRIME' });
+    const saved = await this.repository.updateVehicule(annonceId, { statut: 'DESACTIVE' });
     await this.notifyUtilisateur(found.proprietaireId, 'ANNONCE_DESACTIVEE', `Votre annonce a été désactivée. Raison: ${raisonNettoyee}`);
     return this.mapper.toVehiculeResponse(saved);
   }
@@ -330,7 +338,7 @@ export class AdminService {
       utilisateur: { connect: { id: utilisateurId } },
       titre: type,
       message,
-      type: 'ABONNEMENT',
+      type: 'SYSTEM',
       estLu: false,
       dateCreation: new Date(),
       referenceType: type,

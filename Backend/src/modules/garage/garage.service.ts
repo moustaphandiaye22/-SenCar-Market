@@ -1,3 +1,7 @@
+import { randomUUID } from 'crypto';
+import { mkdir, writeFile } from 'fs/promises';
+import { basename, join } from 'path';
+
 import { Inject, Injectable } from '@nestjs/common';
 
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
@@ -45,24 +49,43 @@ export class GarageService {
     const logoUrl = normalizeOptionalField(request.logoUrl);
 
     const now = new Date();
+    const garageId = this.repository.newId();
     const created = await this.repository.createGarage({
-      id: this.repository.newId(),
+      id: garageId,
       nom,
       adresse,
       telephone,
       ...(email ? { email } : {}),
       ...(description ? { description } : {}),
-      ...(horairesOuverture ? { horairesOuverture } : {}),
+      ...(horairesOuverture ? { horaires_ouverture: horairesOuverture } : {}),
       ...(request.latitude != null ? { latitude: request.latitude } : {}),
       ...(request.longitude != null ? { longitude: request.longitude } : {}),
       ville,
       ...(pays ? { pays } : {}),
-      ...(logoUrl ? { logoUrl } : {}),
+      ...(logoUrl ? { logo_url: logoUrl } : {}),
       statut_validation: 'EN_ATTENTE',
       utilisateur_id: current.id,
       created_at: now,
       updated_at: now,
     });
+
+    if (request.services && request.services.length > 0) {
+      for (const item of request.services) {
+        const serviceDef = await this.repository.findServiceById(item.serviceId);
+        if (serviceDef && serviceDef.actif) {
+          await this.repository.createAssociation({
+            id: this.repository.newId(),
+            garage: { connect: { id: garageId } },
+            service_garage: { connect: { id: item.serviceId } },
+            prix: item.prix ?? (toNullableNumber(serviceDef.prix) || undefined),
+            duree_estimee: serviceDef.duree_estimee ?? undefined,
+            actif: true,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+      }
+    }
 
     return this.mapper.toGarageResponse(created);
   }
@@ -136,13 +159,43 @@ export class GarageService {
       telephone,
       ...(email ? { email } : {}),
       ...(description ? { description } : {}),
-      ...(horairesOuverture ? { horairesOuverture } : {}),
+      ...(horairesOuverture ? { horaires_ouverture: horairesOuverture } : {}),
       ...(request.latitude != null ? { latitude: request.latitude } : {}),
       ...(request.longitude != null ? { longitude: request.longitude } : {}),
       ville,
       ...(pays ? { pays } : {}),
+      ...(request.logoUrl ? { logo_url: request.logoUrl } : {}),
       updated_at: new Date(),
     });
+
+    // Synchronisation des services
+    if (request.services !== undefined) {
+      const now = new Date();
+      // Supprimer les anciennes associations
+      const existingAssociations = await this.repository.findAssociationsByGarageId(id);
+      if (existingAssociations.length > 0) {
+        await this.repository.deleteManyAssociations(existingAssociations.map((a) => a.id));
+      }
+
+      // Créer les nouvelles associations
+      if (request.services.length > 0) {
+        for (const item of request.services) {
+          const serviceDef = await this.repository.findServiceById(item.serviceId);
+          if (serviceDef && serviceDef.actif) {
+            await this.repository.createAssociation({
+              id: this.repository.newId(),
+              garage: { connect: { id: id } },
+              service_garage: { connect: { id: item.serviceId } },
+              prix: item.prix ?? (toNullableNumber(serviceDef.prix) || undefined),
+              duree_estimee: serviceDef.duree_estimee ?? undefined,
+              actif: true,
+              created_at: now,
+              updated_at: now,
+            });
+          }
+        }
+      }
+    }
 
     return this.mapper.toGarageResponse(saved);
   }
@@ -200,7 +253,7 @@ export class GarageService {
       nom: request.nom,
       ...(request.description ? { description: request.description } : {}),
       ...(request.prix != null ? { prix: request.prix } : {}),
-      ...(request.dureeEstimee != null ? { dureeEstimee: request.dureeEstimee } : {}),
+      ...(request.dureeEstimee != null ? { duree_estimee: request.dureeEstimee } : {}),
       ...(request.categorie ? { categorie: request.categorie } : {}),
       actif: true,
       created_at: now,
@@ -320,4 +373,18 @@ export class GarageService {
     return [latitude - latDelta, latitude + latDelta, longitude - lonDelta, longitude + lonDelta];
   }
 
+  async uploadLogo(file: { originalname?: string; buffer: Buffer }): Promise<string> {
+    if (!file || !file.buffer?.length) {
+      throw new DomainException('Fichier image logo requis', 400, 'GARAGE_LOGO_REQUIRED');
+    }
+    const uploadDir = join(process.cwd(), 'uploads', 'garages');
+    await mkdir(uploadDir, { recursive: true });
+
+    const safeOriginal = basename(file.originalname || 'logo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filename = `${randomUUID()}_${safeOriginal}`;
+    const filePath = join(uploadDir, filename);
+
+    await writeFile(filePath, file.buffer);
+    return `/uploads/garages/${filename}`;
+  }
 }

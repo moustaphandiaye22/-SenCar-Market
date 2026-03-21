@@ -56,7 +56,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    }) as unknown as Promise<DemandeRecord>;
+    }).then(item => this.mapDemandeRecord(item as any));
   }
 
   findDemandeById(id: string): Promise<DemandeRecord | null> {
@@ -71,7 +71,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    }) as unknown as Promise<DemandeRecord | null>;
+    }).then(item => item ? this.mapDemandeRecord(item as any) : null);
   }
 
   findDemandesPaged(page: number, size: number): Promise<{ items: DemandeRecord[]; total: number }> {
@@ -83,18 +83,34 @@ export class TradeInRepository implements TradeInRepositoryPort {
         include: {
           utilisateur: { select: { id: true, nom: true } },
           vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-            include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+            include: { 
+              marque: { select: { nom: true } }, 
+              modele: { select: { nom: true } },
+              photo_vehicule: { select: { url: true } },
+            },
           },
           vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-            include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+            include: { 
+              marque: { select: { nom: true } }, 
+              modele: { select: { nom: true } },
+              photo_vehicule: { select: { url: true } },
+            },
           },
         },
       }),
       this.prisma.demande_trade_in.count(),
     ]).then(([items, total]) => ({
-      items: items as unknown as DemandeRecord[],
+      items: items.map((item) => this.mapDemandeRecord(item as any)),
       total,
     }));
+  }
+
+  private mapDemandeRecord(item: any): DemandeRecord {
+    return {
+      ...item,
+      vehicule_actuel: item.vehicule_demande_trade_in_vehicule_actuel_idTovehicule,
+      vehicule_souhaite: item.vehicule_demande_trade_in_vehicule_souhaite_idTovehicule,
+    };
   }
 
   findDemandesByUtilisateurId(utilisateurId: string): Promise<DemandeRecord[]> {
@@ -104,13 +120,21 @@ export class TradeInRepository implements TradeInRepositoryPort {
       include: {
         utilisateur: { select: { id: true, nom: true } },
         vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          include: { 
+            marque: { select: { nom: true } }, 
+            modele: { select: { nom: true } },
+            photo_vehicule: { select: { url: true } },
+          },
         },
         vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          include: { 
+            marque: { select: { nom: true } }, 
+            modele: { select: { nom: true } },
+            photo_vehicule: { select: { url: true } },
+          },
         },
       },
-    }) as unknown as Promise<DemandeRecord[]>;
+    }).then(items => items.map(item => this.mapDemandeRecord(item as any)));
   }
 
   findDemandesByNotifie(estNotifie: boolean): Promise<DemandeRecord[]> {
@@ -120,13 +144,21 @@ export class TradeInRepository implements TradeInRepositoryPort {
       include: {
         utilisateur: { select: { id: true, nom: true } },
         vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          include: { 
+            marque: { select: { nom: true } }, 
+            modele: { select: { nom: true } },
+            photo_vehicule: { select: { url: true } },
+          },
         },
         vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
+          include: { 
+            marque: { select: { nom: true } }, 
+            modele: { select: { nom: true } },
+            photo_vehicule: { select: { url: true } },
+          },
         },
       },
-    }) as unknown as Promise<DemandeRecord[]>;
+    }).then(items => items.map(item => this.mapDemandeRecord(item as any)));
   }
 
   updateDemande(id: string, data: UpdateDemandeInput): Promise<DemandeRecord> {
@@ -142,7 +174,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    }) as unknown as Promise<DemandeRecord>;
+    }).then(item => this.mapDemandeRecord(item as any));
   }
 
   deleteDemande(id: string): Promise<DemandeRecord> {
@@ -157,7 +189,7 @@ export class TradeInRepository implements TradeInRepositoryPort {
           include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
         },
       },
-    }) as unknown as Promise<DemandeRecord>;
+    }).then(item => this.mapDemandeRecord(item as any));
   }
 
   createHistoriqueEstimation(data: CreateHistoriqueEstimationInput): Promise<{ id: string }> {

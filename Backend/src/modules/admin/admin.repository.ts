@@ -5,7 +5,6 @@ import {
   StatutReservation,
   StatutTransaction,
   TypeNotification,
-  TypeTransaction,
 } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
@@ -20,6 +19,54 @@ import { AdminRepositoryPort } from "./admin.repository.port";
 @Injectable()
 export class AdminRepository implements AdminRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
+
+  private toPrismaData(data: Record<string, any>): Record<string, any> {
+    const prismaData: Record<string, any> = {};
+    const mappings: Record<string, string> = {
+      deletedAt: "deleted_at",
+      typeUtilisateurId: "type_utilisateur_id",
+      photoProfilUrl: "photo_profil_url",
+      emailVerifie: "email_verifie",
+      telephoneVerifie: "telephone_verifie",
+      doubleAuthActive: "double_auth_active",
+      statutVerification: "statut_verification",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      proprietaireId: "proprietaire_id",
+      marqueId: "marque_id",
+      modeleId: "modele_id",
+      carburantId: "carburant_id",
+      boiteVitesseId: "boite_vitesse_id",
+      anneeFabrication: "annee_fabrication",
+      prixVente: "prix_vente",
+      numeroVin: "numero_vin",
+      immatriculation: "immatriculation",
+      prixNegociable: "prix_negociable",
+      estBoost: "est_boost",
+      boostDebut: "boost_debut",
+      boostFin: "boost_fin",
+      nombreFavoris: "nombre_favoris",
+      nombrePortes: "nombre_portes",
+      nombrePlaces: "nombre_places",
+      puissanceFiscale: "puissance_fiscale",
+      estGarantie: "est_garantie",
+      garantieMois: "garantie_mois",
+      portefeuilleId: "portefeuille_id",
+      dateTransaction: "date_transaction",
+      referenceExterne: "reference_externe",
+      typeTransaction: "type_transaction",
+      referenceId: "reference_id",
+      referenceType: "reference_type",
+      estLu: "est_lu",
+      dateCreation: "created_at",
+    };
+
+    for (const [key, value] of Object.entries(data)) {
+      const mappedKey = mappings[key] || key;
+      prismaData[mappedKey] = value;
+    }
+    return prismaData;
+  }
 
   private mapUserRecord(
     user: {
@@ -60,48 +107,7 @@ export class AdminRepository implements AdminRepositoryPort {
   }
 
   private mapVehiculeRecord(
-    vehicule: {
-      id: string;
-      proprietaire_id: string;
-      marque_id: string | null;
-      modele_id: string | null;
-      carburant_id: string | null;
-      boite_vitesse_id: string | null;
-      statut: string;
-      marque: { nom: string | null } | null;
-      modele: { nom: string | null } | null;
-      carburant: { nom: string | null } | null;
-      boite_vitesse: { nom: string | null } | null;
-      proprietaire: {
-        id: string;
-        nom: string | null;
-        email: string;
-        telephone: string;
-      };
-      photos: Array<{ url: string }>;
-      annee_fabrication: number | null;
-      kilometrage: number | null;
-      couleur: string | null;
-      prix_vente: unknown;
-      description: string | null;
-      numero_vin: string | null;
-      immatriculation: string | null;
-      prix_negociable: boolean | null;
-      certifie: boolean | null;
-      est_boost: boolean | null;
-      boost_debut: Date | null;
-      boost_fin: Date | null;
-      vues: number | null;
-      nombre_favoris: number | null;
-      titre: string | null;
-      nombre_portes: number | null;
-      nombre_places: number | null;
-      cylindree: string | null;
-      puissance_fiscale: string | null;
-      est_garantie: boolean | null;
-      garantie_mois: number | null;
-      created_at: Date | null;
-    } | null,
+    vehicule: any,
   ): VehiculeRecord | null {
     if (!vehicule) return null;
     return {
@@ -116,8 +122,8 @@ export class AdminRepository implements AdminRepositoryPort {
       modele: vehicule.modele,
       carburant: vehicule.carburant,
       boiteVitesse: vehicule.boite_vitesse,
-      proprietaire: vehicule.proprietaire,
-      photos: vehicule.photos,
+      proprietaire: vehicule.utilisateur,
+      photos: (vehicule.photo_vehicule || []).map((p: any) => ({ url: p.url })),
       anneeFabrication: vehicule.annee_fabrication,
       kilometrage: vehicule.kilometrage,
       couleur: vehicule.couleur,
@@ -143,70 +149,71 @@ export class AdminRepository implements AdminRepositoryPort {
     };
   }
 
-  private mapTransactionRecord(
-    record: {
-      id: string;
-      portefeuille_id: string;
-      montant: unknown;
-      type_transaction: string;
-      statut: string;
-      description: string | null;
-      reference_externe: string | null;
-      date_transaction: Date | null;
-      created_at: Date | null;
-      portefeuille: { utilisateur_id: string } | null;
-    } | null,
-  ): TransactionRecord | null {
-    if (!record) return null;
+  private mapTransactionRecord(transaction: any): TransactionRecord | null {
+    if (!transaction) return null;
     return {
-      id: record.id,
-      portefeuilleId: record.portefeuille_id,
-      montant: record.montant,
-      typeTransaction: record.type_transaction,
-      statut: record.statut,
-      description: record.description,
-      referenceExterne: record.reference_externe,
-      dateTransaction: record.date_transaction,
-      createdAt: record.created_at,
-      portefeuille: record.portefeuille
-        ? { utilisateurId: record.portefeuille.utilisateur_id }
-        : null,
+      id: transaction.id,
+      portefeuilleId: transaction.portefeuille_id,
+      montant: transaction.montant,
+      typeTransaction: transaction.type_transaction,
+      statut: transaction.statut,
+      description: transaction.description,
+      referenceExterne: transaction.reference_externe,
+      dateTransaction: transaction.date_transaction,
+      createdAt: transaction.created_at,
+      portefeuille: transaction.portefeuille,
     };
   }
 
-  findUserByEmail(email: string): Promise<AdminUserRecord | null> {
-    return this.prisma.utilisateur
-      .findUnique({
-        where: { email },
-        include: { type_utilisateur: true },
-      })
-      .then((user) =>
-        this.mapUserRecord(
-          user as unknown as {
-            id: string;
-            email: string;
-            telephone: string;
-            mot_de_passe_hash: string;
-            prenom: string | null;
-            nom: string | null;
-            photo_profil_url: string | null;
-            email_verifie: boolean | null;
-            telephone_verifie: boolean | null;
-            double_auth_active: boolean | null;
-            statut_verification: string | null;
-            created_at: Date | null;
-            deleted_at: Date | null;
-            type_utilisateur_id: string | null;
-            type_utilisateur: { id: string; nom: string } | null;
-          },
-        ),
-      );
+  countUtilisateurs(): Promise<number> {
+    return this.prisma.utilisateur.count();
   }
 
-  findTypeUtilisateurByNom(
-    nom: string,
-  ): Promise<{ id: string; nom: string } | null> {
-    return this.prisma.type_utilisateur.findUnique({ where: { nom } });
+  countVehicules(): Promise<number> {
+    return this.prisma.vehicule.count();
+  }
+
+  countVehiculesByStatut(statut: string): Promise<number> {
+    return this.prisma.vehicule.count({ where: { statut } });
+  }
+
+  countReservations(): Promise<number> {
+    return this.prisma.reservation_location.count();
+  }
+
+  countReservationsByStatut(statut: string): Promise<number> {
+    return this.prisma.reservation_location.count({
+      where: { statut: statut as StatutReservation },
+    });
+  }
+
+  countTransactions(): Promise<number> {
+    return this.prisma.transaction_portefeuille.count();
+  }
+
+  countTransactionsByStatut(statut: string): Promise<number> {
+    return this.prisma.transaction_portefeuille.count({
+      where: { statut: statut as StatutTransaction },
+    });
+  }
+
+  countAbonnements(): Promise<number> {
+    return this.prisma.abonnement.count();
+  }
+
+  countAbonnementsActifs(at: Date): Promise<number> {
+    return this.prisma.utilisateur_abonnement.count({
+      where: {
+        statut: "ACTIF",
+        date_fin: { gte: at },
+      },
+    });
+  }
+
+  countTradeInByStatut(statut: string[]): Promise<number> {
+    return this.prisma.demande_trade_in.count({
+      where: { statut: { in: statut as any } },
+    });
   }
 
   findUsersPaged(
@@ -284,14 +291,13 @@ export class AdminRepository implements AdminRepositoryPort {
       );
   }
 
-  updateUser(
-    id: string,
-    data: Record<string, unknown>,
-  ): Promise<AdminUserRecord> {
+  updateUser(id: string, data: Record<string, unknown>): Promise<AdminUserRecord> {
+    const prismaData = this.toPrismaData(data);
+
     return this.prisma.utilisateur
       .update({
         where: { id },
-        data,
+        data: prismaData,
         include: { type_utilisateur: true },
       })
       .then(
@@ -334,6 +340,7 @@ export class AdminRepository implements AdminRepositoryPort {
       this.prisma.vehicule.findMany({
         skip: page * size,
         take: size,
+        where: { deleted_at: null },
         orderBy,
         include: {
           marque: true,
@@ -344,7 +351,7 @@ export class AdminRepository implements AdminRepositoryPort {
           photo_vehicule: true,
         },
       }),
-      this.prisma.vehicule.count(),
+      this.prisma.vehicule.count({ where: { deleted_at: null } }),
     ]).then(([items, total]) => ({
       items: items.map(
         (item) =>
@@ -458,14 +465,12 @@ export class AdminRepository implements AdminRepositoryPort {
       );
   }
 
-  updateVehicule(
-    id: string,
-    data: Record<string, unknown>,
-  ): Promise<VehiculeRecord> {
+  updateVehicule(id: string, data: Record<string, unknown>): Promise<VehiculeRecord> {
+    const prismaData = this.toPrismaData(data);
     return this.prisma.vehicule
       .update({
         where: { id },
-        data,
+        data: prismaData,
         include: {
           marque: true,
           modele: true,
@@ -475,57 +480,11 @@ export class AdminRepository implements AdminRepositoryPort {
           photo_vehicule: true,
         },
       })
-      .then(
-        (vehicule) =>
-          this.mapVehiculeRecord(
-            vehicule as unknown as {
-              id: string;
-              proprietaire_id: string;
-              marque_id: string | null;
-              modele_id: string | null;
-              carburant_id: string | null;
-              boite_vitesse_id: string | null;
-              statut: string;
-              marque: { nom: string | null } | null;
-              modele: { nom: string | null } | null;
-              carburant: { nom: string | null } | null;
-              boite_vitesse: { nom: string | null } | null;
-              proprietaire: {
-                id: string;
-                nom: string | null;
-                email: string;
-                telephone: string;
-              };
-              photos: Array<{ url: string }>;
-              annee_fabrication: number | null;
-              kilometrage: number | null;
-              couleur: string | null;
-              prix_vente: unknown;
-              description: string | null;
-              numero_vin: string | null;
-              immatriculation: string | null;
-              prix_negociable: boolean | null;
-              certifie: boolean | null;
-              est_boost: boolean | null;
-              boost_debut: Date | null;
-              boost_fin: Date | null;
-              vues: number | null;
-              nombre_favoris: number | null;
-              titre: string | null;
-              nombre_portes: number | null;
-              nombre_places: number | null;
-              cylindree: string | null;
-              puissance_fiscale: string | null;
-              est_garantie: boolean | null;
-              garantie_mois: number | null;
-              created_at: Date | null;
-            },
-          ) as VehiculeRecord,
-      );
+      .then((v) => this.mapVehiculeRecord(v) as VehiculeRecord);
   }
 
-  deleteVehicule(id: string) {
-    return this.prisma.vehicule.delete({ where: { id } });
+  deleteVehicule(id: string): Promise<{ id: string }> {
+    return this.prisma.vehicule.delete({ where: { id } }).then((v) => ({ id: v.id }));
   }
 
   findTransactionsPaged(
@@ -622,118 +581,49 @@ export class AdminRepository implements AdminRepositoryPort {
       );
   }
 
+  findTransactionsByStatut(statut: string): Promise<TransactionRecord[]> {
+    return this.prisma.transaction_portefeuille
+      .findMany({
+        where: { statut: statut as StatutTransaction },
+        include: { portefeuille: { select: { utilisateur_id: true } } },
+      })
+      .then((records) =>
+        records.map((v) => this.mapTransactionRecord(v) as TransactionRecord),
+      );
+  }
+
+  findTypeUtilisateurByNom(
+    nom: string,
+  ): Promise<{ id: string; nom: string } | null> {
+    return this.prisma.type_utilisateur.findUnique({ where: { nom } });
+  }
+
   createTransaction(data: {
     id: string;
     portefeuille: { connect: { id: string } };
     montant: number;
-    typeTransaction: TypeTransaction;
-    statut: StatutTransaction;
+    typeTransaction: string;
+    statut: string;
     description: string;
     dateTransaction: Date;
     createdAt: Date;
   }): Promise<TransactionRecord> {
+    const prismaData = this.toPrismaData(data);
     return this.prisma.transaction_portefeuille
       .create({
         data: {
-          id: data.id,
-          portefeuille_id: (data.portefeuille as { connect: { id: string } })
-            .connect.id,
-          montant: data.montant,
-          type_transaction: data.typeTransaction,
-          statut: data.statut,
-          description: data.description,
-          date_transaction: data.dateTransaction,
-          created_at: data.createdAt,
+          id: prismaData.id,
+          portefeuille_id: data.portefeuille.connect.id,
+          montant: prismaData.montant,
+          type_transaction: prismaData.type_transaction,
+          statut: prismaData.statut,
+          description: prismaData.description,
+          date_transaction: prismaData.date_transaction,
+          created_at: prismaData.created_at,
         },
         include: { portefeuille: { select: { utilisateur_id: true } } },
       })
-      .then(
-        (record) =>
-          this.mapTransactionRecord(
-            record as unknown as {
-              id: string;
-              portefeuille_id: string;
-              montant: unknown;
-              type_transaction: string;
-              statut: string;
-              description: string | null;
-              reference_externe: string | null;
-              date_transaction: Date | null;
-              created_at: Date | null;
-              portefeuille: { utilisateur_id: string } | null;
-            },
-          ) as TransactionRecord,
-      );
-  }
-
-  countUtilisateurs(): Promise<number> {
-    return this.prisma.utilisateur.count();
-  }
-
-  countVehicules(): Promise<number> {
-    return this.prisma.vehicule.count();
-  }
-
-  countVehiculesByStatut(statut: string): Promise<number> {
-    return this.prisma.vehicule.count({ where: { statut } });
-  }
-
-  countReservations(): Promise<number> {
-    return this.prisma.reservation_location.count();
-  }
-
-  countReservationsByStatut(statut: StatutReservation): Promise<number> {
-    return this.prisma.reservation_location.count({ where: { statut } });
-  }
-
-  countTransactions(): Promise<number> {
-    return this.prisma.transaction_portefeuille.count();
-  }
-
-  countTransactionsByStatut(statut: StatutTransaction): Promise<number> {
-    return this.prisma.transaction_portefeuille.count({ where: { statut } });
-  }
-
-  countAbonnements(): Promise<number> {
-    return this.prisma.utilisateur_abonnement.count();
-  }
-
-  countAbonnementsActifs(now: Date): Promise<number> {
-    return this.prisma.utilisateur_abonnement.count({
-      where: {
-        statut: "ACTIF",
-        date_fin: { gt: now },
-      },
-    });
-  }
-
-  findTransactionsByStatut(
-    statut: StatutTransaction,
-  ): Promise<TransactionRecord[]> {
-    return this.prisma.transaction_portefeuille
-      .findMany({
-        where: { statut },
-        include: { portefeuille: { select: { utilisateur_id: true } } },
-      })
-      .then((records) =>
-        records.map(
-          (item) =>
-            this.mapTransactionRecord(
-              item as unknown as {
-                id: string;
-                portefeuille_id: string;
-                montant: unknown;
-                type_transaction: string;
-                statut: string;
-                description: string | null;
-                reference_externe: string | null;
-                date_transaction: Date | null;
-                created_at: Date | null;
-                portefeuille: { utilisateur_id: string } | null;
-              },
-            ) as TransactionRecord,
-        ),
-      );
+      .then((v) => this.mapTransactionRecord(v) as TransactionRecord);
   }
 
   createNotification(data: {
@@ -741,37 +631,67 @@ export class AdminRepository implements AdminRepositoryPort {
     utilisateur: { connect: { id: string } };
     titre: string;
     message: string;
-    type: TypeNotification;
+    type: string;
     estLu: boolean;
     dateCreation: Date;
     referenceType?: string;
-  }) {
-    return this.prisma.notification.create({ data });
+    referenceId?: string;
+  }): Promise<{ id: string }> {
+    const prismaData = this.toPrismaData(data);
+    return this.prisma.notification
+      .create({
+        data: {
+          id: prismaData.id,
+          utilisateur_id: data.utilisateur.connect.id,
+          titre: prismaData.titre,
+          message: prismaData.message,
+          type: prismaData.type as TypeNotification,
+          est_lu: prismaData.est_lu,
+          created_at: prismaData.created_at,
+          reference_type: prismaData.reference_type,
+          reference_id: prismaData.reference_id,
+        },
+      })
+      .then((n) => ({ id: n.id }));
   }
 
   findAllUsersIds(): Promise<Array<{ id: string }>> {
-    return this.prisma.utilisateur.findMany({ select: { id: true } });
+    return this.prisma.utilisateur.findMany({
+      where: { deleted_at: null },
+      select: { id: true },
+    });
+  }
+
+  findUserByEmail(email: string): Promise<AdminUserRecord | null> {
+    return this.prisma.utilisateur
+      .findUnique({
+        where: { email },
+        include: { type_utilisateur: true },
+      })
+      .then((u) => this.mapUserRecord(u as any));
   }
 
   newId(): string {
     return randomUUID();
   }
 
-  private userSortBy(sortBy: string): "createdAt" | "updatedAt" | "email" {
-    if (sortBy === "updatedAt" || sortBy === "email") return sortBy;
-    return "createdAt";
+  private userSortBy(sortBy: string): "created_at" | "updated_at" | "email" {
+    if (sortBy === "updatedAt") return "updated_at";
+    if (sortBy === "email") return "email";
+    return "created_at";
   }
 
   private vehiculeSortBy(
     sortBy: string,
-  ): "createdAt" | "updatedAt" | "prixVente" | "vues" {
-    if (sortBy === "updatedAt" || sortBy === "prixVente" || sortBy === "vues")
-      return sortBy;
-    return "createdAt";
+  ): "created_at" | "updated_at" | "prix_vente" | "vues" {
+    if (sortBy === "updatedAt") return "updated_at";
+    if (sortBy === "prixVente") return "prix_vente";
+    if (sortBy === "vues") return "vues";
+    return "created_at";
   }
 
-  private transactionSortBy(sortBy: string): "createdAt" | "dateTransaction" {
-    if (sortBy === "dateTransaction") return sortBy;
-    return "createdAt";
+  private transactionSortBy(sortBy: string): "created_at" | "date_transaction" {
+    if (sortBy === "dateTransaction") return "date_transaction";
+    return "created_at";
   }
 }

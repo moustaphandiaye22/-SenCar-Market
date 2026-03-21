@@ -14,6 +14,7 @@ export type AuthUserRecord = {
   statut_verification: string | null;
   created_at: Date | null;
   type_utilisateur_id: string | null;
+  deleted_at: Date | null;
 };
 
 export type AuthUserTypeRecord = {

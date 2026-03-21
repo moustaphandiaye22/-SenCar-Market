@@ -25,6 +25,29 @@ export class NotificationService {
     private readonly mapper: NotificationMapper,
   ) {}
 
+  async createNotification(data: {
+    utilisateurId: string;
+    titre: string;
+    message: string;
+    type: string;
+    entiteId?: string;
+    entiteType?: string;
+  }): Promise<NotificationResponseDto> {
+    const created = await this.repository.createNotification({
+      id: this.repository.newId(),
+      utilisateur_id: data.utilisateurId,
+      titre: data.titre,
+      message: data.message,
+      type: data.type as any,
+      reference_id: data.entiteId,
+      reference_type: data.entiteType,
+      est_lu: false,
+      created_at: new Date(),
+    });
+
+    return this.mapper.toNotificationResponse(created);
+  }
+
   async getNotificationsByUtilisateur(
     utilisateurId: string,
     page: number,

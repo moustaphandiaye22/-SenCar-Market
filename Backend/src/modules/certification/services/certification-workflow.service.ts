@@ -7,21 +7,21 @@ import type { StatutDemandeCertification } from '../types/certification.types';
 export class CertificationWorkflowService {
   validateTransition(current: StatutDemandeCertification, next: StatutDemandeCertification): void {
     if (current === 'EN_ATTENTE') {
-      if (!['PAYEE', 'REJETEE'].includes(next)) {
+      if (!['PAYEE', 'CERTIFIEE', 'REJETEE'].includes(next)) {
         throw new DomainException(`Transition invalide de ${current} vers ${next}`, 400, 'CERTIFICATION_STATUS_TRANSITION_INVALID');
       }
       return;
     }
 
     if (current === 'PAYEE') {
-      if (!['INSPECTION_PROGRAMMEE', 'REJETEE'].includes(next)) {
+      if (!['INSPECTION_PROGRAMMEE', 'CERTIFIEE', 'REJETEE'].includes(next)) {
         throw new DomainException(`Transition invalide de ${current} vers ${next}`, 400, 'CERTIFICATION_STATUS_TRANSITION_INVALID');
       }
       return;
     }
 
     if (current === 'INSPECTION_PROGRAMMEE') {
-      if (!['INSPECTE', 'REJETEE'].includes(next)) {
+      if (!['INSPECTE', 'CERTIFIEE', 'REJETEE'].includes(next)) {
         throw new DomainException(`Transition invalide de ${current} vers ${next}`, 400, 'CERTIFICATION_STATUS_TRANSITION_INVALID');
       }
       return;

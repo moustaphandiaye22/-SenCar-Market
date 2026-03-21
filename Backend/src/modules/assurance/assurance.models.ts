@@ -1,4 +1,4 @@
-import type { StatutAssurance, TypeAssurance } from './types/assurance.types';
+import type { StatutAssurance, TypeAssurance } from "./types/assurance.types";
 
 export type UserRecord = {
   id: string;
@@ -56,6 +56,24 @@ export type SouscriptionRecord = {
   produit_assurance: { id: string; nom: string };
   vehicule: VehiculeSummaryRecord;
   souscription_options: Array<{ option_assurance: OptionRecord }>;
+};
+
+export type PaiementRecord = {
+  id: string;
+  utilisateur_id: string | null;
+  reservation_id: string | null;
+  montant: unknown;
+  montant_escrow: unknown;
+  commission: unknown;
+  methode_paiement: string | null;
+  statut: string | null;
+  is_escrow: boolean | null;
+  reference_transaction: string | null;
+  reference_externe: string | null;
+  url_paiement: string | null;
+  date_paiement: Date | null;
+  created_at: Date | null;
+  updated_at: Date | null;
 };
 
 export type CreateProduitInput = {

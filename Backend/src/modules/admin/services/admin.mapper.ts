@@ -22,6 +22,7 @@ export class AdminMapper {
       typeUtilisateur: user.typeUtilisateur?.nom ?? null,
       statutVerification: user.statutVerification,
       createdAt: user.createdAt,
+      estActif: !user.deletedAt,
     };
   }
 
@@ -72,6 +73,7 @@ export class AdminMapper {
     return {
       id: transaction.id,
       portefeuilleId: transaction.portefeuilleId,
+      utilisateurId: transaction.portefeuille?.utilisateurId ?? null,
       montant: String(toNumberOrZero(transaction.montant)),
       typeTransaction:
         (transaction.typeTransaction as TransactionResponseDto['typeTransaction']) ?? 'CREDIT',

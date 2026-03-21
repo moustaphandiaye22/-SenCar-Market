@@ -7,6 +7,8 @@ import type {
   ServiceGarageRecord,
   UpdateGarageInput,
   UserRecord,
+  CreateRendezVousInput,
+  RendezVousServiceRecord,
 } from './garage.models';
 import type { StatutValidationGarage } from './types/garage.types';
 
@@ -44,6 +46,12 @@ export interface GarageRepositoryPort {
   findAssociationsByGarageId(garageId: string): Promise<Array<{ id: string }>>;
   deleteAssociation(id: string): Promise<void>;
   deleteManyAssociations(ids: string[]): Promise<void>;
+
+  createRendezVous(data: CreateRendezVousInput): Promise<RendezVousServiceRecord>;
+  findRendezVousById(id: string): Promise<RendezVousServiceRecord | null>;
+  findRendezVousByClient(clientId: string): Promise<RendezVousServiceRecord[]>;
+  findRendezVousByGarage(garageId: string): Promise<RendezVousServiceRecord[]>;
+  updateRendezVousStatut(id: string, statut: string): Promise<RendezVousServiceRecord>;
 
   newId(): string;
 }

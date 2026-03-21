@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CertificationService } from '../../../../core/services/certification.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { LucideAngularModule, Shield, Check, X, Search, Filter, Calendar } from 'lucide-angular';
 import { ConfirmService } from '../../../../core/services/confirm.service';
 import { PromptService } from '../../../../core/services/prompt.service';
@@ -71,7 +72,7 @@ import { FormsModule } from '@angular/forms';
                   </span>
                 </td>
                 <td class="px-8 py-6 text-right">
-                  <div class="flex justify-end gap-2" *ngIf="d.statut === 'EN_ATTENTE' || d.statut === 'PAYEE'">
+                  <div class="flex justify-end gap-2" *ngIf="d.statut !== 'CERTIFIEE' && d.statut !== 'REJETEE'">
                     <button (click)="valider(d)" 
                             title="Certifier le véhicule"
                             class="p-3 bg-green-50 text-green-600 rounded-2xl hover:bg-green-100 transition-all active:scale-95 group/btn">
@@ -102,6 +103,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageCertificationsComponent implements OnInit {
   private certService = inject(CertificationService);
+  private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
   private promptService = inject(PromptService);
   demandes: any[] = [];
@@ -143,7 +145,10 @@ export class ManageCertificationsComponent implements OnInit {
       confirmText: 'Certifier',
       cancelText: 'Annuler',
       onConfirm: () => {
-        this.certService.validerDemande(d.id).subscribe(() => this.loadDemandes());
+        this.certService.validerDemande(d.id).subscribe(() => {
+          this.toastService.success('Véhicule certifié avec succès');
+          this.loadDemandes();
+        });
       }
     });
   }
@@ -152,10 +157,14 @@ export class ManageCertificationsComponent implements OnInit {
     this.promptService.show({
       title: 'Rejeter la certification',
       message: 'Veuillez indiquer la raison du rejet technique.',
+      confirmText: 'Rejeter',
       placeholder: 'Ex: Photos floues, documents non conformes...',
       onConfirm: (raison) => {
         if (raison) {
-          this.certService.rejeterDemande(d.id, raison).subscribe(() => this.loadDemandes());
+          this.certService.rejeterDemande(d.id, raison).subscribe(() => {
+            this.toastService.warning('Demande de certification rejetée');
+            this.loadDemandes();
+          });
         }
       }
     });

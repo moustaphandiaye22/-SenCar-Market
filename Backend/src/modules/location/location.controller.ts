@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Put,
@@ -17,6 +18,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { ApiErrorResponseDto } from '../auth/dto/api-error-response.dto';
 
 import { AnnonceLocationResponseDto } from './dto/annonce-location-response.dto';
@@ -86,11 +88,14 @@ export class LocationController {
   }
 
   @Get('annonces')
-  @ApiOperation({ summary: 'Liste des annonces' })
-  @ApiResponse({ status: 200, type: AnnonceLocationResponseDto, isArray: true, description: 'Annonces récupérées avec succès' })
+  @ApiOperation({ summary: 'Liste des annonces (paginée)' })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Annonces récupérées avec succès' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
-  getAllAnnoncesLocation(): Promise<AnnonceLocationResponseDto[]> {
-    return this.service.getAllAnnoncesLocation();
+  getAllAnnoncesLocation(
+    @Query('page', new ParseIntPipe({ optional: true })) page = 0,
+    @Query('size', new ParseIntPipe({ optional: true })) size = 10,
+  ): Promise<PaginatedResponseDto<AnnonceLocationResponseDto>> {
+    return this.service.getAllAnnoncesLocationPaginated(page, size);
   }
 
   @Get('mes-annonces')

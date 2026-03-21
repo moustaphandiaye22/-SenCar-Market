@@ -23,14 +23,23 @@ export class DashboardStatsResponseDto {
   revenusCeMois!: number;
 
   @ApiProperty()
+  totalTransactions!: number;
+
+  @ApiProperty()
   totalPaiements!: number;
 
   @ApiProperty()
   paiementsEnAttente!: number;
 
   @ApiProperty()
+  reprisesEnAttente!: number;
+
+  @ApiProperty()
   totalAbonnements!: number;
 
   @ApiProperty()
   abonnementsActifs!: number;
+
+  @ApiProperty({ type: [Number], required: false })
+  revenusMensuels?: number[];
 }

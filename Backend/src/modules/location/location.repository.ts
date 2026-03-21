@@ -107,6 +107,31 @@ export class LocationRepository implements LocationRepositoryPort {
     }) as Promise<AnnonceRecord[]>;
   }
 
+  async findAnnoncesAllPaginated(page: number, size: number): Promise<{ items: AnnonceRecord[]; total: number }> {
+    const include = {
+      vehicule: {
+        include: {
+          marque: true,
+          modele: true,
+          photo_vehicule: true,
+          carburant: true,
+          boite_vitesse: true,
+        },
+      },
+      utilisateur: { include: { type_utilisateur: true } },
+    };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.annonce_location.findMany({
+        skip: page * size,
+        take: size,
+        orderBy: { created_at: "desc" },
+        include,
+      }),
+      this.prisma.annonce_location.count(),
+    ]);
+    return { items: items as AnnonceRecord[], total };
+  }
+
   findAnnoncesByProprietaireId(
     proprietaireId: string,
   ): Promise<AnnonceRecord[]> {

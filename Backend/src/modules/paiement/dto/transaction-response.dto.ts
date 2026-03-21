@@ -9,6 +9,9 @@ export class TransactionResponseDto {
   @ApiProperty({ format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440011' })
   portefeuilleId!: string;
 
+  @ApiProperty({ format: 'uuid', nullable: true, example: '550e8400-e29b-41d4-a716-446655440012' })
+  utilisateurId!: string | null;
+
   @ApiProperty({ example: '10000.00' })
   montant!: string;
 

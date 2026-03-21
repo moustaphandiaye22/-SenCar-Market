@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 import { LucideAngularModule, Car, CheckCircle, XCircle, Trash2, Eye, Search, Filter } from 'lucide-angular';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -47,15 +49,15 @@ import { FormsModule } from '@angular/forms';
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-5">
                     <div class="w-16 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-200 overflow-hidden shadow-inner group-hover:scale-105 transition-transform duration-500">
-                      <img *ngIf="ad.photos?.length > 0" [src]="ad.photos[0]" class="w-full h-full object-cover">
-                      <lucide-angular *ngIf="!ad.photos?.length" [img]="icons.Car" size="24"></lucide-angular>
+                      <img *ngIf="ad.photosUrls?.length > 0" [src]="getImageUrl(ad.photosUrls[0])" class="w-full h-full object-cover">
+                      <img *ngIf="!ad.photosUrls?.length" src="assets/placeholder-car.jpg" class="w-full h-full object-cover">
                     </div>
                     <div>
                       <div class="font-black text-gray-900 text-sm tracking-tight group-hover:text-primary-600 transition-colors">
-                        {{ ad.titre || (ad.marque + ' ' + ad.modele) }}
+                        {{ ad.titre || (ad.marque?.nom + ' ' + ad.modele?.nom) }}
                       </div>
                       <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 opacity-60">
-                        {{ ad.marque }} <span class="mx-1">•</span> {{ ad.annee }}
+                        {{ ad.marque?.nom || ad.marque }} <span class="mx-1">•</span> {{ ad.anneeFabrication || ad.annee }}
                       </div>
                     </div>
                   </div>
@@ -77,15 +79,15 @@ import { FormsModule } from '@angular/forms';
                        class="p-3 text-blue-500 hover:bg-blue-50 rounded-2xl transition-all active:scale-95 group/btn">
                       <lucide-angular [img]="icons.Eye" size="18" class="group-hover/btn:scale-110 transition-transform"></lucide-angular>
                     </a>
-                    <button *ngIf="ad.statut === 'EN_ATTENTE_VALIDATION'" 
+                    <button *ngIf="ad.statut === 'EN_ATTENTE_VALIDATION' || ad.statut === 'DESACTIVE' || ad.statut === 'REJETE' || ad.statut === 'EN_ATTENTE'" 
                             (click)="valider(ad)"
-                            title="Approuver l'annonce"
+                            title="Activer / Approuver l'annonce"
                             class="p-3 text-green-500 hover:bg-green-50 rounded-2xl transition-all active:scale-95 group/btn">
                       <lucide-angular [img]="icons.CheckCircle" size="18" class="group-hover/btn:scale-110 transition-transform"></lucide-angular>
                     </button>
-                    <button *ngIf="ad.statut === 'VALIDE' || ad.statut === 'ACTIF' || ad.statut === 'ACTIVE'" 
+                    <button *ngIf="ad.statut === 'PUBLIE' || ad.statut === 'VALIDE' || ad.statut === 'ACTIF' || ad.statut === 'ACTIVE'" 
                             (click)="desactiver(ad)"
-                            title="Mettre en pause"
+                            title="Désactiver l'annonce"
                             class="p-3 text-amber-500 hover:bg-amber-50 rounded-2xl transition-all active:scale-95 group/btn">
                       <lucide-angular [img]="icons.XCircle" size="18" class="group-hover/btn:rotate-12 transition-transform"></lucide-angular>
                     </button>
@@ -114,6 +116,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class ManageAdsComponent implements OnInit {
   private adminService = inject(AdminService);
+  private toastService = inject(ToastService);
+  private confirmService = inject(ConfirmService);
   ads: any[] = [];
   filteredAds: any[] = [];
   searchQuery = '';
@@ -123,10 +127,18 @@ export class ManageAdsComponent implements OnInit {
     this.loadAds();
   }
 
+  getImageUrl(url: string | null): string {
+    if (!url) return 'assets/placeholder-car.jpg';
+    if (url.startsWith('http')) return url;
+    // Base backend URL is localhost:8082
+    const base = 'http://localhost:8082';
+    return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
+  }
+
   loadAds() {
     this.adminService.getAnnonces().subscribe({
-      next: (res) => {
-        this.ads = res.content;
+      next: (res: any) => {
+        this.ads = res?.content || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
         this.filterAds();
       },
       error: (err) => console.error('Error loading ads', err)
@@ -138,35 +150,61 @@ export class ManageAdsComponent implements OnInit {
       this.filteredAds = this.ads;
     } else {
       const q = this.searchQuery.toLowerCase();
-      this.filteredAds = this.ads.filter(ad => 
-        (ad.titre && ad.titre.toLowerCase().includes(q)) ||
-        ad.marque.toLowerCase().includes(q) ||
-        ad.modele.toLowerCase().includes(q)
-      );
+      this.filteredAds = this.ads.filter(ad => {
+        const titleMatch = ad.titre && ad.titre.toLowerCase().includes(q);
+        const marqueStr = typeof ad.marque === 'string' ? ad.marque : (ad.marque?.nom || '');
+        const modeleStr = typeof ad.modele === 'string' ? ad.modele : (ad.modele?.nom || '');
+        
+        return titleMatch || 
+               marqueStr.toLowerCase().includes(q) || 
+               modeleStr.toLowerCase().includes(q);
+      });
     }
   }
 
   valider(ad: any) {
-    this.adminService.validerAnnonce(ad.id).subscribe(() => this.loadAds());
+    this.adminService.validerAnnonce(ad.id).subscribe(() => {
+      this.toastService.success('Annonce validée avec succès');
+      this.loadAds();
+    });
   }
 
   desactiver(ad: any) {
-    this.adminService.desactiverAnnonce(ad.id, 'Désactivée par modération').subscribe(() => this.loadAds());
+    this.adminService.desactiverAnnonce(ad.id, 'Désactivée par modération').subscribe(() => {
+      this.toastService.success('Annonce désactivée avec succès');
+      this.loadAds();
+    });
   }
 
   supprimer(ad: any) {
-    this.adminService.supprimerAnnonce(ad.id).subscribe(() => this.loadAds());
+    this.confirmService.show({
+      title: 'Supprimer l\'annonce',
+      message: `Êtes-vous sûr de vouloir supprimer l'annonce "${ad.titre || ad.marque + ' ' + ad.modele}" ?`,
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: () => {
+        this.adminService.supprimerAnnonce(ad.id).subscribe(() => {
+          this.toastService.success('Annonce supprimée avec succès');
+          this.loadAds();
+        });
+      }
+    });
   }
 
   getStatusClass(status: string) {
     switch(status) {
+      case 'PUBLIE':
       case 'ACTIF':
       case 'ACTIVE':
       case 'VALIDE': return 'bg-green-50 text-green-600';
-      case 'EN_ATTENTE_VALIDATION': return 'bg-amber-50 text-amber-600';
+      case 'EN_ATTENTE_VALIDATION':
+      case 'EN_ATTENTE': return 'bg-amber-50 text-amber-600';
       case 'DESACTIVE': return 'bg-gray-50 text-gray-500';
-      case 'REJETE': return 'bg-red-50 text-red-600';
+      case 'REJETE':
+      case 'REJETEE': return 'bg-red-50 text-red-600';
+      case 'VENDU': return 'bg-blue-50 text-blue-600';
       default: return 'bg-gray-50 text-gray-500';
     }
   }
 }
+

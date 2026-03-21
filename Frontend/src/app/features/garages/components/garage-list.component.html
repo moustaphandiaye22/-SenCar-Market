@@ -17,17 +17,26 @@
         </p>
         
         <!-- Search Bar Hero -->
-        <div class="relative max-w-2xl group">
-          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <lucide-angular [img]="icons.Search" size="20" class="text-primary-300"></lucide-angular>
+        <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-center max-w-4xl group">
+          <div class="relative flex-1 group">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <lucide-angular [img]="icons.Search" size="20" class="text-primary-300"></lucide-angular>
+            </div>
+            <input 
+              type="text" 
+              [(ngModel)]="filters.q" 
+              (ngModelChange)="onFilterChange()"
+              placeholder="Rechercher par nom, service ou ville..." 
+              class="block w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:bg-white/20 transition-all text-lg shadow-2xl"
+            >
           </div>
-          <input 
-            type="text" 
-            [(ngModel)]="filters.q" 
-            (ngModelChange)="onFilterChange()"
-            placeholder="Rechercher par nom, service ou ville..." 
-            class="block w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:bg-white/20 transition-all text-lg shadow-2xl"
+          <button 
+            routerLink="/garages/new"
+            class="px-8 py-4 bg-primary-400 hover:bg-primary-300 text-primary-900 rounded-2xl font-bold transition-all shadow-xl flex items-center justify-center gap-2 whitespace-nowrap"
           >
+            <lucide-angular [img]="icons.Plus" size="20"></lucide-angular>
+            Ajouter un garage
+          </button>
         </div>
       </div>
     </div>
@@ -136,6 +145,42 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!isLoading && totalPages > 1" class="mt-12 flex justify-center">
+      <nav class="flex items-center gap-2">
+        <button 
+          (click)="previousPage()" 
+          [disabled]="filters.page === 0"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          <lucide-angular [img]="icons.ChevronLeft" size="20"></lucide-angular>
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <button 
+            *ngFor="let p of [].constructor(totalPages); let i = index"
+            (click)="goToPage(i)"
+            [class.bg-primary-600]="filters.page === i"
+            [class.text-white]="filters.page === i"
+            [class.border-primary-600]="filters.page === i"
+            class="flex items-center justify-center min-w-10 h-10 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-medium text-sm hover:bg-gray-50 transition-all">
+            {{ i + 1 }}
+          </button>
+        </div>
+        
+        <button 
+          (click)="nextPage()" 
+          [disabled]="filters.page >= totalPages - 1"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          <lucide-angular [img]="icons.ChevronRight" size="20"></lucide-angular>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Results info -->
+    <div *ngIf="!isLoading && totalElements > 0" class="mt-8 text-center text-sm text-gray-500">
+      Affichage de {{ startItem }} à {{ endItem }} sur {{ totalElements }} garages
     </div>
   </div>
 

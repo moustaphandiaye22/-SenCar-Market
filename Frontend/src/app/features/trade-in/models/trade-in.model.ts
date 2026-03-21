@@ -19,6 +19,7 @@ export interface DemandeTradeIn {
   estNotifie: boolean | null;
   createdAt: string | null;
   updatedAt: string | null;
+  photosUrls?: string[];
 }
 
 export interface Estimation {

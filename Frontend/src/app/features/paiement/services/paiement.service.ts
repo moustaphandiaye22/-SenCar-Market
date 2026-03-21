@@ -20,7 +20,7 @@ export interface Paiement {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PaiementService {
   private api = inject(ApiService);
@@ -29,15 +29,29 @@ export class PaiementService {
     return this.api.get(`/paiements/portefeuille/utilisateur/${userId}`);
   }
 
-  createPaiement(data: { reservationId?: string; montant: number; methodePaiement: string }): Observable<Paiement> {
+  createPaiement(data: {
+    utilisateurId?: string;
+    reservationId?: string;
+    montant: number;
+    methodePaiement: string;
+    description?: string;
+  }): Observable<Paiement> {
     return this.api.post('/paiements', data);
   }
 
-  createPaiementWave(data: any): Observable<Paiement> {
+  createPaiementWave(data: {
+    utilisateurId?: string;
+    montant: number;
+    description?: string;
+  }): Observable<Paiement> {
     return this.api.post('/paiements/wave', data);
   }
 
-  createPaiementOrangeMoney(data: any): Observable<Paiement> {
+  createPaiementOrangeMoney(data: {
+    utilisateurId?: string;
+    montant: number;
+    description?: string;
+  }): Observable<Paiement> {
     return this.api.post('/paiements/orange-money', data);
   }
 

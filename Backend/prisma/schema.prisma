@@ -87,12 +87,9 @@ model boost_annonce {
   date_debut          DateTime?
   date_fin            DateTime?
   niveau_boost        String?          @db.VarChar(50)
-  statut              StatutBoost?     @default(EN_ATTENTE)
-  payment_id          String?          @db.Uuid
   annonce_location    annonce_location @relation(fields: [annonce_location_id], references: [id])
 
   @@index([annonce_location_id], map: "idx_boost_annonce_location")
-  @@index([payment_id], map: "idx_boost_annonce_payment")
 }
 
 model carburant {
@@ -218,6 +215,7 @@ model garage {
   avis                       avis[]
   utilisateur                utilisateur?                 @relation(fields: [utilisateur_id], references: [id])
   garage_service_association garage_service_association[]
+  rendez_vous_service        rendez_vous_service[]
 
   @@index([statut_validation], map: "idx_garage_statut_validation")
   @@index([utilisateur_id], map: "idx_garage_utilisateur")
@@ -498,9 +496,29 @@ model service_garage {
   created_at                 DateTime?                    @default(now())
   updated_at                 DateTime?
   garage_service_association garage_service_association[]
+  rendez_vous_service         rendez_vous_service[]
 
   @@index([actif], map: "idx_service_garage_actif")
   @@index([categorie, actif], map: "idx_service_garage_categorie_actif")
+}
+
+model rendez_vous_service {
+  id                String       @id @db.Uuid
+  garage_id         String       @db.Uuid
+  client_id         String       @db.Uuid
+  service_id        String?      @db.Uuid
+  date_rendez_vous  DateTime?
+  statut            String?      @db.VarChar(50)
+  commentaire       String?
+  created_at        DateTime?    @default(now())
+  updated_at        DateTime?
+  garage            garage       @relation(fields: [garage_id], references: [id])
+  client            utilisateur  @relation(fields: [client_id], references: [id])
+  service           service_garage? @relation(fields: [service_id], references: [id])
+
+  @@index([garage_id], map: "idx_rendez_vous_garage")
+  @@index([client_id], map: "idx_rendez_vous_client")
+  @@index([date_rendez_vous], map: "idx_rendez_vous_date")
 }
 
 model signalement {
@@ -619,6 +637,7 @@ model utilisateur {
   utilisateur_abonnement                                                  utilisateur_abonnement[]
   vehicule                                                                vehicule[]
   vehicule_favori                                                         vehicule_favori[]
+  rendez_vous_service                                                     rendez_vous_service[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -793,13 +812,6 @@ enum StatutPaiement {
   ANNULE
 }
 
-enum StatutBoost {
-  EN_ATTENTE
-  ACTIF
-  EXPIRE
-  ANNULE
-}
-
 enum StatutReservation {
   ACTIF
   INACTIF
@@ -913,6 +925,9 @@ enum TypeNotification {
   ASSURANCE
   ASSURANCE_SOUSCRITE
   ASSURANCE_EXPIRE
+  RENDEZ_VOUS_GARAGE
+  RENDEZ_VOUS_CONFIRME
+  RENDEZ_VOUS_ANNULE
   SYSTEM
   MARKETING
 }

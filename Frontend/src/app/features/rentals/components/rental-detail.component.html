@@ -134,6 +134,13 @@
                 Message direct
               </button>
               <button 
+                (click)="onWhatsAppContact()"
+                class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-green-900/10 flex items-center justify-center gap-2"
+              >
+                <lucide-angular [img]="icons.MessageCircle" size="18"></lucide-angular>
+                WhatsApp
+              </button>
+              <button 
                 (click)="onShowPhone()"
                 class="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold transition-all backdrop-blur-sm border border-white/10 flex items-center justify-center gap-2"
               >

@@ -14,6 +14,9 @@ export class ReservationLocationResponseDto {
   vehiculeModele!: string | null;
 
   @ApiProperty()
+  vehiculePhoto!: string | null;
+
+  @ApiProperty()
   locataireId!: string;
 
   @ApiProperty()

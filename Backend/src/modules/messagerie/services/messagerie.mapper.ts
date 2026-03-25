@@ -10,28 +10,28 @@ export class MessagerieMapper {
   toParticipantResponse(item: ParticipantRecord): ParticipantResponseDto {
     return {
       id: item.id,
-      utilisateurId: item.utilisateurId,
+      utilisateurId: item.utilisateur_id,
       utilisateurNom: `${item.utilisateur.prenom ?? ''} ${item.utilisateur.nom ?? ''}`.trim() || null,
-      utilisateurPhotoUrl: item.utilisateur.photoProfilUrl,
-      dateJoin: item.dateJoin,
-      estAdmin: item.estAdmin,
-      estMute: item.estMute,
-      nombreNonLus: item.nombreNonLus,
+      utilisateurPhotoUrl: item.utilisateur.photo_profil_url ?? null,
+      dateJoin: item.date_join ?? null,
+      estAdmin: item.est_admin ?? false,
+      estMute: item.est_mute ?? false,
+      nombreNonLus: item.nombre_non_lus ?? 0,
     };
   }
 
   toMessageResponse(message: MessageRecord): MessageResponseDto {
     return {
       id: message.id,
-      conversationId: message.conversationId,
-      utilisateurId: message.utilisateurId,
+      conversationId: message.conversation_id,
+      utilisateurId: message.utilisateur_id,
       utilisateurNom: `${message.utilisateur.prenom ?? ''} ${message.utilisateur.nom ?? ''}`.trim() || null,
       contenu: message.contenu,
-      dateEnvoi: message.dateEnvoi,
-      dateLecture: message.dateLecture,
-      estLu: message.estLu,
-      estEpingle: message.estEpingle,
-      typeMessage: message.typeMessage,
+      dateEnvoi: message.date_envoi ?? null,
+      dateLecture: message.date_lecture ?? null,
+      estLu: message.est_lu ?? false,
+      estEpingle: message.est_epingle ?? false,
+      typeMessage: (message.type_message as any) ?? 'TEXTE',
     };
   }
 
@@ -43,12 +43,12 @@ export class MessagerieMapper {
   ): ConversationResponseDto {
     return {
       id: conversation.id,
-      titre: conversation.titre,
-      avatarUrl: conversation.avatarUrl,
-      typeConversation: conversation.typeConversation,
-      annonceId: conversation.annonceId,
-      createdAt: conversation.createdAt,
-      updatedAt: conversation.updatedAt,
+      titre: conversation.titre ?? null,
+      avatarUrl: conversation.avatar_url ?? null,
+      typeConversation: conversation.type_conversation ?? 'DIRECT',
+      annonceId: conversation.annonce_id ?? null,
+      createdAt: conversation.created_at ?? null,
+      updatedAt: conversation.updated_at ?? null,
       dernierMessage,
       participants,
       nombreNonLus,

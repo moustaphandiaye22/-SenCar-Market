@@ -1,0 +1,282 @@
+<div class="min-h-screen bg-gray-50/50 pb-20 pt-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Breadcrumbs / Back -->
+    <div class="mb-6">
+      <a routerLink="/vehicles" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
+        <lucide-angular [img]="icons.ArrowLeft" size="16" class="mr-2"></lucide-angular>
+        Retour à la recherche
+      </a>
+    </div>
+
+    <div *ngIf="isLoading" class="flex items-center justify-center py-20">
+      <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-600"></div>
+    </div>
+
+    <div *ngIf="!isLoading && vehicule" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Gallery & Details -->
+      <div class="lg:col-span-8 space-y-8">
+        
+        <!-- Gallery Card -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="relative group h-[500px] bg-gray-900">
+            <ng-container *ngIf="vehicule.photosUrls?.length; else noPhoto">
+              <img 
+                [src]="getImageUrl(vehicule.photosUrls[activePhotoIndex])" 
+                class="w-full h-full object-contain"
+                [alt]="vehicule.marque"
+              >
+            </ng-container>
+            <ng-template #noPhoto>
+              <div class="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <lucide-angular [img]="icons.Calendar" size="64" class="mb-4 opacity-30"></lucide-angular>
+                <p class="text-sm font-medium">Aucune photo disponible</p>
+              </div>
+            </ng-template>
+            
+            <!-- Gallery Navigation Dots -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              <button 
+                *ngFor="let photo of vehicule.photosUrls; let i = index"
+                (click)="setActivePhoto(i)"
+                class="h-2 w-2 rounded-full transition-all"
+                [ngClass]="activePhotoIndex === i ? 'bg-white' : 'bg-white/40'"
+              ></button>
+            </div>
+
+            <!-- Actions Overlay -->
+            <div class="absolute top-6 right-6 flex flex-col gap-3">
+              <button 
+                (click)="toggleFavorite()"
+                class="p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl hover:bg-white transition-all text-gray-700"
+                [class.text-red-500]="vehicule.estFavori"
+              >
+                <lucide-angular [img]="icons.Heart" [size]="20" [class.fill-red-500]="vehicule.estFavori"></lucide-angular>
+              </button>
+              <button class="p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl hover:bg-white transition-all text-gray-700">
+                <lucide-angular [img]="icons.Share2" [size]="20"></lucide-angular>
+              </button>
+            </div>
+          </div>
+
+          <!-- Thumbnails -->
+          <div class="p-4 grid grid-cols-5 gap-3 border-t border-gray-50">
+            <button 
+              *ngFor="let photo of vehicule.photosUrls; let i = index"
+              (click)="setActivePhoto(i)"
+              [class.ring-2]="activePhotoIndex === i"
+              [class.ring-primary-500]="activePhotoIndex === i"
+              class="h-24 rounded-xl overflow-hidden bg-gray-100 transition-all opacity-70 hover:opacity-100"
+            >
+              <img [src]="getImageUrl(photo)" class="w-full h-full object-cover">
+            </button>
+          </div>
+        </div>
+
+        <!-- Description Card -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Description du véhicule</h2>
+          <div class="prose prose-primary max-w-none text-gray-600 whitespace-pre-wrap">
+            {{ vehicule.description }}
+          </div>
+          
+          <!-- Features Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 pt-10 border-t border-gray-50">
+            <div class="p-4 rounded-2xl bg-gray-50/50">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Kilométrage</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.kilometrage | number }} km</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Carburant</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.carburant }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Boite</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.boiteVitesse }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Année</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.anneeFabrication }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Portes / Places</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.nombrePortes || '5' }} / {{ vehicule.nombrePlaces || '5' }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50" *ngIf="vehicule.cylindree">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Cylindrée</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.cylindree }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50" *ngIf="vehicule.puissanceFiscale">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Puissance</span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.puissanceFiscale }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50" *ngIf="vehicule.immatriculation">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Immatriculation</span>
+              <p class="mt-1 font-bold text-gray-900 text-[10px]">{{ vehicule.immatriculation }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50" *ngIf="vehicule.numeroVin">
+              <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">N° VIN</span>
+              <p class="mt-1 font-bold text-gray-900 text-[10px] truncate">{{ vehicule.numeroVin }}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-gray-50/50 col-span-2" *ngIf="vehicule.estGarantie">
+              <span class="text-xs text-green-600 font-bold uppercase tracking-wider flex items-center gap-1">
+                <lucide-angular [img]="icons.ShieldCheck" size="12"></lucide-angular>
+                Sous Garantie
+              </span>
+              <p class="mt-1 font-bold text-gray-900">{{ vehicule.garantieMois }} mois</p>
+            </div>
+          </div>
+        </div>
+        <!-- /Description Card -->
+
+        <!-- Reviews Section -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+          <h2 class="text-xl font-bold text-gray-900 mb-8 flex items-center">
+            <lucide-angular [img]="icons.Mail" size="20" class="mr-3 text-primary-500"></lucide-angular>
+            Avis des utilisateurs
+          </h2>
+          
+          <!-- Form to leave an avis -->
+          <div *ngIf="showAvisForm" class="mb-10">
+            <app-avis-form 
+              [targetId]="vehicule.id" 
+              typeAvis="ACHAT_VEHICULE" 
+              [transactionId]="transactionId"
+              (avisSent)="showAvisForm = false; checkAvisEligibility()">
+            </app-avis-form>
+          </div>
+
+          <app-avis-list [targetId]="vehicule.id" type="vehicule"></app-avis-list>
+        </div>
+        <!-- /Reviews Section -->
+
+      </div>
+      <!-- /col-span-8 -->
+
+      <!-- Right Column: Info & Contact -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- Price & Stats Card -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sticky top-24">
+          <div class="flex items-center gap-2 mb-2">
+            <span *ngIf="vehicule.estBoost" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white uppercase">
+              <lucide-angular [img]="icons.Zap" size="10" class="mr-1"></lucide-angular>
+              Premium
+            </span>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">{{ vehicule.marque }} {{ vehicule.modele }}</span>
+          </div>
+
+          <h2 class="text-lg font-bold text-gray-800 leading-tight mb-4" *ngIf="vehicule.titre">
+            {{ vehicule.titre }}
+          </h2>
+
+          <h1 class="text-4xl font-extrabold text-primary-600 tracking-tight">
+            {{ formatPrice(vehicule.prixVente) }}
+          </h1>
+          <div *ngIf="vehicule.prixNegociable" class="text-sm font-semibold text-primary-600 mt-1 flex items-center gap-1">
+            <lucide-angular [img]="icons.CheckCircle2" size="14"></lucide-angular>
+            Prix négociable
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="mt-8 space-y-3" *ngIf="(currentUser$ | async)?.id !== vehicule.proprietaireId">
+            <button 
+              (click)="onShowPhone()"
+              class="w-full flex justify-center items-center py-4 bg-primary-600 text-white rounded-2xl font-bold shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all gap-3"
+            >
+              <lucide-angular [img]="icons.Phone" size="20"></lucide-angular>
+              {{ showPhone ? vehicule.proprietaireTelephone : 'Afficher le téléphone' }}
+            </button>
+            <button 
+              (click)="onMessageDirect()"
+              class="w-full flex justify-center items-center py-4 bg-primary-100 text-primary-700 rounded-2xl font-bold hover:bg-primary-200 transition-all gap-3"
+            >
+              <lucide-angular [img]="icons.Mail" size="20"></lucide-angular>
+              Envoyer un message
+            </button>
+            <button 
+              (click)="onContactEmail()"
+              class="w-full flex justify-center items-center py-4 bg-white text-gray-600 border border-gray-100 rounded-2xl font-semibold hover:bg-gray-50 transition-all gap-3 text-sm"
+            >
+              Contacter par email
+            </button>
+          </div>
+
+          <!-- Owner Actions for logged user -->
+          <ng-container *ngIf="(currentUser$ | async) as user">
+            <div *ngIf="user.id === vehicule.proprietaireId" class="mt-6 pt-6 border-t border-gray-100 space-y-3">
+              <div class="flex gap-2">
+                <button *ngIf="vehicule.statut === 'BROUILLON'"
+                        (click)="publishVehicule()"
+                        class="flex-1 flex justify-center items-center py-3 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all gap-2 shadow-lg shadow-green-100">
+                  <lucide-angular [img]="icons.CheckCircle2" size="16"></lucide-angular>
+                  Publier
+                </button>
+                <a [routerLink]="['/vehicles', vehicule.id, 'edit']" 
+                   class="flex-1 flex justify-center items-center py-3 border-2 border-primary-100 text-primary-600 rounded-2xl font-bold hover:bg-primary-50 transition-all gap-2">
+                  <lucide-angular [img]="icons.Zap" size="16"></lucide-angular>
+                  Modifier
+                </a>
+              </div>
+              
+              <div class="flex gap-2">
+                <button *ngIf="!vehicule.estBoost"
+                        (click)="boostVehicule()"
+                        class="flex-1 flex justify-center items-center py-3 bg-amber-500 text-white rounded-2xl font-bold hover:bg-amber-600 transition-all gap-2 shadow-lg shadow-amber-100">
+                  <lucide-angular [img]="icons.Zap" size="16"></lucide-angular>
+                  Booster (7j)
+                </button>
+                <button (click)="deleteVehicule()"
+                        class="flex-1 flex justify-center items-center py-3 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-bold hover:bg-red-100 transition-all gap-2">
+                  <lucide-angular [img]="icons.Trash2" size="16"></lucide-angular>
+                  Supprimer
+                </button>
+              </div>
+
+              <div class="pt-3" *ngIf="!vehicule.certifie">
+                <button (click)="demanderCertification()"
+                        [disabled]="isCertifying"
+                        class="w-full flex justify-center items-center py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all gap-3 shadow-lg shadow-blue-100 disabled:opacity-50">
+                  <lucide-angular [img]="icons.Shield" size="20"></lucide-angular>
+                  {{ isCertifying ? 'Traitement...' : 'Faire certifier ce véhicule' }}
+                </button>
+              </div>
+
+              <div class="pt-3">
+                <a routerLink="/assurance" 
+                   class="w-full flex justify-center items-center py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all gap-3 shadow-lg shadow-green-100">
+                  <lucide-angular [img]="icons.ShieldCheck" size="20"></lucide-angular>
+                  Assurer ce véhicule
+                </a>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Owner Card -->
+          <div class="mt-8 pt-8 border-t border-gray-100">
+            <div class="flex items-center gap-4">
+              <div class="h-14 w-14 rounded-2xl bg-gray-100 flex items-center justify-center border border-gray-50 overflow-hidden">
+                <img *ngIf="vehicule.proprietaireNom" [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + vehicule.proprietaireNom" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Vendeur</p>
+                <div class="flex items-center gap-1">
+                  <p class="text-base font-bold text-gray-900">{{ vehicule.proprietaireNom || 'Vendeur particulier' }}</p>
+                  <lucide-angular [img]="icons.ShieldCheck" size="16" class="text-blue-500"></lucide-angular>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex flex-col gap-3">
+              <div class="flex items-center text-sm text-gray-500">
+                <lucide-angular [img]="icons.MapPin" size="16" class="mr-3 text-gray-400"></lucide-angular>
+                Dakar, Sénégal
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

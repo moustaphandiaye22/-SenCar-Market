@@ -21,20 +21,19 @@ export class PaiementEscrowService {
 
     await this.repository.createTransaction({
       id: this.repository.newId(),
-      portefeuille: { connect: { id: portefeuille.id } },
+      portefeuille_id: portefeuille.id,
       montant,
-      typeTransaction: 'ESCROW_DEPOSIT',
+      type_transaction: 'ESCROW_DEPOSIT',
       statut: 'CONFIRMEE',
       description: `Blocage fonds escrow - ${reference ?? ''}`.trim(),
-      referenceExterne: reference ?? undefined,
-      dateTransaction: new Date(),
-      createdAt: new Date(),
-    });
+      reference_externe: reference ?? undefined,
+      date_transaction: new Date(),
+    } as any);
 
     await this.repository.updatePortefeuille(portefeuille.id, {
-      soldeBloque: toNumberOrZero(portefeuille.soldeBloque) + montant,
-      updatedAt: new Date(),
-    });
+      solde_bloque: toNumberOrZero(portefeuille.solde_bloque) + montant,
+      updated_at: new Date(),
+    } as any);
   }
 
   async libererFondsEscrow(utilisateurId: string, montant: number, reference: string | null): Promise<void> {
@@ -42,19 +41,18 @@ export class PaiementEscrowService {
 
     await this.repository.createTransaction({
       id: this.repository.newId(),
-      portefeuille: { connect: { id: portefeuille.id } },
+      portefeuille_id: portefeuille.id,
       montant,
-      typeTransaction: 'ESCROW_RELEASE',
+      type_transaction: 'ESCROW_RELEASE',
       statut: 'CONFIRMEE',
       description: `Libération fonds escrow - ${reference ?? ''}`.trim(),
-      referenceExterne: reference ?? undefined,
-      dateTransaction: new Date(),
-      createdAt: new Date(),
-    });
+      reference_externe: reference ?? undefined,
+      date_transaction: new Date(),
+    } as any);
 
     await this.repository.updatePortefeuille(portefeuille.id, {
-      soldeBloque: Math.max(0, toNumberOrZero(portefeuille.soldeBloque) - montant),
-      updatedAt: new Date(),
-    });
+      solde_bloque: Math.max(0, toNumberOrZero(portefeuille.solde_bloque) - montant),
+      updated_at: new Date(),
+    } as any);
   }
 }

@@ -17,10 +17,25 @@ export class AnnonceLocationResponseDto {
   vehiculePhoto!: string | null;
 
   @ApiProperty()
+  vehiculeTransmission!: string | null;
+
+  @ApiProperty()
+  vehiculeCarburant!: string | null;
+
+  @ApiProperty()
+  vehiculePlaces!: number | null;
+
+  @ApiProperty()
   proprietaireId!: string;
 
   @ApiProperty()
   proprietaireNom!: string | null;
+
+  @ApiProperty()
+  proprietaireTelephone!: string | null;
+
+  @ApiProperty()
+  proprietaireEmail!: string | null;
 
   @ApiProperty()
   tarifJournalier!: string | null;

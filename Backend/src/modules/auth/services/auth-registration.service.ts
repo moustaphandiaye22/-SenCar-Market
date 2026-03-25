@@ -47,16 +47,14 @@ export class AuthRegistrationService {
       id: randomUUID(),
       email: this.inputValidator.normalizeEmail(request.email),
       telephone: this.inputValidator.normalizeTelephone(request.telephone),
-      motDePasseHash: hashedPassword,
+      mot_de_passe_hash: hashedPassword,
       prenom: this.inputValidator.normalizePrenom(request.prenom),
       nom: this.inputValidator.normalizeNom(request.nom),
-      emailVerifie: false,
-      telephoneVerifie: false,
-      doubleAuthActive: false,
-      typeUtilisateur: {
-        connect: { id: typeUtilisateur.id },
-      },
-    });
+      email_verifie: false,
+      telephone_verifie: false,
+      double_auth_active: false,
+      type_utilisateur_id: typeUtilisateur.id,
+    } as any);
 
     await this.generateOtp(user.id, user.email, 'VERIFICATION_EMAIL');
 
@@ -113,13 +111,13 @@ export class AuthRegistrationService {
 
     await this.repository.createOtp({
       id: randomUUID(),
-      utilisateur: { connect: { id: utilisateurId } },
+      utilisateur_id: utilisateurId,
       code,
       type,
       expiration: addMinutes(new Date(), AUTH_CONFIG.OTP.EXPIRATION_MINUTES),
       utilise: false,
       tentatives: 0,
-    });
+    } as any);
 
     const emailEnabled = AUTH_CONFIG.OTP.EMAIL_ENABLED;
     if (emailEnabled) {

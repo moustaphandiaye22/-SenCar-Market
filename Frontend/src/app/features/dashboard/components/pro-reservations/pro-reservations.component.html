@@ -1,0 +1,77 @@
+<div>
+  <div class="flex items-center gap-3 mb-6">
+    <lucide-angular [img]="icons.Calendar" class="text-primary-600" size="32"></lucide-angular>
+    <div>
+      <h2 class="text-2xl font-black text-neutral-900">Demandes de Réservations</h2>
+      <p class="text-neutral-500 text-sm">Gérez les réservations de location reçues sur vos véhicules.</p>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center p-8">
+    <div class="w-8 h-8 rounded-full border-4 border-primary-500 border-t-transparent animate-spin"></div>
+  </div>
+
+  <div *ngIf="!isLoading && reservations.length === 0" class="text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col items-center">
+    <lucide-angular [img]="icons.Car" size="48" class="text-neutral-300 mb-4"></lucide-angular>
+    <p class="text-neutral-500 font-medium">Aucune réservation pour le moment.</p>
+  </div>
+
+  <div class="grid gap-6">
+    <div *ngFor="let resa of reservations"
+         class="bg-white border flex flex-col lg:flex-row justify-between border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+
+      <div class="mb-4 lg:mb-0">
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          <h3 class="text-lg font-bold text-neutral-900">
+            {{ resa.vehiculeMarque }} {{ resa.vehiculeModele }}
+          </h3>
+
+          <span *ngIf="resa.statut === 'EN_ATTENTE_VALIDATION_LOUEUR'" class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-lg uppercase">À Valider</span>
+          <span *ngIf="resa.statut === 'EN_ATTENTE_PAIEMENT'" class="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-lg uppercase">En attente paiement</span>
+          <span *ngIf="resa.statut === 'CONFIRMEE'" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-lg uppercase">Confirmée</span>
+          <span *ngIf="resa.statut === 'REFUSEE'" class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg uppercase">Refusée</span>
+          <span *ngIf="resa.statut === 'EN_COURS'" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">En cours</span>
+          <span *ngIf="resa.statut === 'TERMINEE'" class="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-lg uppercase">Terminée</span>
+          <span *ngIf="resa.statut === 'ANNULEE'" class="px-2 py-1 bg-red-50 text-red-500 text-xs font-bold rounded-lg uppercase">Annulée</span>
+        </div>
+
+        <div class="flex flex-col gap-1 text-sm text-neutral-600">
+          <p><span class="font-bold">Locataire:</span> {{ resa.locataireNom ?? resa.locataireId }}</p>
+          <p *ngIf="resa.locataireEmail"><span class="font-bold">Email:</span> {{ resa.locataireEmail }}</p>
+          <p class="flex items-center gap-1 font-bold mt-1 text-primary-700">
+            <lucide-angular [img]="icons.Clock" size="14"></lucide-angular>
+            Du {{ resa.dateDebut | date:'dd/MM/yyyy' }} au {{ resa.dateFin | date:'dd/MM/yyyy' }}
+          </p>
+          <p class="mt-2 text-lg font-black text-neutral-900">{{ resa.coutTotal ?? '—' }} CFA</p>
+          <p *ngIf="resa.caution" class="text-xs text-neutral-500">Caution: {{ resa.caution }} CFA</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-wrap items-center gap-3 self-start lg:self-center">
+        <button *ngIf="resa.statut === 'EN_ATTENTE_VALIDATION_LOUEUR'"
+                (click)="updateStatut(resa.id, 'EN_ATTENTE_PAIEMENT')"
+                class="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold flex items-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.Check" size="18"></lucide-angular>
+          Accepter
+        </button>
+        <button *ngIf="resa.statut === 'EN_ATTENTE_VALIDATION_LOUEUR'"
+                (click)="updateStatut(resa.id, 'REFUSEE')"
+                class="px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl font-bold flex items-center gap-2 transition-colors">
+          <lucide-angular [img]="icons.X" size="18"></lucide-angular>
+          Refuser
+        </button>
+        <button *ngIf="resa.statut === 'CONFIRMEE'"
+                (click)="updateStatut(resa.id, 'EN_COURS')"
+                class="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold transition-colors">
+          Débuter Location
+        </button>
+        <button *ngIf="resa.statut === 'EN_COURS'"
+                (click)="updateStatut(resa.id, 'TERMINEE')"
+                class="px-4 py-2 bg-neutral-900 text-white rounded-xl font-bold transition-colors">
+          Terminer Restitution
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

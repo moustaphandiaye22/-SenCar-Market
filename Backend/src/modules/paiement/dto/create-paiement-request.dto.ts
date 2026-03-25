@@ -9,9 +9,10 @@ export class CreatePaiementRequestDto {
   @IsUUID()
   utilisateurId?: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiPropertyOptional({ format: 'uuid', description: 'ID de la réservation (optionnel pour recharge portefeuille)' })
+  @IsOptional()
   @IsUUID()
-  reservationId!: string;
+  reservationId?: string;
 
   @ApiProperty({ example: 25000 })
   @IsNumber()

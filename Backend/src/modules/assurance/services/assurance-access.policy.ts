@@ -11,7 +11,7 @@ import type { UserRecord } from '../assurance.models';
 @Injectable()
 export class AssuranceAccessPolicy {
   assertAssuranceManager(currentUser: UserRecord): void {
-    if (!hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ASSURANCE_MANAGER)) {
+    if (!hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ASSURANCE_MANAGER)) {
       throw new DomainException('Accès refusé', 403, 'FORBIDDEN');
     }
   }
@@ -21,7 +21,7 @@ export class AssuranceAccessPolicy {
       return true;
     }
 
-    return hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    return hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
   }
 
   assertCanAccessSouscription(currentUser: UserRecord, ownerId: string): void {

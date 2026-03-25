@@ -1,11 +1,9 @@
 import type { StatutTradeIn } from './types/tradein.types';
 
-type ConnectById = { connect: { id: string } };
-
 export type VehiculeMini = {
   id: string;
-  anneeFabrication: number | null;
-  prixVente: unknown;
+  annee_fabrication: number | null;
+  prix_vente: unknown;
   marque: { nom: string | null } | null;
   modele: { nom: string | null } | null;
 };
@@ -16,82 +14,80 @@ export type UserRecord = {
   email: string;
   nom: string | null;
   prenom: string | null;
-  typeUtilisateur: UserRole | null;
+  type_utilisateur: UserRole | null;
 };
 
 export type DemandeRecord = {
   id: string;
-  utilisateurId: string;
-  vehiculeActuelId: string;
-  vehiculeSouhaiteId: string | null;
-  statut: string;
-  prixEstime: unknown;
-  prixPropose: unknown;
-  kilometrageActuel: number | null;
-  etatVehicule: string | null;
-  dateSoumission: Date | null;
-  dateTraitement: Date | null;
-  dateEvaluation: Date | null;
-  motifRejet: string | null;
-  commentaireAdmin: string | null;
-  estNotifie: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  utilisateur_id: string;
+  vehicule_actuel_id: string;
+  vehicule_souhaite_id: string | null;
+  statut: StatutTradeIn;
+  prix_estime?: unknown;
+  prix_propose?: unknown;
+  kilometrage_actuel?: number | null;
+  etat_vehicule?: string | null;
+  date_soumission: Date | null;
+  date_traitement?: Date | null;
+  date_evaluation?: Date | null;
+  motif_rejet?: string | null;
+  commentaire_admin?: string | null;
+  est_notifie: boolean | null;
+  created_at: Date | null;
+  updated_at: Date | null;
   utilisateur: { id: string; nom: string | null };
-  vehiculeActuel: VehiculeMini;
-  vehiculeSouhaite: VehiculeMini | null;
+  vehicule_actuel: VehiculeMini;
+  vehicule_souhaite: VehiculeMini | null;
 };
 
 export type CreateDemandeInput = {
   id: string;
-  utilisateur: ConnectById;
-  vehiculeActuel: ConnectById;
-  vehiculeSouhaite?: ConnectById;
+  utilisateur_id: string;
+  vehicule_actuel_id: string;
+  vehicule_souhaite_id?: string;
   statut: StatutTradeIn;
-  kilometrageActuel: number;
-  etatVehicule: string;
-  dateSoumission: Date;
-  estNotifie: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  kilometrage_actuel: number;
+  etat_vehicule: string;
+  date_soumission: Date;
+  est_notifie: boolean;
 };
 
 export type UpdateDemandeInput = Partial<{
   statut: StatutTradeIn;
-  prixEstime: number;
-  prixPropose: number;
-  kilometrageActuel: number;
-  etatVehicule: string;
-  dateTraitement: Date;
-  dateEvaluation: Date;
-  motifRejet: string;
-  commentaireAdmin: string;
-  estNotifie: boolean;
-  updatedAt: Date;
+  prix_estime: number;
+  prix_propose: number;
+  kilometrage_actuel: number;
+  etat_vehicule: string;
+  date_traitement: Date;
+  date_evaluation: Date;
+  motif_rejet: string;
+  commentaire_admin: string;
+  est_notifie: boolean;
+  updated_at: Date;
 }>;
 
 export type CreateHistoriqueEstimationInput = {
   id: string;
-  vehiculeId: string;
+  vehicule_id: string;
   marque: string;
   modele: string;
-  anneeFabrication?: number;
+  annee_fabrication?: number;
   kilometrage: number;
-  etatVehicule: string;
-  prixEstime: number;
-  prixMinimum: number;
-  prixMaximum: number;
-  scoreCondition: number;
+  etat_vehicule: string;
+  prix_estime: number;
+  prix_minimum: number;
+  prix_maximum: number;
+  score_condition: number;
   recommandation: string;
-  dateEstimation: Date;
+  date_estimation: Date;
 };
 
 export type CreateNotificationInput = {
   id: string;
-  utilisateur: ConnectById;
+  utilisateur_id: string;
   titre: string;
   message: string;
   type: string;
-  estLu: boolean;
-  dateCreation: Date;
+  est_lu: boolean;
+  date_creation: Date;
 };

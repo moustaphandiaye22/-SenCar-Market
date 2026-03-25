@@ -30,25 +30,24 @@ export class AvisRepository implements AvisRepositoryPort {
   }
 
   createAvis(data: CreateAvisInput): Promise<AvisRecord> {
-    // Transform CreateAvisInput to Prisma's expected input format
-    const prismaData: Prisma.AvisCreateInput = {
+    const prismaData = {
       id: data.id,
-      auteur: data.auteur,
-      cibleUtilisateur: data.cibleUtilisateur,
-      vehicule: data.vehicule,
-      garage: data.garageId ? { connect: { id: data.garageId } } : undefined,
-      typeAvis: data.typeAvis,
-      transactionId: data.transactionId,
+      auteur_id: data.auteur_id,
+      cible_utilisateur_id: data.cible_utilisateur_id,
+      vehicule_id: data.vehicule_id,
+      garage_id: data.garage_id,
+      type_avis: data.type_avis,
+      transaction_id: data.transaction_id,
       note: data.note,
       commentaire: data.commentaire,
       statut: data.statut,
-      createdAt: data.createdAt,
+      created_at: data.created_at,
     };
 
     return this.prisma.avis.create({
-      data: prismaData,
+      data: prismaData as any,
       include: {
-        auteur: {
+        utilisateur_avis_auteur_idToutilisateur: {
           select: {
             id: true,
             nom: true,
@@ -56,14 +55,20 @@ export class AvisRepository implements AvisRepositoryPort {
           },
         },
       },
-    }) as unknown as Promise<AvisRecord>;
+    }).then(res => ({
+      ...res,
+      auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+    })) as unknown as Promise<AvisRecord>;
   }
 
   findAvisById(id: string): Promise<AvisRecord | null> {
     return this.prisma.avis.findUnique({
       where: { id },
-      include: { auteur: { select: { id: true, nom: true, prenom: true } } },
-    });
+      include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
+    }).then(res => res ? ({
+      ...res,
+      auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+    }) : null) as any;
   }
 
   findAllAvisPaged(statut: StatutAvis, page: number, size: number) {
@@ -73,87 +78,111 @@ export class AvisRepository implements AvisRepositoryPort {
         where,
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { auteur: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
       this.prisma.avis.count({ where }),
-    ]).then(([items, total]) => ({ items, total }));
+    ]).then(([items, total]) => ({
+      items: items.map(res => ({
+        ...res,
+        auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+      })),
+      total
+    }));
   }
 
   findAvisByUtilisateurPaged(utilisateurId: string, statut: StatutAvis, page: number, size: number) {
-    const where = { cibleUtilisateurId: utilisateurId, statut };
+    const where = { cible_utilisateur_id: utilisateurId, statut };
     return Promise.all([
       this.prisma.avis.findMany({
-        where,
+        where: where as any,
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { auteur: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
-      this.prisma.avis.count({ where }),
-    ]).then(([items, total]) => ({ items, total }));
+      this.prisma.avis.count({ where: where as any }),
+    ]).then(([items, total]) => ({
+      items: items.map(res => ({
+        ...res,
+        auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+      })),
+      total
+    }));
   }
 
   findAvisByVehiculePaged(vehiculeId: string, statut: StatutAvis, page: number, size: number) {
-    const where = { vehiculeId, statut };
+    const where = { vehicule_id: vehiculeId, statut };
     return Promise.all([
       this.prisma.avis.findMany({
-        where,
+        where: where as any,
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { auteur: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
-      this.prisma.avis.count({ where }),
-    ]).then(([items, total]) => ({ items, total }));
+      this.prisma.avis.count({ where: where as any }),
+    ]).then(([items, total]) => ({
+      items: items.map(res => ({
+        ...res,
+        auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+      })),
+      total
+    }));
   }
 
   findAvisByGaragePaged(garageId: string, statut: StatutAvis, page: number, size: number) {
-    const where = { garageId, statut };
+    const where = { garage_id: garageId, statut };
     return Promise.all([
       this.prisma.avis.findMany({
-        where,
+        where: where as any,
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { auteur: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
-      this.prisma.avis.count({ where }),
-    ]).then(([items, total]) => ({ items, total }));
+      this.prisma.avis.count({ where: where as any }),
+    ]).then(([items, total]) => ({
+      items: items.map(res => ({
+        ...res,
+        auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+      })),
+      total
+    }));
   }
 
   async getNoteMoyenneUtilisateur(utilisateurId: string): Promise<number | null> {
     const result = await this.prisma.avis.aggregate({
-      where: { cibleUtilisateurId: utilisateurId, statut: 'PUBLIE' },
+      where: { cible_utilisateur_id: utilisateurId, statut: 'PUBLIE' } as any,
       _avg: { note: true },
     });
-    return result._avg.note ?? null;
+    return (result._avg.note as any) ?? null;
   }
 
   async getNoteMoyenneVehicule(vehiculeId: string): Promise<number | null> {
     const result = await this.prisma.avis.aggregate({
-      where: { vehiculeId, statut: 'PUBLIE' },
+      where: { vehicule_id: vehiculeId, statut: 'PUBLIE' } as any,
       _avg: { note: true },
     });
-    return result._avg.note ?? null;
+    return (result._avg.note as any) ?? null;
   }
 
   async getNoteMoyenneGarage(garageId: string): Promise<number | null> {
     const result = await this.prisma.avis.aggregate({
-      where: { garageId, statut: 'PUBLIE' },
+      where: { garage_id: garageId, statut: 'PUBLIE' } as any,
       _avg: { note: true },
     });
-    return result._avg.note ?? null;
+    return (result._avg.note as any) ?? null;
   }
 
   existsByTransactionAndAuteur(transactionId: string, auteurId: string): Promise<boolean> {
     return this.prisma.avis
       .findFirst({
         where: {
-          transactionId,
-          auteurId,
+          transaction_id: transactionId,
+          auteur_id: auteurId,
           statut: { not: 'SUPPRIMEE' },
-        },
+        } as any,
         select: { id: true },
       })
       .then((value: { id: string } | null) => Boolean(value));
@@ -162,9 +191,9 @@ export class AvisRepository implements AvisRepositoryPort {
   findByTransactionId(transactionId: string): Promise<Array<{ id: string }>> {
     return this.prisma.avis.findMany({
       where: {
-        transactionId,
+        transaction_id: transactionId,
         statut: { not: 'SUPPRIMEE' },
-      },
+      } as any,
       select: { id: true },
     });
   }
@@ -173,8 +202,11 @@ export class AvisRepository implements AvisRepositoryPort {
     return this.prisma.avis.update({
       where: { id },
       data: { statut },
-      include: { auteur: { select: { id: true, nom: true, prenom: true } } },
-    });
+      include: { utilisateur_avis_auteur_idToutilisateur: { select: { id: true, nom: true, prenom: true } } },
+    }).then(res => ({
+      ...res,
+      auteur: (res as any).utilisateur_avis_auteur_idToutilisateur
+    })) as any;
   }
 
   newId(): string {

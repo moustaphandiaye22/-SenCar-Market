@@ -4,3 +4,4 @@ coverage/
 jest.config.ts
 prisma/seed.ts
 scripts/test-swagger-with-db.ts
+test-login.js

@@ -25,7 +25,7 @@ export class MessagerieAccessService {
       throw new DomainException('Vous ne participez pas à cette conversation', 403, 'NOT_PARTICIPANT');
     }
 
-    if (!participant.estAdmin) {
+    if (!participant.est_admin) {
       throw new DomainException('Droits admin requis', 403, 'MESSAGERIE_ADMIN_REQUIRED');
     }
   }

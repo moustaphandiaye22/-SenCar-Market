@@ -2,7 +2,7 @@ import type {
   EtatVehiculeInspection,
   ResultatInspection,
   StatutDemandeCertification,
-} from './types/certification.types';
+} from "./types/certification.types";
 
 type ConnectById = { connect: { id: string } };
 
@@ -11,7 +11,7 @@ export type UserRecord = {
   email: string;
   nom: string | null;
   prenom: string | null;
-  typeUtilisateur: { nom: string | null } | null;
+  type_utilisateur: { nom: string | null } | null;
 };
 
 export type VehiculeMini = {
@@ -22,58 +22,64 @@ export type VehiculeMini = {
 
 export type DemandeRecord = {
   id: string;
-  utilisateurId: string;
-  vehiculeId: string;
+  utilisateur_id: string;
+  vehicule_id: string;
   statut: string;
-  montantPaiement: unknown;
-  paiementId: string | null;
-  inspecteurId: string | null;
-  dateSoumission: Date | null;
-  dateTraitement: Date | null;
-  dateInspection: Date | null;
-  motifRejet: string | null;
-  badgeCertifieUrl: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  utilisateur: { id: string; nom: string | null };
+  montant_paiement: unknown;
+  paiement_id: string | null;
+  inspecteur_id: string | null;
+  date_soumission: Date | null;
+  date_traitement: Date | null;
+  date_inspection: Date | null;
+  motif_rejet: string | null;
+  badge_certifie_url: string | null;
+  created_at: Date | null;
+  updated_at: Date | null;
+  utilisateur_demande_certification_utilisateur_idToutilisateur: {
+    id: string;
+    nom: string | null;
+  };
   vehicule: VehiculeMini;
-  inspecteur: { id: string; nom: string | null } | null;
+  utilisateur_demande_certification_inspecteur_idToutilisateur: {
+    id: string;
+    nom: string | null;
+  } | null;
 };
 
 export type InspectionRecord = {
   id: string;
-  demandeCertificationId: string;
-  inspecteurId: string;
-  dateInspection: Date | null;
+  demande_certification_id: string;
+  inspecteur_id: string;
+  date_inspection: Date | null;
   resultat: string | null;
   commentaire: string | null;
   kilometrage: number | null;
-  etatMoteur: string | null;
-  etatGenerateur: string | null;
-  etatFreinage: string | null;
-  etatSuspension: string | null;
-  etatTransmission: string | null;
-  etatPneus: string | null;
-  etatCarrosserie: string | null;
-  etatInterieur: string | null;
-  scoreTotal: number | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  demandeCertification: { id: string };
-  inspecteur: { id: string; nom: string | null };
+  etat_moteur: string | null;
+  etat_generateur: string | null;
+  etat_freinage: string | null;
+  etat_suspension: string | null;
+  etat_transmission: string | null;
+  etat_pneus: string | null;
+  etat_carrosserie: string | null;
+  etat_interieur: string | null;
+  score_total: number | null;
+  created_at: Date | null;
+  updated_at: Date | null;
+  demande_certification: { id: string };
+  utilisateur: { id: string; nom: string | null };
 };
 
 export type RapportRecord = {
   id: string;
-  inspectionId: string;
-  urlRapportPdf: string | null;
-  dateGeneration: Date | null;
-  scoreGlobale: number | null;
+  inspection_id: string;
+  url_rapport_pdf: string | null;
+  date_generation: Date | null;
+  score_globale: number | null;
   recommendations: string | null;
   conclusion: string | null;
-  estApprouve: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  est_approuve: boolean | null;
+  created_at: Date | null;
+  updated_at: Date | null;
   inspection: { id: string };
 };
 
@@ -82,79 +88,79 @@ export type CreateDemandeInput = {
   utilisateur: ConnectById;
   vehicule: ConnectById;
   statut: StatutDemandeCertification;
-  montantPaiement: number;
-  dateSoumission: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  montant_paiement: number;
+  date_soumission: Date;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateDemandeInput = Partial<{
   statut: StatutDemandeCertification;
-  paiementId: string;
-  inspecteur: ConnectById;
-  dateTraitement: Date;
-  dateInspection: Date;
-  motifRejet: string;
-  badgeCertifieUrl: string;
-  updatedAt: Date;
+  paiement_id: string;
+  utilisateur_demande_certification_inspecteur_idToutilisateur: ConnectById;
+  date_traitement: Date;
+  date_inspection: Date;
+  motif_rejet: string;
+  badge_certifie_url: string;
+  updated_at: Date;
 }>;
 
 export type CreateInspectionInput = {
   id: string;
-  demandeCertification: ConnectById;
-  inspecteur: ConnectById;
-  dateInspection: Date;
+  demande_certification: ConnectById;
+  utilisateur: ConnectById;
+  date_inspection: Date;
   resultat: ResultatInspection;
   commentaire?: string;
   kilometrage?: number;
-  etatMoteur?: EtatVehiculeInspection;
-  etatGenerateur?: EtatVehiculeInspection;
-  etatFreinage?: EtatVehiculeInspection;
-  etatSuspension?: EtatVehiculeInspection;
-  etatTransmission?: EtatVehiculeInspection;
-  etatPneus?: EtatVehiculeInspection;
-  etatCarrosserie?: EtatVehiculeInspection;
-  etatInterieur?: EtatVehiculeInspection;
-  createdAt: Date;
-  updatedAt: Date;
+  etat_moteur?: EtatVehiculeInspection;
+  etat_generateur?: EtatVehiculeInspection;
+  etat_freinage?: EtatVehiculeInspection;
+  etat_suspension?: EtatVehiculeInspection;
+  etat_transmission?: EtatVehiculeInspection;
+  etat_pneus?: EtatVehiculeInspection;
+  etat_carrosserie?: EtatVehiculeInspection;
+  etat_interieur?: EtatVehiculeInspection;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateInspectionInput = Partial<{
-  dateInspection: Date;
+  date_inspection: Date;
   resultat: ResultatInspection;
   commentaire: string;
   kilometrage: number;
-  etatMoteur: EtatVehiculeInspection;
-  etatGenerateur: EtatVehiculeInspection;
-  etatFreinage: EtatVehiculeInspection;
-  etatSuspension: EtatVehiculeInspection;
-  etatTransmission: EtatVehiculeInspection;
-  etatPneus: EtatVehiculeInspection;
-  etatCarrosserie: EtatVehiculeInspection;
-  etatInterieur: EtatVehiculeInspection;
-  scoreTotal: number;
-  updatedAt: Date;
+  etat_moteur: EtatVehiculeInspection;
+  etat_generateur: EtatVehiculeInspection;
+  etat_freinage: EtatVehiculeInspection;
+  etat_suspension: EtatVehiculeInspection;
+  etat_transmission: EtatVehiculeInspection;
+  etat_pneus: EtatVehiculeInspection;
+  etat_carrosserie: EtatVehiculeInspection;
+  etat_interieur: EtatVehiculeInspection;
+  score_total: number;
+  updated_at: Date;
 }>;
 
 export type CreateRapportInput = {
   id: string;
   inspection: ConnectById;
-  urlRapportPdf?: string;
-  dateGeneration: Date;
-  scoreGlobale?: number;
+  url_rapport_pdf?: string;
+  date_generation: Date;
+  score_globale?: number;
   recommendations?: string;
   conclusion?: string;
-  estApprouve?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  est_approuve?: boolean;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateRapportInput = Partial<{
-  urlRapportPdf: string;
-  dateGeneration: Date;
-  scoreGlobale: number;
+  url_rapport_pdf: string;
+  date_generation: Date;
+  score_globale: number;
   recommendations: string;
   conclusion: string;
-  estApprouve: boolean;
-  updatedAt: Date;
+  est_approuve: boolean;
+  updated_at: Date;
 }>;

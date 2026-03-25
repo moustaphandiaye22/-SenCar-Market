@@ -30,7 +30,7 @@ export class AuthOtpService {
   async verifyEmailWithOtp(email: string, codeOtp: string): Promise<void> {
     const user = await this.mustFindUserByEmail(email);
     await this.verifyOtp(user.id, 'VERIFICATION_EMAIL', codeOtp);
-    await this.repository.updateUser(user.id, { emailVerifie: true });
+    await this.repository.updateUser(user.id, { email_verifie: true } as any);
   }
 
   /**
@@ -66,8 +66,8 @@ export class AuthOtpService {
 
     const hashedPassword = await this.hashPassword(request.nouveauMotDePasse);
     await this.repository.updateUser(user.id, {
-      motDePasseHash: hashedPassword,
-    });
+      mot_de_passe_hash: hashedPassword,
+    } as any);
   }
 
   // Private helpers
@@ -91,13 +91,13 @@ export class AuthOtpService {
 
     await this.repository.createOtp({
       id: randomUUID(),
-      utilisateur: { connect: { id: utilisateurId } },
+      utilisateur_id: utilisateurId,
       code,
       type,
       expiration: addMinutes(new Date(), AUTH_CONFIG.OTP.EXPIRATION_MINUTES),
       utilise: false,
       tentatives: 0,
-    });
+    } as any);
 
     const emailEnabled = AUTH_CONFIG.OTP.EMAIL_ENABLED;
     if (emailEnabled) {

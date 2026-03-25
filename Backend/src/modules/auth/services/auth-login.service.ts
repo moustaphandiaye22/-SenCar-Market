@@ -39,20 +39,20 @@ export class AuthLoginService {
       throw new DomainException(APP_MESSAGES.invalidCredentials, 401, 'AUTH_INVALID_CREDENTIALS');
     }
 
-    const isPasswordValid = await bcrypt.compare(request.motDePasse, user.motDePasseHash);
+    const isPasswordValid = await bcrypt.compare(request.motDePasse, user.mot_de_passe_hash);
     if (!isPasswordValid) {
       throw new DomainException(APP_MESSAGES.invalidCredentials, 401, 'AUTH_INVALID_CREDENTIALS');
     }
 
     const updated = await this.repository.updateUser(user.id, {
-      derniereConnexion: new Date(),
-    });
+      derniere_connexion: new Date(),
+    } as any);
     const updatedWithType = await this.mustFindUserWithTypeById(updated.id);
 
     const tokens = this.jwtService.generateTokens({
       userId: updatedWithType.id,
       email: updatedWithType.email,
-      typeUtilisateur: updatedWithType.typeUtilisateur?.nom ?? null,
+      typeUtilisateur: updatedWithType.type_utilisateur?.nom ?? null,
     });
 
     return {
@@ -76,7 +76,7 @@ export class AuthLoginService {
     const tokens = this.jwtService.generateTokens({
       userId: userWithType.id,
       email: userWithType.email,
-      typeUtilisateur: userWithType.typeUtilisateur?.nom ?? null,
+      typeUtilisateur: userWithType.type_utilisateur?.nom ?? null,
     });
 
     return {
@@ -90,20 +90,20 @@ export class AuthLoginService {
    */
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     const currentUser = await this.mustFindUserById(userId);
-    const valid = await bcrypt.compare(currentPassword, currentUser.motDePasseHash);
+    const valid = await bcrypt.compare(currentPassword, currentUser.mot_de_passe_hash);
 
     if (!valid) {
       throw new DomainException(APP_MESSAGES.currentPasswordInvalid, 400, 'AUTH_CURRENT_PASSWORD_INVALID');
     }
-    const isSamePassword = await bcrypt.compare(newPassword, currentUser.motDePasseHash);
+    const isSamePassword = await bcrypt.compare(newPassword, currentUser.mot_de_passe_hash);
     if (isSamePassword) {
       throw new DomainException(APP_MESSAGES.newPasswordMustDiffer, 400, 'AUTH_PASSWORD_REUSE_FORBIDDEN');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, AUTH_CONFIG.BCRYPT_ROUNDS);
     await this.repository.updateUser(currentUser.id, {
-      motDePasseHash: hashedPassword,
-    });
+      mot_de_passe_hash: hashedPassword,
+    } as any);
   }
 
   // Private helpers

@@ -25,6 +25,7 @@ export interface TradeInRepositoryPort {
 
   createHistoriqueEstimation(data: CreateHistoriqueEstimationInput): Promise<{ id: string }>;
   createNotification(data: CreateNotificationInput): Promise<{ id: string }>;
+  findOrCreateVehicule(proprietaireId: string, marqueNom: string, modeleNom: string, annee: number, kilometrage: number): Promise<string>;
 
   newId(): string;
 }

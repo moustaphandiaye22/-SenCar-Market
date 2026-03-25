@@ -4,16 +4,17 @@ export type AuthUserRecord = {
   id: string;
   email: string;
   telephone: string;
-  motDePasseHash: string;
+  mot_de_passe_hash: string;
   prenom: string | null;
   nom: string | null;
-  photoProfilUrl: string | null;
-  emailVerifie: boolean | null;
-  telephoneVerifie: boolean | null;
-  doubleAuthActive: boolean | null;
-  statutVerification: string | null;
-  createdAt: Date | null;
-  typeUtilisateurId: string | null;
+  photo_profil_url: string | null;
+  email_verifie: boolean | null;
+  telephone_verifie: boolean | null;
+  double_auth_active: boolean | null;
+  statut_verification: string | null;
+  created_at: Date | null;
+  type_utilisateur_id: string | null;
+  deleted_at: Date | null;
 };
 
 export type AuthUserTypeRecord = {
@@ -22,12 +23,13 @@ export type AuthUserTypeRecord = {
 };
 
 export type AuthUserWithTypeRecord = AuthUserRecord & {
-  typeUtilisateur: AuthUserTypeRecord | null;
+  type_utilisateur: AuthUserTypeRecord | null;
 };
 
 export type OtpCodeRecord = {
   id: string;
   code: string;
+  type: OtpType;
   tentatives: number;
 };
 
@@ -35,28 +37,28 @@ export type CreateUserInput = {
   id: string;
   email: string;
   telephone: string;
-  motDePasseHash: string;
+  mot_de_passe_hash: string;
   prenom: string;
   nom: string;
-  emailVerifie: boolean;
-  telephoneVerifie: boolean;
-  doubleAuthActive: boolean;
-  typeUtilisateur: { connect: { id: string } };
+  email_verifie: boolean;
+  telephone_verifie: boolean;
+  double_auth_active: boolean;
+  type_utilisateur_id: string;
 };
 
 export type UpdateUserInput = Partial<{
   prenom: string;
   nom: string;
   telephone: string;
-  photoProfilUrl: string;
-  motDePasseHash: string;
-  derniereConnexion: Date;
-  emailVerifie: boolean;
+  photo_profil_url: string;
+  mot_de_passe_hash: string;
+  derniere_connexion: Date;
+  email_verifie: boolean;
 }>;
 
 export type CreateOtpInput = {
   id: string;
-  utilisateur: { connect: { id: string } };
+  utilisateur_id: string;
   code: string;
   type: OtpType;
   expiration: Date;

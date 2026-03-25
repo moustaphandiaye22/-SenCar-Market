@@ -8,7 +8,13 @@ export class VehiculeResponseDto {
   marque!: string | null;
 
   @ApiProperty()
+  marqueId!: string | null;
+
+  @ApiProperty()
   modele!: string | null;
+
+  @ApiProperty()
+  modeleId!: string | null;
 
   @ApiProperty()
   anneeFabrication!: number | null;
@@ -20,7 +26,13 @@ export class VehiculeResponseDto {
   carburant!: string | null;
 
   @ApiProperty()
+  carburantId!: string | null;
+
+  @ApiProperty()
   boiteVitesse!: string | null;
+
+  @ApiProperty()
+  boiteVitesseId!: string | null;
 
   @ApiProperty()
   couleur!: string | null;
@@ -45,7 +57,26 @@ export class VehiculeResponseDto {
 
   @ApiProperty()
   certifie!: boolean | null;
+  @ApiProperty()
+  titre!: string | null;
 
+  @ApiProperty()
+  nombrePortes!: number | null;
+
+  @ApiProperty()
+  nombrePlaces!: number | null;
+
+  @ApiProperty()
+  cylindree!: string | null;
+
+  @ApiProperty()
+  puissanceFiscale!: string | null;
+
+  @ApiProperty()
+  estGarantie!: boolean | null;
+
+  @ApiProperty()
+  garantieMois!: number | null;
   @ApiProperty({ type: [String] })
   photosUrls!: string[];
 
@@ -72,6 +103,12 @@ export class VehiculeResponseDto {
 
   @ApiProperty()
   proprietaireId!: string;
+
+  @ApiProperty()
+  proprietaireTelephone!: string | null;
+
+  @ApiProperty()
+  proprietaireEmail!: string | null;
 
   @ApiProperty()
   createdAt!: Date | null;

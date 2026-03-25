@@ -8,7 +8,7 @@ import type { UserRecord } from '../notification.models';
 @Injectable()
 export class NotificationAccessPolicy {
   assertOwnerOrAdmin(currentUser: UserRecord, ownerId: string): void {
-    const role = currentUser.typeUtilisateur?.nom;
+    const role = currentUser.type_utilisateur?.nom;
     const isAdmin = hasAnyRole(role, ROLES_ADMIN_MODERATION);
     if (!isAdmin && currentUser.id !== ownerId) {
       throw new DomainException('Accès refusé', 403, 'ACCESS_DENIED_NOTIFICATIONS');

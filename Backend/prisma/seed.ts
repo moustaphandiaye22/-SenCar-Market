@@ -1,22 +1,17 @@
+import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
-import { PrismaClient } from '@prisma/client';
+
+declare const process: any;
 
 const prisma = new PrismaClient();
 
 const IDS = {
   roles: {
     utilisateur: '00000000-0000-4000-8000-000000000001',
-    acheteur: '00000000-0000-4000-8000-000000000002',
-    vendeur: '00000000-0000-4000-8000-000000000003',
-    concessionnaire: '00000000-0000-4000-8000-000000000004',
-    proprioLoueur: '00000000-0000-4000-8000-000000000005',
+    professionnel: '00000000-0000-4000-8000-000000000004',
     admin: '00000000-0000-4000-8000-000000000006',
-    moderateur: '00000000-0000-4000-8000-000000000007',
-    superAdmin: '00000000-0000-4000-8000-000000000008',
-    inspecteur: '00000000-0000-4000-8000-000000000009',
-    garage: '00000000-0000-4000-8000-00000000000a',
-    assurance: '00000000-0000-4000-8000-00000000000b',
+    expert: '00000000-0000-4000-8000-000000000009',
   },
   users: {
     admin: '10000000-0000-4000-8000-000000000001',
@@ -70,8 +65,8 @@ const IDS = {
   signalement: '91000000-0000-4000-8000-000000000001',
   otpCode: '92000000-0000-4000-8000-000000000001',
   conversation: '93000000-0000-4000-8000-000000000001',
-  conversationParticipant1: '94000000-0000-4000-8000-000000000001',
-  conversationParticipant2: '94000000-0000-4000-8000-000000000002',
+  conversation_participant1: '94000000-0000-4000-8000-000000000001',
+  conversation_participant2: '94000000-0000-4000-8000-000000000002',
   message: '95000000-0000-4000-8000-000000000001',
 } as const;
 
@@ -84,24 +79,18 @@ async function main(): Promise<void> {
 
   const passwordHash = await hash('Password123!', 10);
 
+  // 4 rôles uniques post-refactoring
   const roleEntries = [
     { id: IDS.roles.utilisateur, nom: 'UTILISATEUR', description: 'Utilisateur standard' },
-    { id: IDS.roles.acheteur, nom: 'UTILISATEUR', description: 'Acheteur de vehicules' },
-    { id: IDS.roles.vendeur, nom: 'UTILISATEUR', description: 'Vendeur particulier' },
-    { id: IDS.roles.concessionnaire, nom: 'PROFESSIONNEL', description: 'Concessionnaire auto' },
-    { id: IDS.roles.proprioLoueur, nom: 'PROFESSIONNEL', description: 'Proprietaire loueur' },
+    { id: IDS.roles.professionnel, nom: 'PROFESSIONNEL', description: 'Professionnel auto' },
     { id: IDS.roles.admin, nom: 'ADMIN', description: 'Administrateur' },
-    { id: IDS.roles.moderateur, nom: 'ADMIN', description: 'Moderateur' },
-    { id: IDS.roles.superAdmin, nom: 'ADMIN', description: 'Super administrateur' },
-    { id: IDS.roles.inspecteur, nom: 'EXPERT', description: 'Inspecteur certification' },
-    { id: IDS.roles.garage, nom: 'PROFESSIONNEL', description: 'Gestionnaire garage' },
-    { id: IDS.roles.assurance, nom: 'PROFESSIONNEL', description: 'Compagnie assurance' },
+    { id: IDS.roles.expert, nom: 'EXPERT', description: 'Expert / Inspecteur' },
   ];
 
   for (const role of roleEntries) {
-    await prisma.typeUtilisateur.upsert({
-      where: { nom: role.nom },
-      update: role,
+    await prisma.type_utilisateur.upsert({
+      where: { id: role.id },
+      update: { nom: role.nom, description: role.description },
       create: role,
     });
   }
@@ -121,7 +110,7 @@ async function main(): Promise<void> {
       telephone: '+221770000002',
       prenom: 'Mod',
       nom: 'Systeme',
-      typeUtilisateurId: IDS.roles.moderateur,
+      typeUtilisateurId: IDS.roles.admin,  // moderateur => ADMIN
     },
     {
       id: IDS.users.inspecteur,
@@ -129,7 +118,7 @@ async function main(): Promise<void> {
       telephone: '+221770000003',
       prenom: 'Inspecteur',
       nom: 'Technique',
-      typeUtilisateurId: IDS.roles.inspecteur,
+      typeUtilisateurId: IDS.roles.expert,  // inspecteur => EXPERT
     },
     {
       id: IDS.users.vendeur,
@@ -137,7 +126,7 @@ async function main(): Promise<void> {
       telephone: '+221770000004',
       prenom: 'Vendeur',
       nom: 'Demo',
-      typeUtilisateurId: IDS.roles.vendeur,
+      typeUtilisateurId: IDS.roles.utilisateur,  // vendeur => UTILISATEUR
     },
     {
       id: IDS.users.acheteur,
@@ -145,7 +134,7 @@ async function main(): Promise<void> {
       telephone: '+221770000005',
       prenom: 'Acheteur',
       nom: 'Demo',
-      typeUtilisateurId: IDS.roles.acheteur,
+      typeUtilisateurId: IDS.roles.utilisateur,  // acheteur => UTILISATEUR
     },
     {
       id: IDS.users.proprioLoueur,
@@ -153,7 +142,7 @@ async function main(): Promise<void> {
       telephone: '+221770000006',
       prenom: 'Loueur',
       nom: 'Demo',
-      typeUtilisateurId: IDS.roles.proprioLoueur,
+      typeUtilisateurId: IDS.roles.professionnel,  // loueur => PROFESSIONNEL
     },
     {
       id: IDS.users.garageOwner,
@@ -161,7 +150,7 @@ async function main(): Promise<void> {
       telephone: '+221770000007',
       prenom: 'Garage',
       nom: 'Demo',
-      typeUtilisateurId: IDS.roles.garage,
+      typeUtilisateurId: IDS.roles.professionnel,  // garage => PROFESSIONNEL
     },
     {
       id: IDS.users.assuranceManager,
@@ -169,7 +158,7 @@ async function main(): Promise<void> {
       telephone: '+221770000008',
       prenom: 'Assureur',
       nom: 'Demo',
-      typeUtilisateurId: IDS.roles.assurance,
+      typeUtilisateurId: IDS.roles.professionnel,  // assurance => PROFESSIONNEL
     },
   ];
 
@@ -232,8 +221,8 @@ async function main(): Promise<void> {
 
   await prisma.carburant.upsert({ where: { id: IDS.carburantEssence }, update: { nom: 'Essence' }, create: { id: IDS.carburantEssence, nom: 'Essence' } });
   await prisma.carburant.upsert({ where: { id: IDS.carburantDiesel }, update: { nom: 'Diesel' }, create: { id: IDS.carburantDiesel, nom: 'Diesel' } });
-  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteManuelle }, update: { nom: 'Manuelle' }, create: { id: IDS.boiteManuelle, nom: 'Manuelle' } });
-  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteAuto }, update: { nom: 'Automatique' }, create: { id: IDS.boiteAuto, nom: 'Automatique' } });
+  await prisma.boite_vitesse.upsert({ where: { id: IDS.boiteManuelle }, update: { nom: 'Manuelle' }, create: { id: IDS.boiteManuelle, nom: 'Manuelle' } });
+  await prisma.boite_vitesse.upsert({ where: { id: IDS.boiteAuto }, update: { nom: 'Automatique' }, create: { id: IDS.boiteAuto, nom: 'Automatique' } });
 
   await prisma.vehicule.upsert({
     where: { id: IDS.vehiculeVendeur },
@@ -321,13 +310,13 @@ async function main(): Promise<void> {
 
   await prisma.photoVehicule.upsert({
     where: { id: IDS.photoVehicule1 },
-    update: { vehiculeId: IDS.vehiculeVendeur, url: 'https://cdn.sen-car.test/vehicules/v1.jpg', estPrincipale: true, ordre: 0 },
-    create: { id: IDS.photoVehicule1, vehiculeId: IDS.vehiculeVendeur, url: 'https://cdn.sen-car.test/vehicules/v1.jpg', estPrincipale: true, ordre: 0 },
+    update: { vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule1, vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
   });
   await prisma.photoVehicule.upsert({
     where: { id: IDS.photoVehicule2 },
-    update: { vehiculeId: IDS.vehiculeLoueur, url: 'https://cdn.sen-car.test/vehicules/v2.jpg', estPrincipale: true, ordre: 0 },
-    create: { id: IDS.photoVehicule2, vehiculeId: IDS.vehiculeLoueur, url: 'https://cdn.sen-car.test/vehicules/v2.jpg', estPrincipale: true, ordre: 0 },
+    update: { vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule2, vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
   });
 
   await prisma.garage.upsert({
@@ -960,10 +949,10 @@ async function main(): Promise<void> {
     },
   });
 
-  await prisma.conversationParticipant.upsert({
-    where: { id: IDS.conversationParticipant1 },
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant1 },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       dateJoin: now,
       estAdmin: true,
@@ -972,8 +961,8 @@ async function main(): Promise<void> {
       aRejointLe: now,
     },
     create: {
-      id: IDS.conversationParticipant1,
-      conversationId: IDS.conversation,
+      id: IDS.conversation_participant1,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       dateJoin: now,
       estAdmin: true,
@@ -983,10 +972,10 @@ async function main(): Promise<void> {
     },
   });
 
-  await prisma.conversationParticipant.upsert({
-    where: { id: IDS.conversationParticipant2 },
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant2 },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.proprioLoueur,
       dateJoin: now,
       estAdmin: false,
@@ -995,8 +984,8 @@ async function main(): Promise<void> {
       aRejointLe: now,
     },
     create: {
-      id: IDS.conversationParticipant2,
-      conversationId: IDS.conversation,
+      id: IDS.conversation_participant2,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.proprioLoueur,
       dateJoin: now,
       estAdmin: false,
@@ -1009,7 +998,7 @@ async function main(): Promise<void> {
   await prisma.message.upsert({
     where: { id: IDS.message },
     update: {
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
       dateEnvoi: now,
@@ -1020,7 +1009,7 @@ async function main(): Promise<void> {
     },
     create: {
       id: IDS.message,
-      conversationId: IDS.conversation,
+      conversation_id: IDS.conversation,
       utilisateurId: IDS.users.acheteur,
       contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
       dateEnvoi: now,
@@ -1033,13 +1022,13 @@ async function main(): Promise<void> {
 
   await prisma.conversation.update({
     where: { id: IDS.conversation },
-    data: { messageEpingleId: IDS.message },
+    data: { message_epingle_id: IDS.message },
   });
 
   await prisma.avis.upsert({
     where: { id: IDS.avisVehicule },
     update: {
-      auteurId: IDS.users.acheteur,
+      auteur_id: IDS.users.acheteur,
       cibleUtilisateurId: IDS.users.vendeur,
       vehiculeId: IDS.vehiculeVendeur,
       garageId: null,
@@ -1052,7 +1041,7 @@ async function main(): Promise<void> {
     },
     create: {
       id: IDS.avisVehicule,
-      auteurId: IDS.users.acheteur,
+      auteur_id: IDS.users.acheteur,
       cibleUtilisateurId: IDS.users.vendeur,
       vehiculeId: IDS.vehiculeVendeur,
       garageId: null,

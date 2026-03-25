@@ -25,6 +25,29 @@ export class NotificationService {
     private readonly mapper: NotificationMapper,
   ) {}
 
+  async createNotification(data: {
+    utilisateurId: string;
+    titre: string;
+    message: string;
+    type: string;
+    entiteId?: string;
+    entiteType?: string;
+  }): Promise<NotificationResponseDto> {
+    const created = await this.repository.createNotification({
+      id: this.repository.newId(),
+      utilisateur_id: data.utilisateurId,
+      titre: data.titre,
+      message: data.message,
+      type: data.type as any,
+      reference_id: data.entiteId,
+      reference_type: data.entiteType,
+      est_lu: false,
+      created_at: new Date(),
+    });
+
+    return this.mapper.toNotificationResponse(created);
+  }
+
   async getNotificationsByUtilisateur(
     utilisateurId: string,
     page: number,
@@ -72,11 +95,11 @@ export class NotificationService {
   async markAsRead(id: string, user: AuthenticatedUser): Promise<NotificationResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const notification = await this.mustFindNotification(id);
-    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateurId);
+    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateur_id);
 
     const updated = await this.repository.updateNotification(id, {
-      estLu: true,
-      dateLecture: new Date(),
+      est_lu: true,
+      date_lecture: new Date(),
     });
 
     return this.mapper.toNotificationResponse(updated);
@@ -90,8 +113,8 @@ export class NotificationService {
     await Promise.all(
       notifications.map((item) =>
         this.repository.updateNotification(item.id, {
-          estLu: true,
-          dateLecture: new Date(),
+          est_lu: true,
+          date_lecture: new Date(),
         }),
       ),
     );
@@ -100,7 +123,7 @@ export class NotificationService {
   async deleteNotification(id: string, user: AuthenticatedUser): Promise<void> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const notification = await this.mustFindNotification(id);
-    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateurId);
+    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateur_id);
     await this.repository.deleteNotification(id);
   }
 
@@ -119,7 +142,7 @@ export class NotificationService {
   async getNotificationById(id: string, user: AuthenticatedUser): Promise<NotificationResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const notification = await this.mustFindNotification(id);
-    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateurId);
+    this.accessPolicy.assertOwnerOrAdmin(currentUser, notification.utilisateur_id);
     return this.mapper.toNotificationResponse(notification);
   }
 
@@ -135,13 +158,13 @@ export class NotificationService {
 
     const created = await this.repository.createSignalement({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: currentUser.id } },
-      typeEntite: request.typeEntite,
-      entiteId: request.entiteId,
+      utilisateur_id: currentUser.id,
+      type_entite: request.typeEntite,
+      entite_id: request.entiteId,
       motif: request.motif,
       description,
-      statutTraitement: 'EN_ATTENTE',
-      dateSignalement: new Date(),
+      statut_traitement: 'EN_ATTENTE',
+      created_at: new Date(),
     });
 
     return this.mapper.toSignalementResponse(created);
@@ -149,7 +172,7 @@ export class NotificationService {
 
   async getSignalementById(id: string, user: AuthenticatedUser): Promise<SignalementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
 
     const signalement = await this.mustFindSignalement(id);
     return this.mapper.toSignalementResponse(signalement);
@@ -163,7 +186,7 @@ export class NotificationService {
     user: AuthenticatedUser,
   ): Promise<PaginatedResponseDto<SignalementResponseDto>> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
 
     const parsedSortDir = this.inputValidator.parseSortDir(sortDir);
     const { page: safePage, size: safeSize } = parsePaginationParams(page, size, { defaultSize: 10 });
@@ -178,7 +201,7 @@ export class NotificationService {
     user: AuthenticatedUser,
   ): Promise<PaginatedResponseDto<SignalementResponseDto>> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
 
     const { page: safePage, size: safeSize } = parsePaginationParams(page, size, { defaultSize: 10 });
     const data = await this.repository.findSignalementsByStatutPaged('EN_ATTENTE', safePage, safeSize);
@@ -192,7 +215,7 @@ export class NotificationService {
     user: AuthenticatedUser,
   ): Promise<PaginatedResponseDto<SignalementResponseDto>> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
 
     const parsed = this.inputValidator.parseSignalementStatut(statut);
     const { page: safePage, size: safeSize } = parsePaginationParams(page, size, { defaultSize: 10 });
@@ -207,7 +230,7 @@ export class NotificationService {
     user: AuthenticatedUser,
   ): Promise<PaginatedResponseDto<SignalementResponseDto>> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
 
     const parsed = this.inputValidator.parseSignalementType(typeEntite);
     const { page: safePage, size: safeSize } = parsePaginationParams(page, size, { defaultSize: 10 });
@@ -221,18 +244,18 @@ export class NotificationService {
     user: AuthenticatedUser,
   ): Promise<SignalementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
     requireNonBlank(request.actionAdmin, 'Action admin requise', 'SIGNALEMENT_ACTION_REQUIRED');
 
     const signalement = await this.mustFindSignalement(id);
-    if (signalement.statutTraitement === 'TRAITE' || signalement.statutTraitement === 'RESOLU') {
+    if (signalement.statut_traitement === 'TRAITE' || signalement.statut_traitement === 'RESOLU') {
       throw new DomainException('Ce signalement a déjà été traité', 400, 'SIGNALEMENT_ALREADY_PROCESSED');
     }
 
     const updated = await this.repository.updateSignalement(id, {
-      statutTraitement: request.nouveauStatut,
-      adminId: currentUser.id,
-      dateTraitement: new Date(),
+      statut_traitement: request.nouveauStatut,
+      traite_par: currentUser.id,
+      date_traitement: new Date(),
     });
 
     return this.mapper.toSignalementResponse(updated);
@@ -240,7 +263,7 @@ export class NotificationService {
 
   async countPending(user: AuthenticatedUser): Promise<number> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    this.accessPolicy.assertModeratorOrAdmin(currentUser.typeUtilisateur?.nom);
+    this.accessPolicy.assertModeratorOrAdmin(currentUser.type_utilisateur?.nom);
     return this.repository.countPendingSignalements();
   }
 

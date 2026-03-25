@@ -18,12 +18,16 @@ export type AdminUserRecord = {
 export type VehiculeRecord = {
   id: string;
   proprietaireId: string;
+  marqueId: string | null;
+  modeleId: string | null;
+  carburantId: string | null;
+  boiteVitesseId: string | null;
   statut: string;
   marque: { nom: string | null } | null;
   modele: { nom: string | null } | null;
   carburant: { nom: string | null } | null;
   boiteVitesse: { nom: string | null } | null;
-  proprietaire: { id: string; nom: string | null };
+  proprietaire: { id: string; nom: string | null; email: string; telephone: string };
   photos: Array<{ url: string }>;
   anneeFabrication: number | null;
   kilometrage: number | null;
@@ -39,6 +43,13 @@ export type VehiculeRecord = {
   boostFin: Date | null;
   vues: number | null;
   nombreFavoris: number | null;
+  titre: string | null;
+  nombrePortes: number | null;
+  nombrePlaces: number | null;
+  cylindree: string | null;
+  puissanceFiscale: string | null;
+  estGarantie: boolean | null;
+  garantieMois: number | null;
   createdAt: Date | null;
 };
 

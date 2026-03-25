@@ -40,13 +40,13 @@ export class PaiementRefundService {
     user: AuthenticatedUser,
   ): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
     this.assertNonNegativeFiniteAmount(montant, 'Montant de remboursement invalide', 'PAIEMENT_REFUND_AMOUNT_INVALID');
 
     const paiement = await this.mustFindPaiement(id);
     const updated = await this.repository.updatePaiement(paiement.id, {
       statut: 'REMBOURSE',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     });
     await this.paiementLogService.createLogAction(id, 'REMBOURSEMENT', `Remboursement de ${montant}`);
 
@@ -74,7 +74,7 @@ export class PaiementRefundService {
    */
   async calculateCommissionForUser(montant: number, user: AuthenticatedUser): Promise<number> {
     const currentUser = await this.mustFindCurrentUser(user.email);
-    assertHasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
+    assertHasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_SUPER_ADMIN);
     this.assertNonNegativeFiniteAmount(montant, 'Montant invalide', 'PAIEMENT_AMOUNT_INVALID');
     return this.calculateCommission(montant);
   }

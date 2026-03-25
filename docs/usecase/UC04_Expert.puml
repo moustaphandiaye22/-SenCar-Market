@@ -1,0 +1,112 @@
+@startuml UC04_Expert
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — EXPERT (Inspecteur)\nSen-Car-Market
+
+' ── ACTEURS ─────────────────────────────────────────────
+actor "EXPERT\n(Inspecteur)" as E
+actor "Systeme\n(Notification)" as SYS
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "S'authentifier\n(JWT)" as UC_AUTH
+    usecase "Voir son profil" as UC_ME
+    usecase "Modifier\nle profil" as UC_UPROFIL
+  }
+
+  package "Certification Vehicule" {
+    usecase "Consulter demandes\nassignees" as UC_GDEM
+    usecase "Verifier\nl'assignation" as UC_CHKASSIGN
+    usecase "Creer\nune inspection" as UC_CINSP
+    usecase "Saisir details\nde l'inspection" as UC_DETINSP
+    usecase "Modifier\nune inspection" as UC_UINSP
+    usecase "Supprimer\nune inspection" as UC_DINSP
+    usecase "Consulter\nune inspection" as UC_GINSP
+    usecase "Voir mes\ninspections" as UC_MYINSP
+    usecase "Uploader\nle rapport PDF" as UC_URAPPORT
+    usecase "Verifier format\ndu fichier PDF" as UC_VERPDF
+    usecase "Enregistrer\nle resultat" as UC_SRESULT
+    usecase "Renseigner\nconclusion\n(CONFORME / NON_CONFORME)" as UC_CONCL
+  }
+
+  package "Notifications (recues)" {
+    usecase "Recevoir notification\nd'assignation" as UC_NOTIFASS
+    usecase "Recevoir rappel\nd'inspection" as UC_RAPPEL
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+E --> UC_ME
+E --> UC_GDEM
+E --> UC_CINSP
+E --> UC_UINSP
+E --> UC_GINSP
+E --> UC_MYINSP
+E --> UC_URAPPORT
+E --> UC_SRESULT
+
+SYS --> UC_NOTIFASS
+SYS --> UC_RAPPEL
+
+' ── RELATIONS include / extend ───────────────────────────
+' Authentification
+UC_ME       ..> UC_AUTH : <<include>>
+UC_GDEM     ..> UC_AUTH : <<include>>
+UC_CINSP    ..> UC_AUTH : <<include>>
+UC_UINSP    ..> UC_AUTH : <<include>>
+UC_GINSP    ..> UC_AUTH : <<include>>
+UC_MYINSP   ..> UC_AUTH : <<include>>
+UC_URAPPORT ..> UC_AUTH : <<include>>
+UC_SRESULT  ..> UC_AUTH : <<include>>
+
+' Profil
+UC_UPROFIL ..> UC_ME : <<extend>>
+
+' Consultation demandes
+UC_GDEM    ..> UC_CHKASSIGN : <<include>>
+
+' Inspection
+UC_CINSP   ..> UC_GDEM     : <<include>>
+UC_CINSP   ..> UC_DETINSP  : <<include>>
+UC_UINSP   ..> UC_CINSP    : <<extend>>
+UC_DINSP   ..> UC_CINSP    : <<extend>>
+
+' Rapport PDF
+UC_URAPPORT ..> UC_CINSP  : <<include>>
+UC_URAPPORT ..> UC_VERPDF : <<include>>
+
+' Resultat
+UC_SRESULT ..> UC_CINSP : <<include>>
+UC_SRESULT ..> UC_CONCL : <<include>>
+
+' Notifications declenchees par le systeme
+UC_NOTIFASS ..> UC_GDEM  : <<extend>>
+UC_RAPPEL   ..> UC_CINSP : <<extend>>
+
+note right of UC_GDEM
+  L'EXPERT ne peut intervenir
+  que sur les demandes qui
+  lui sont assignees par l'ADMIN
+end note
+
+note right of UC_SRESULT
+  Resultat : CONFORME ou
+  NON_CONFORME. Declenche la
+  generation du badge par l'ADMIN.
+end note
+
+@enduml

@@ -13,6 +13,8 @@ import {
   ServiceGarageRecord,
   UpdateGarageInput,
   UserRecord,
+  CreateRendezVousInput,
+  RendezVousServiceRecord,
 } from './garage.models';
 import { GarageRepositoryPort } from './garage.repository.port';
 import { StatutValidationGarage } from './types/garage.types';
@@ -24,14 +26,14 @@ export class GarageRepository implements GarageRepositoryPort {
   findUserByEmail(email: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { email },
-      include: { typeUtilisateur: true },
+      include: { type_utilisateur: true },
     });
   }
 
   findUserById(id: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { id },
-      include: { typeUtilisateur: true },
+      include: { type_utilisateur: true },
     });
   }
 
@@ -40,7 +42,7 @@ export class GarageRepository implements GarageRepositoryPort {
     return this.prisma.garage.create({ data }).then((garage) =>
       this.prisma.garage.findUnique({
         where: { id: garage.id },
-        include: { proprietaire: { select: { id: true, nom: true } } },
+        include: { utilisateur: { select: { id: true, nom: true } } },
       }) as Promise<GarageRecord>,
     );
   }
@@ -50,7 +52,7 @@ export class GarageRepository implements GarageRepositoryPort {
     return this.prisma.garage.update({ where: { id }, data }).then((garage) =>
       this.prisma.garage.findUnique({
         where: { id: garage.id },
-        include: { proprietaire: { select: { id: true, nom: true } } },
+        include: { utilisateur: { select: { id: true, nom: true } } },
       }) as Promise<GarageRecord>,
     );
   }
@@ -58,14 +60,14 @@ export class GarageRepository implements GarageRepositoryPort {
   findGarageById(id: string): Promise<GarageRecord | null> {
     return this.prisma.garage.findUnique({
       where: { id },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
   deleteGarage(id: string): Promise<GarageRecord> {
     return this.prisma.garage.delete({
       where: { id },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
@@ -74,22 +76,22 @@ export class GarageRepository implements GarageRepositoryPort {
       this.prisma.garage.findMany({
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { proprietaire: { select: { id: true, nom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur: { select: { id: true, nom: true } } },
       }),
       this.prisma.garage.count(),
     ]).then(([items, total]) => ({ items, total }));
   }
 
   findGaragesByStatutPaged(statut: StatutValidationGarage, page: number, size: number): Promise<{ items: GarageRecord[]; total: number }> {
-    const where = { statutValidation: statut };
+    const where = { statut_validation: statut };
     return Promise.all([
       this.prisma.garage.findMany({
         where,
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
-        include: { proprietaire: { select: { id: true, nom: true } } },
+        orderBy: { created_at: 'desc' },
+        include: { utilisateur: { select: { id: true, nom: true } } },
       }),
       this.prisma.garage.count({ where }),
     ]).then(([items, total]) => ({ items, total }));
@@ -97,17 +99,17 @@ export class GarageRepository implements GarageRepositoryPort {
 
   findGaragesByProprietaireId(proprietaireId: string): Promise<GarageRecord[]> {
     return this.prisma.garage.findMany({
-      where: { utilisateurId: proprietaireId },
-      orderBy: { createdAt: 'desc' },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      where: { utilisateur_id: proprietaireId },
+      orderBy: { created_at: 'desc' },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
   findActiveByVille(ville: string): Promise<GarageRecord[]> {
     return this.prisma.garage.findMany({
-      where: { ville, statutValidation: 'ACTIF' },
-      orderBy: { createdAt: 'desc' },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      where: { ville, statut_validation: 'ACTIF' },
+      orderBy: { created_at: 'desc' },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
@@ -116,88 +118,146 @@ export class GarageRepository implements GarageRepositoryPort {
       where: {
         latitude: { gte: minLat, lte: maxLat },
         longitude: { gte: minLon, lte: maxLon },
-        statutValidation: 'ACTIF',
+        statut_validation: 'ACTIF',
       },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
   searchGarages(query: string): Promise<GarageRecord[]> {
     return this.prisma.garage.findMany({
       where: {
-        statutValidation: 'ACTIF',
+        statut_validation: 'ACTIF',
         OR: [
           { nom: { contains: query, mode: 'insensitive' } },
           { adresse: { contains: query, mode: 'insensitive' } },
           { ville: { contains: query, mode: 'insensitive' } },
         ],
       },
-      include: { proprietaire: { select: { id: true, nom: true } } },
+      include: { utilisateur: { select: { id: true, nom: true } } },
     });
   }
 
   createService(data: CreateServiceInput): Promise<ServiceGarageRecord> {
-    return this.prisma.serviceGarage.create({ data });
+    return this.prisma.service_garage.create({ data });
   }
 
   findServiceById(id: string): Promise<ServiceGarageRecord | null> {
-    return this.prisma.serviceGarage.findUnique({ where: { id } });
+    return this.prisma.service_garage.findUnique({ where: { id } });
   }
 
   findServicesActifs(): Promise<ServiceGarageRecord[]> {
-    return this.prisma.serviceGarage.findMany({
+    return this.prisma.service_garage.findMany({
       where: { actif: true },
       orderBy: { nom: 'asc' },
     });
   }
 
   findAssociationByGarageAndService(garageId: string, serviceId: string): Promise<GarageServiceAssociationRecord | null> {
-    return this.prisma.garageServiceAssociation.findFirst({
-      where: { garageId, serviceId },
+    return this.prisma.garage_service_association.findFirst({
+      where: { garage_id: garageId, service_id: serviceId },
       include: {
         garage: { select: { id: true, nom: true } },
-        service: { select: { id: true, nom: true } },
+        service_garage: { select: { id: true, nom: true } },
       },
     });
   }
 
   createAssociation(data: CreateGarageServiceAssociationInput): Promise<GarageServiceAssociationRecord> {
-    return this.prisma.garageServiceAssociation.create({
+    return this.prisma.garage_service_association.create({
       data,
       include: {
         garage: { select: { id: true, nom: true } },
-        service: { select: { id: true, nom: true } },
+        service_garage: { select: { id: true, nom: true } },
       },
     });
   }
 
   findServicesByGarageId(garageId: string): Promise<GarageServiceAssociationRecord[]> {
-    return this.prisma.garageServiceAssociation.findMany({
-      where: { garageId, actif: true },
+    return this.prisma.garage_service_association.findMany({
+      where: { garage_id: garageId, actif: true },
       include: {
         garage: { select: { id: true, nom: true } },
-        service: { select: { id: true, nom: true } },
+        service_garage: { select: { id: true, nom: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   }
 
   findAssociationsByGarageId(garageId: string): Promise<Array<{ id: string }>> {
-    return this.prisma.garageServiceAssociation.findMany({
-      where: { garageId },
+    return this.prisma.garage_service_association.findMany({
+      where: { garage_id: garageId },
       select: { id: true },
     });
   }
 
   deleteAssociation(id: string): Promise<void> {
-    return this.prisma.garageServiceAssociation.delete({ where: { id } }).then(() => undefined);
+    return this.prisma.garage_service_association.delete({ where: { id } }).then(() => undefined);
   }
 
   deleteManyAssociations(ids: string[]): Promise<void> {
     if (ids.length === 0) {
       return Promise.resolve();
     }
-    return this.prisma.garageServiceAssociation.deleteMany({ where: { id: { in: ids } } }).then(() => undefined);
+    return this.prisma.garage_service_association.deleteMany({ where: { id: { in: ids } } }).then(() => undefined);
+  }
+
+  createRendezVous(data: CreateRendezVousInput): Promise<RendezVousServiceRecord> {
+    return (this.prisma as any).rendez_vous_service.create({
+      data,
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord>;
+  }
+
+  findRendezVousById(id: string): Promise<RendezVousServiceRecord | null> {
+    return (this.prisma as any).rendez_vous_service.findUnique({
+      where: { id },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord | null>;
+  }
+
+  findRendezVousByClient(clientId: string): Promise<RendezVousServiceRecord[]> {
+    return (this.prisma as any).rendez_vous_service.findMany({
+      where: { client_id: clientId },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+      orderBy: { date_rendez_vous: 'desc' },
+    }) as unknown as Promise<RendezVousServiceRecord[]>;
+  }
+
+  findRendezVousByGarage(garageId: string): Promise<RendezVousServiceRecord[]> {
+    return (this.prisma as any).rendez_vous_service.findMany({
+      where: { garage_id: garageId },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+      orderBy: { date_rendez_vous: 'desc' },
+    }) as unknown as Promise<RendezVousServiceRecord[]>;
+  }
+
+  updateRendezVousStatut(id: string, statut: string): Promise<RendezVousServiceRecord> {
+    return (this.prisma as any).rendez_vous_service.update({
+      where: { id },
+      data: { statut: statut as any },
+      include: {
+        garage: { select: { id: true, nom: true, utilisateur_id: true } },
+        client: { select: { id: true, nom: true, prenom: true, email: true } },
+        service: { select: { id: true, nom: true } },
+      },
+    }) as unknown as Promise<RendezVousServiceRecord>;
   }
 
   newId(): string {

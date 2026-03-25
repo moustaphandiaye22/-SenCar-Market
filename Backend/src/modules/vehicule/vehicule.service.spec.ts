@@ -58,8 +58,8 @@ describe('VehiculeService', () => {
     await expect(
       service.createVehicule(
         {
-          marqueId: '00000000-0000-0000-0000-000000000001',
-          modeleId: '00000000-0000-0000-0000-000000000002',
+          marque: 'Toyota',
+          modele: 'Corolla',
           anneeFabrication: 2022,
           kilometrage: 1000,
           carburantId: '00000000-0000-0000-0000-000000000003',
@@ -82,8 +82,8 @@ describe('VehiculeService', () => {
     await expect(
       service.createVehicule(
         {
-          marqueId: '00000000-0000-0000-0000-000000000001',
-          modeleId: '00000000-0000-0000-0000-000000000002',
+          marque: 'Toyota',
+          modele: 'Corolla',
           anneeFabrication: 2022,
           kilometrage: 1000,
           carburantId: '00000000-0000-0000-0000-000000000003',

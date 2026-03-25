@@ -1,8 +1,11 @@
 export const STATUT_TRADEIN_VALUES = [
   'EN_ATTENTE',
+  'EN_ANALYSE', // Alias for EN_COURS_EVALUATION (used in frontend)
   'EN_COURS_EVALUATION',
   'EVALUATION_TERMINEE',
+  'OFFRE_PROPOSEE',
   'ACCEPTE',
+  'REFUSE', // Alias for REJETEE (used in frontend)
   'REJETEE',
   'ANNULEE',
 ] as const;

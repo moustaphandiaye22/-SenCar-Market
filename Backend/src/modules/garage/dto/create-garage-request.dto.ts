@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+
+import { CreateGarageServiceItemDto } from './create-garage-service-item.dto';
 
 export class CreateGarageRequestDto {
   @ApiProperty()
@@ -56,4 +59,11 @@ export class CreateGarageRequestDto {
   @IsOptional()
   @IsString()
   logoUrl?: string;
+
+  @ApiPropertyOptional({ type: [CreateGarageServiceItemDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateGarageServiceItemDto)
+  services?: CreateGarageServiceItemDto[];
 }

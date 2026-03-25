@@ -22,6 +22,7 @@ export class AdminMapper {
       typeUtilisateur: user.typeUtilisateur?.nom ?? null,
       statutVerification: user.statutVerification,
       createdAt: user.createdAt,
+      estActif: !user.deletedAt,
     };
   }
 
@@ -29,11 +30,15 @@ export class AdminMapper {
     return {
       id: vehicule.id,
       marque: vehicule.marque?.nom ?? null,
+      marqueId: vehicule.marqueId,
       modele: vehicule.modele?.nom ?? null,
+      modeleId: vehicule.modeleId,
       anneeFabrication: vehicule.anneeFabrication,
       kilometrage: vehicule.kilometrage,
       carburant: vehicule.carburant?.nom ?? null,
+      carburantId: vehicule.carburantId,
       boiteVitesse: vehicule.boiteVitesse?.nom ?? null,
+      boiteVitesseId: vehicule.boiteVitesseId,
       couleur: vehicule.couleur,
       prixVente: vehicule.prixVente != null ? String(vehicule.prixVente) : null,
       description: vehicule.description,
@@ -49,8 +54,17 @@ export class AdminMapper {
       vues: vehicule.vues,
       nombreFavoris: vehicule.nombreFavoris,
       estFavori: false,
+      titre: vehicule.titre,
+      nombrePortes: vehicule.nombrePortes,
+      nombrePlaces: vehicule.nombrePlaces,
+      cylindree: vehicule.cylindree,
+      puissanceFiscale: vehicule.puissanceFiscale,
+      estGarantie: vehicule.estGarantie,
+      garantieMois: vehicule.garantieMois,
       proprietaireNom: vehicule.proprietaire?.nom ?? null,
       proprietaireId: vehicule.proprietaireId,
+      proprietaireTelephone: vehicule.proprietaire?.telephone ?? null,
+      proprietaireEmail: vehicule.proprietaire?.email ?? null,
       createdAt: vehicule.createdAt,
     };
   }
@@ -59,6 +73,7 @@ export class AdminMapper {
     return {
       id: transaction.id,
       portefeuilleId: transaction.portefeuilleId,
+      utilisateurId: transaction.portefeuille?.utilisateurId ?? null,
       montant: String(toNumberOrZero(transaction.montant)),
       typeTransaction:
         (transaction.typeTransaction as TransactionResponseDto['typeTransaction']) ?? 'CREDIT',

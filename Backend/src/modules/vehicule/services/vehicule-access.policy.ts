@@ -29,6 +29,6 @@ export class VehiculeAccessPolicy {
     if (vehicule.statut === 'PUBLIE') {
       return;
     }
-    this.assertAdminOrOwner(role, currentUserId, vehicule.proprietaireId);
+    this.assertAdminOrOwner(role, currentUserId, vehicule.proprietaire_id);
   }
 }

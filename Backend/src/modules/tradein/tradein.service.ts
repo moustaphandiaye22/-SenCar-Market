@@ -34,37 +34,39 @@ export class TradeInService {
     const current = await this.requireCurrentUser(user.email);
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
 
-    const vehiculeActuel = await this.repository.findVehiculeById(request.vehiculeActuelId);
-    if (!vehiculeActuel) {
-      throw new DomainException('Véhicule actuel non trouvé', 404, 'VEHICULE_NOT_FOUND');
-    }
-
-    this.estimationService.assertEtatVehiculeValid(etatVehicule);
-
-    if (request.vehiculeSouhaiteId) {
-      if (request.vehiculeSouhaiteId === request.vehiculeActuelId) {
-        throw new DomainException('Le véhicule souhaité doit être différent du véhicule actuel', 400, 'TRADEIN_DESIRED_SAME_AS_CURRENT');
+    let vehiculeId = request.vehiculeActuelId;
+    if (!vehiculeId) {
+      if (!request.marque || !request.modele) {
+        throw new DomainException('Marque et modèle requis si le véhicule n\'est pas spécifié', 400, 'TRADEIN_VEHICLE_INFO_REQUIRED');
       }
-      const vehiculeSouhaite = await this.repository.findVehiculeById(request.vehiculeSouhaiteId);
-      if (!vehiculeSouhaite) {
-        throw new DomainException('Véhicule souhaité non trouvé', 404, 'VEHICULE_DESIRED_NOT_FOUND');
+      vehiculeId = await this.repository.findOrCreateVehicule(
+        current.id,
+        request.marque || '',
+        request.modele || '',
+        request.anneeFabrication || new Date().getFullYear(),
+        request.kilometrageActuel || request.kilometrage || 0,
+      );
+    } else {
+      const vehiculeActuel = await this.repository.findVehiculeById(vehiculeId);
+      if (!vehiculeActuel) {
+        throw new DomainException('Véhicule actuel non trouvé', 404, 'VEHICULE_NOT_FOUND');
       }
     }
 
     const now = new Date();
     const created = await this.repository.createDemande({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: current.id } },
-      vehiculeActuel: { connect: { id: request.vehiculeActuelId } },
-      ...(request.vehiculeSouhaiteId ? { vehiculeSouhaite: { connect: { id: request.vehiculeSouhaiteId } } } : {}),
+      utilisateur_id: current.id,
+      vehicule_actuel_id: vehiculeId,
+      ...(request.vehiculeSouhaiteId ? { vehicule_souhaite_id: request.vehiculeSouhaiteId } : {}),
       statut: 'EN_ATTENTE',
-      kilometrageActuel: request.kilometrageActuel,
-      etatVehicule,
-      dateSoumission: now,
-      estNotifie: false,
-      createdAt: now,
-      updatedAt: now,
-    });
+      kilometrage_actuel: request.kilometrageActuel || request.kilometrage || 0,
+      etat_vehicule: etatVehicule,
+      date_soumission: now,
+      est_notifie: false,
+      created_at: now,
+      updated_at: now,
+    } as any);
 
     await this.sendTradeInNotification(current.id, 'Trade-In', 'EN_ATTENTE - Votre demande est en attente d\'évaluation');
 
@@ -73,7 +75,7 @@ export class TradeInService {
 
   async getAllDemandes(page: number, size: number, user: AuthenticatedUser): Promise<PaginatedResponseDto<DemandeTradeInResponseDto>> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.securityService.ensureAdminOrModerator(current.type_utilisateur?.nom);
 
     const safePage = clampPage(page);
     const safeSize = clampSize(size, 10);
@@ -89,7 +91,7 @@ export class TradeInService {
   async getDemandeById(id: string, user: AuthenticatedUser): Promise<DemandeTradeInResponseDto> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(id);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
     return this.mapper.toDemandeResponse(demande);
   }
 
@@ -109,7 +111,7 @@ export class TradeInService {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(id);
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
 
     if (demande.statut !== 'EN_ATTENTE') {
       throw new DomainException('Seule une demande EN_ATTENTE peut être modifiée', 400, 'TRADEIN_ONLY_PENDING_UPDATE');
@@ -118,10 +120,10 @@ export class TradeInService {
     this.estimationService.assertEtatVehiculeValid(etatVehicule);
 
     const updated = await this.repository.updateDemande(id, {
-      kilometrageActuel: request.kilometrageActuel,
-      etatVehicule,
-      updatedAt: new Date(),
-    });
+      kilometrage_actuel: request.kilometrageActuel,
+      etat_vehicule: etatVehicule,
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toDemandeResponse(updated);
   }
@@ -129,7 +131,7 @@ export class TradeInService {
   async deleteDemande(id: string, user: AuthenticatedUser): Promise<void> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(id);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
 
     if (demande.statut === 'ACCEPTE') {
       throw new DomainException('Impossible de supprimer une demande acceptée', 400, 'TRADEIN_CANNOT_DELETE_ACCEPTED');
@@ -140,53 +142,67 @@ export class TradeInService {
 
   async estimerVehicule(request: EstimationRequestDto): Promise<EstimationResponseDto> {
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
-    const vehicule = await this.repository.findVehiculeById(request.vehiculeId);
-    if (!vehicule) {
-      throw new DomainException('Véhicule non trouvé', 404, 'VEHICULE_NOT_FOUND');
-    }
-
     this.estimationService.assertEtatVehiculeValid(etatVehicule);
-    return this.estimationService.calculateEstimation(vehicule, request.kilometrage, etatVehicule);
+
+    if (request.vehiculeId) {
+      const vehicule = await this.repository.findVehiculeById(request.vehiculeId);
+      if (!vehicule) {
+        throw new DomainException('Véhicule non trouvé', 404, 'VEHICULE_NOT_FOUND');
+      }
+      return this.estimationService.calculateEstimation(vehicule, request.kilometrage, etatVehicule);
+    } else {
+      // Logic for estimation without existing vehicle
+      const mockVehicule = {
+        id: 'external',
+        annee_fabrication: request.anneeFabrication ?? new Date().getFullYear(),
+        prix_vente: 10000000, // Consider a default market value or add it to request
+        marque: { nom: request.marque ?? 'Inconnu' },
+        modele: { nom: request.modele ?? 'Inconnu' },
+      } as any;
+      return this.estimationService.calculateEstimation(mockVehicule, request.kilometrage, etatVehicule);
+    }
   }
 
   async calculerEstimationAuto(demandeId: string, user: AuthenticatedUser): Promise<DemandeTradeInResponseDto> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(demandeId);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
     this.workflowService.validateTransition(demande.statut as StatutTradeIn, 'EVALUATION_TERMINEE');
 
     const estimation = this.estimationService.calculateEstimation(
-      demande.vehiculeActuel,
-      demande.kilometrageActuel ?? 0,
-      this.estimationService.normalizeEtatVehicule(demande.etatVehicule ?? 'moyen'),
+      demande.vehicule_actuel as any,
+      demande.kilometrage_actuel ?? 0,
+      this.estimationService.normalizeEtatVehicule(demande.etat_vehicule ?? 'moyen'),
     );
 
     const now = new Date();
     const updated = await this.repository.updateDemande(demandeId, {
-      prixEstime: estimation.prixEstime,
+      prix_estime: estimation.prixEstime,
       statut: 'EVALUATION_TERMINEE',
-      dateEvaluation: now,
-      updatedAt: now,
-    });
+      date_evaluation: now,
+      updated_at: now,
+    } as any);
 
     await this.repository.createHistoriqueEstimation({
       id: this.repository.newId(),
-      vehiculeId: demande.vehiculeActuel.id,
-      marque: demande.vehiculeActuel.marque?.nom ?? 'Inconnu',
-      modele: demande.vehiculeActuel.modele?.nom ?? 'Inconnu',
-      ...(demande.vehiculeActuel.anneeFabrication != null ? { anneeFabrication: demande.vehiculeActuel.anneeFabrication } : {}),
+      vehicule_id: demande.vehicule_actuel.id,
+      marque: demande.vehicule_actuel.marque?.nom ?? 'Inconnu',
+      modele: demande.vehicule_actuel.modele?.nom ?? 'Inconnu',
+      ...(demande.vehicule_actuel.annee_fabrication != null
+        ? { annee_fabrication: demande.vehicule_actuel.annee_fabrication }
+        : {}),
       kilometrage: estimation.kilometrage,
-      etatVehicule: estimation.etatVehicule,
-      prixEstime: estimation.prixEstime,
-      prixMinimum: estimation.prixMinimum,
-      prixMaximum: estimation.prixMaximum,
-      scoreCondition: estimation.scoreCondition,
+      etat_vehicule: estimation.etatVehicule,
+      prix_estime: estimation.prixEstime,
+      prix_minimum: estimation.prixMinimum,
+      prix_maximum: estimation.prixMaximum,
+      score_condition: estimation.scoreCondition,
       recommandation: estimation.recommandation,
-      dateEstimation: now,
-    });
+      date_estimation: now,
+    } as any);
 
     await this.sendTradeInNotification(
-      updated.utilisateurId,
+      updated.utilisateur_id,
       'Estimation',
       `EVALUATION_TERMINEE - Votre estimation est prête: ${estimation.prixEstime} XOF`,
     );
@@ -200,7 +216,7 @@ export class TradeInService {
     user: AuthenticatedUser,
   ): Promise<DemandeTradeInResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.securityService.ensureAdminOrModerator(current.type_utilisateur?.nom);
 
     const demande = await this.requireDemande(id);
     this.workflowService.validateTransition(demande.statut as StatutTradeIn, request.nouveauStatut);
@@ -208,31 +224,31 @@ export class TradeInService {
     const now = new Date();
     const updated = await this.repository.updateDemande(id, {
       statut: request.nouveauStatut,
-      ...(request.prixPropose != null ? { prixPropose: request.prixPropose } : {}),
-      ...(request.commentaireAdmin != null ? { commentaireAdmin: request.commentaireAdmin } : {}),
-      ...(request.motifRejet != null ? { motifRejet: request.motifRejet } : {}),
-      dateTraitement: now,
-      updatedAt: now,
-    });
+      ...(request.prixPropose != null ? { prix_propose: request.prixPropose } : {}),
+      ...(request.commentaireAdmin != null ? { commentaire_admin: request.commentaireAdmin } : {}),
+      ...(request.motifRejet != null ? { motif_rejet: request.motifRejet } : {}),
+      date_traitement: now,
+      updated_at: now,
+    } as any);
 
     const message = `${request.nouveauStatut} - ${request.commentaireAdmin ?? ''}`.trim();
-    await this.sendTradeInNotification(updated.utilisateurId, 'Validation', message);
+    await this.sendTradeInNotification(updated.utilisateur_id, 'Validation', message);
 
     return this.mapper.toDemandeResponse(updated);
   }
 
   async updateStatut(id: string, nouveauStatut: StatutTradeIn, user: AuthenticatedUser): Promise<DemandeTradeInResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.securityService.ensureAdminOrModerator(current.type_utilisateur?.nom);
 
     const demande = await this.requireDemande(id);
     this.workflowService.validateTransition(demande.statut as StatutTradeIn, nouveauStatut);
 
     const updated = await this.repository.updateDemande(id, {
       statut: nouveauStatut,
-      dateTraitement: new Date(),
-      updatedAt: new Date(),
-    });
+      date_traitement: new Date(),
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toDemandeResponse(updated);
   }
@@ -248,23 +264,23 @@ export class TradeInService {
 
   async notifierUtilisateur(id: string, user: AuthenticatedUser): Promise<DemandeTradeInResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.securityService.ensureAdminOrModerator(current.type_utilisateur?.nom);
 
     const demande = await this.requireDemande(id);
 
-    await this.sendTradeInNotification(demande.utilisateurId, 'Notification', demande.statut);
+    await this.sendTradeInNotification(demande.utilisateur_id, 'Notification', demande.statut);
 
     const updated = await this.repository.updateDemande(id, {
-      estNotifie: true,
-      updatedAt: new Date(),
-    });
+      est_notifie: true,
+      updated_at: new Date(),
+    } as any);
 
     return this.mapper.toDemandeResponse(updated);
   }
 
   async getDemandesNonNotifiees(user: AuthenticatedUser): Promise<DemandeTradeInResponseDto[]> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.securityService.ensureAdminOrModerator(current.type_utilisateur?.nom);
 
     const demandes = await this.repository.findDemandesByNotifie(false);
     return demandes.map((demande) => this.mapper.toDemandeResponse(demande));
@@ -292,13 +308,13 @@ export class TradeInService {
   private async sendTradeInNotification(utilisateurId: string, title: string, message: string): Promise<void> {
     await this.repository.createNotification({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: utilisateurId } },
+      utilisateur_id: utilisateurId,
       titre: title,
       message,
       type: 'TRADE_IN',
-      estLu: false,
-      dateCreation: new Date(),
-    });
+      est_lu: false,
+      created_at: new Date(),
+    } as any);
   }
 
 }

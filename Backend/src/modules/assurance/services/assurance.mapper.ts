@@ -12,14 +12,14 @@ export class AssuranceMapper {
     return {
       id: produit.id,
       nom: produit.nom,
-      description: produit.description,
-      prixBase: toNullableNumber(produit.prixBase) ?? 0,
-      typeAssurance: produit.typeAssurance,
-      dureeMois: produit.dureeMois,
-      estActif: produit.estActif,
-      options: produit.options.map((option) => this.toOptionResponse(option)),
-      createdAt: produit.createdAt,
-      updatedAt: produit.updatedAt,
+      description: produit.description ?? null,
+      prixBase: toNullableNumber(produit.prix_base) ?? 0,
+      typeAssurance: (produit.type_assurance as any) ?? 'TIERS',
+      dureeMois: produit.duree_mois ?? null,
+      estActif: produit.est_actif ?? false,
+      options: (produit.option_assurance ?? []).map((option) => this.toOptionResponse(option)),
+      createdAt: produit.created_at ?? null,
+      updatedAt: produit.updated_at ?? null,
     };
   }
 
@@ -27,12 +27,12 @@ export class AssuranceMapper {
     return {
       id: option.id,
       nom: option.nom,
-      description: option.description,
-      prixSupplementaire: toNullableNumber(option.prixSupplementaire),
-      produitAssuranceId: option.produitAssuranceId,
-      estActif: option.estActif,
-      createdAt: option.createdAt,
-      updatedAt: option.updatedAt,
+      description: option.description ?? null,
+      prixSupplementaire: toNullableNumber(option.prix_supplementaire) ?? 0,
+      produitAssuranceId: option.produit_assurance_id,
+      estActif: option.est_actif ?? false,
+      createdAt: option.created_at ?? null,
+      updatedAt: option.updated_at ?? null,
     };
   }
 
@@ -42,22 +42,22 @@ export class AssuranceMapper {
 
     return {
       id: subscription.id,
-      utilisateurId: subscription.utilisateurId,
-      utilisateurNom: subscription.utilisateur.nom,
-      vehiculeId: subscription.vehiculeId,
+      utilisateurId: subscription.utilisateur_id,
+      utilisateurNom: subscription.utilisateur?.nom ?? null,
+      vehiculeId: subscription.vehicule_id,
       vehiculeDescription: `${marque} ${modele}`.trim() || null,
-      produitAssuranceId: subscription.produitAssuranceId,
-      produitAssuranceNom: subscription.produitAssurance.nom,
-      optionsSelectionnees: subscription.optionsSelectionnees.map((item) => this.toOptionResponse(item.option)),
-      montantTotal: toNullableNumber(subscription.montantTotal),
-      statut: subscription.statut,
-      dateDebut: subscription.dateDebut,
-      dateFin: subscription.dateFin,
-      numeroContrat: subscription.numeroContrat,
-      documentUrl: subscription.documentUrl,
-      paiementId: subscription.paiementId,
-      createdAt: subscription.createdAt,
-      updatedAt: subscription.updatedAt,
+      produitAssuranceId: subscription.produit_assurance_id,
+      produitAssuranceNom: subscription.produit_assurance?.nom ?? null,
+      optionsSelectionnees: (subscription.souscription_options ?? []).map((item) => this.toOptionResponse(item.option_assurance)),
+      montantTotal: toNullableNumber(subscription.montant_total) ?? 0,
+      statut: (subscription.statut as any) ?? 'EN_ATTENTE',
+      dateDebut: subscription.date_debut ?? null,
+      dateFin: subscription.date_fin ?? null,
+      numeroContrat: subscription.numero_contrat ?? null,
+      documentUrl: subscription.document_url ?? null,
+      paiementId: subscription.paiement_id ?? null,
+      createdAt: subscription.created_at ?? null,
+      updatedAt: subscription.updated_at ?? null,
     };
   }
 

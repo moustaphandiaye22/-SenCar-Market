@@ -1,6 +1,9 @@
+import { join } from 'path';
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
@@ -12,6 +15,9 @@ import { PrismaService } from './prisma/prisma.service';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const expressApp = app.getHttpAdapter().getInstance();
+
+  // Servir les fichiers statiques (uploads)
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Global prefix for all routes
   app.setGlobalPrefix('api');

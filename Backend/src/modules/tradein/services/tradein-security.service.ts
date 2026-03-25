@@ -8,7 +8,7 @@ import type { UserRecord } from '../tradein.models';
 @Injectable()
 export class TradeInSecurityService {
   ensureAdminOrModerator(role: string | null | undefined): void {
-    if (!hasAnyRole(role, ROLES_ADMIN_MODERATION)) {
+    if (!hasAnyRole(role, [...ROLES_ADMIN_MODERATION, 'PROFESSIONNEL', 'EXPERT'])) {
       throw new DomainException('Accès refusé', 403, 'FORBIDDEN');
     }
   }
@@ -17,6 +17,6 @@ export class TradeInSecurityService {
     if (current.id === ownerId) {
       return;
     }
-    this.ensureAdminOrModerator(current.typeUtilisateur?.nom);
+    this.ensureAdminOrModerator(current.type_utilisateur?.nom);
   }
 }

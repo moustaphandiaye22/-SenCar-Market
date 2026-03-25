@@ -42,41 +42,52 @@ export class AuthRepository implements AuthRepositoryPort {
   findUserWithTypeById(id: string): Promise<AuthUserWithTypeRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { id },
-      include: { typeUtilisateur: true },
-    });
+      include: { type_utilisateur: true },
+    }) as any;
   }
 
   findTypeUtilisateurByNom(nom: string): Promise<AuthUserTypeRecord | null> {
-    return this.prisma.typeUtilisateur.findUnique({ where: { nom } });
+    return this.prisma.type_utilisateur.findUnique({ where: { nom } });
   }
 
   createUser(data: CreateUserInput): Promise<AuthUserRecord> {
-    return this.prisma.utilisateur.create({ data });
+    return this.prisma.utilisateur.create({ data: data as any }) as any;
   }
 
   updateUser(id: string, data: UpdateUserInput): Promise<AuthUserRecord> {
     return this.prisma.utilisateur.update({
       where: { id },
-      data,
-    });
+      data: data as any,
+    }) as any;
   }
 
   findLatestValidOtp(utilisateurId: string, type: OtpType, now: Date): Promise<OtpCodeRecord | null> {
-    return this.prisma.otpCode.findFirst({
+    return this.prisma.otp_code.findFirst({
       where: {
-        utilisateurId,
+        utilisateur_id: utilisateurId,
         type,
         utilise: false,
         expiration: { gt: now },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  findLatestOtpByEmail(email: string, type: OtpType): Promise<OtpCodeRecord | null> {
+    return this.prisma.otp_code.findFirst({
+      where: {
+        utilisateur: { email },
+        type,
+        utilise: false,
+      },
+      orderBy: { created_at: 'desc' },
     });
   }
 
   async deleteUnusedOtpByType(utilisateurId: string, type: OtpType): Promise<void> {
-    await this.prisma.otpCode.deleteMany({
+    await this.prisma.otp_code.deleteMany({
       where: {
-        utilisateurId,
+        utilisateur_id: utilisateurId,
         type,
         utilise: false,
       },
@@ -84,13 +95,13 @@ export class AuthRepository implements AuthRepositoryPort {
   }
 
   createOtp(data: CreateOtpInput): Promise<OtpCodeRecord> {
-    return this.prisma.otpCode.create({ data });
+    return this.prisma.otp_code.create({ data: data as any });
   }
 
   updateOtp(id: string, data: UpdateOtpInput): Promise<OtpCodeRecord> {
-    return this.prisma.otpCode.update({
+    return this.prisma.otp_code.update({
       where: { id },
-      data,
+      data: data as any,
     });
   }
 }

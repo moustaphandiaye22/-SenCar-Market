@@ -28,47 +28,58 @@ export class PaiementRepository implements PaiementRepositoryPort {
   findUserByEmail(email: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { email },
-      include: { typeUtilisateur: true },
-    });
+      include: { type_utilisateur: true },
+    }) as unknown as Promise<UserRecord | null>;
   }
 
   findUserById(id: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { id },
-      include: { typeUtilisateur: true },
-    });
+      include: { type_utilisateur: true },
+    }) as unknown as Promise<UserRecord | null>;
   }
 
   findReservationById(id: string): Promise<ReservationRecord | null> {
-    return this.prisma.reservationLocation.findUnique({
+    return this.prisma.reservation_location.findUnique({
       where: { id },
       include: {
-        annonceLocation: {
-          select: { proprietaireId: true },
+        annonce_location: {
+          select: { proprietaire_id: true },
         },
       },
+    }) as unknown as Promise<ReservationRecord | null>;
+  }
+
+  async updateReservationStatus(id: string, statut: string): Promise<void> {
+    await this.prisma.reservation_location.update({
+      where: { id },
+      data: { statut: statut as any },
     });
   }
 
   createPaiement(data: CreatePaiementInput): Promise<PaiementRecord> {
     return this.prisma.paiement.create({
-      data,
+      data: data as any,
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord>;
   }
 
   updatePaiement(id: string, data: UpdatePaiementInput): Promise<PaiementRecord> {
     return this.prisma.paiement.update({
       where: { id },
-      data,
+      data: data as any,
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord>;
   }
 
   findPaiementById(id: string): Promise<PaiementRecord | null> {
@@ -76,42 +87,50 @@ export class PaiementRepository implements PaiementRepositoryPort {
       where: { id },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord | null>;
   }
 
   findPaiementsByUtilisateurId(utilisateurId: string): Promise<PaiementRecord[]> {
     return this.prisma.paiement.findMany({
-      where: { utilisateurId },
-      orderBy: { createdAt: 'desc' },
+      where: { utilisateur_id: utilisateurId },
+      orderBy: { created_at: 'desc' },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord[]>;
   }
 
   findPaiementsByReservationId(reservationId: string): Promise<PaiementRecord[]> {
     return this.prisma.paiement.findMany({
-      where: { reservationId },
-      orderBy: { createdAt: 'desc' },
+      where: { reservation_id: reservationId },
+      orderBy: { created_at: 'desc' },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord[]>;
   }
 
   findPaiementsByStatut(statut: StatutPaiement): Promise<PaiementRecord[]> {
     return this.prisma.paiement.findMany({
       where: { statut },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord[]>;
   }
 
   async findAllPaiementsPaged(page: number, size: number): Promise<{ items: PaiementRecord[]; total: number }> {
@@ -119,104 +138,126 @@ export class PaiementRepository implements PaiementRepositoryPort {
       this.prisma.paiement.findMany({
         skip: page * size,
         take: size,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
         include: {
           utilisateur: { select: { id: true } },
-          reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+          reservation_location_paiement_reservation_idToreservation_location: {
+            include: { annonce_location: { select: { proprietaire_id: true } } },
+          },
         },
       }),
       this.prisma.paiement.count(),
     ]);
-    return { items, total };
+    return {
+      items: items as unknown as PaiementRecord[],
+      total,
+    };
   }
 
   findPaiementByReferenceExterne(referenceExterne: string): Promise<PaiementRecord | null> {
     return this.prisma.paiement.findFirst({
-      where: { referenceExterne },
+      where: { reference_externe: referenceExterne },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord | null>;
   }
 
   findPaiementByReferenceTransaction(referenceTransaction: string): Promise<PaiementRecord | null> {
     return this.prisma.paiement.findFirst({
-      where: { referenceTransaction },
+      where: { reference_transaction: referenceTransaction },
       include: {
         utilisateur: { select: { id: true } },
-        reservation: { include: { annonceLocation: { select: { proprietaireId: true } } } },
+        reservation_location_paiement_reservation_idToreservation_location: {
+          include: { annonce_location: { select: { proprietaire_id: true } } },
+        },
       },
-    });
+    }) as unknown as Promise<PaiementRecord | null>;
   }
 
   findPortefeuilleByUtilisateurId(utilisateurId: string): Promise<PortefeuilleRecord | null> {
-    return this.prisma.portefeuille.findUnique({ where: { utilisateurId } });
+    return this.prisma.portefeuille.findUnique({
+      where: { utilisateur_id: utilisateurId },
+    }) as unknown as Promise<PortefeuilleRecord | null>;
   }
 
   createPortefeuille(data: CreatePortefeuilleInput): Promise<PortefeuilleRecord> {
-    return this.prisma.portefeuille.create({ data });
+    return this.prisma.portefeuille.create({
+      data: data as any,
+    }) as unknown as Promise<PortefeuilleRecord>;
   }
 
   updatePortefeuille(id: string, data: UpdatePortefeuilleInput): Promise<PortefeuilleRecord> {
-    return this.prisma.portefeuille.update({ where: { id }, data });
+    return this.prisma.portefeuille.update({
+      where: { id },
+      data: data as any,
+    }) as unknown as Promise<PortefeuilleRecord>;
   }
 
   createTransaction(data: CreateTransactionInput): Promise<TransactionRecord> {
-    return this.prisma.transactionPortefeuille.create({ data });
+    return this.prisma.transaction_portefeuille.create({
+      data: data as any,
+    }) as unknown as Promise<TransactionRecord>;
   }
 
   findTransactionById(id: string): Promise<TransactionRecord | null> {
-    return this.prisma.transactionPortefeuille.findUnique({ where: { id } });
+    return this.prisma.transaction_portefeuille.findUnique({
+      where: { id },
+    }) as unknown as Promise<TransactionRecord | null>;
   }
 
   findTransactionsByUtilisateurId(utilisateurId: string): Promise<TransactionRecord[]> {
-    return this.prisma.transactionPortefeuille.findMany({
+    return this.prisma.transaction_portefeuille.findMany({
       where: {
         portefeuille: {
-          utilisateurId,
+          utilisateur_id: utilisateurId,
         },
       },
-      orderBy: { dateTransaction: 'desc' },
-    });
+      orderBy: { date_transaction: 'desc' },
+    }) as unknown as Promise<TransactionRecord[]>;
   }
 
   hasEscrowReleaseTransaction(utilisateurId: string, referenceExterne: string): Promise<boolean> {
-    return this.prisma.transactionPortefeuille
+    return this.prisma.transaction_portefeuille
       .findFirst({
         where: {
-          typeTransaction: 'ESCROW_RELEASE',
-          referenceExterne,
-          portefeuille: { utilisateurId },
+          type_transaction: 'ESCROW_RELEASE',
+          reference_externe: referenceExterne,
+          portefeuille: { utilisateur_id: utilisateurId },
         },
         select: { id: true },
       })
-      .then((value: { id: string } | null) => Boolean(value));
+      .then((value) => Boolean(value));
   }
 
   transactionBelongsToUser(transactionId: string, utilisateurId: string): Promise<boolean> {
-    return this.prisma.transactionPortefeuille
+    return this.prisma.transaction_portefeuille
       .findFirst({
         where: {
           id: transactionId,
           portefeuille: {
-            utilisateurId,
+            utilisateur_id: utilisateurId,
           },
         },
         select: { id: true },
       })
-      .then((value: { id: string } | null) => Boolean(value));
+      .then((value) => Boolean(value));
   }
 
   createPaiementLog(data: CreatePaiementLogInput): Promise<PaiementLogRecord> {
-    return this.prisma.paiementLog.create({ data });
+    return this.prisma.paiement_log.create({
+      data: data as any,
+    }) as unknown as Promise<PaiementLogRecord>;
   }
 
   findLogsByPaiementId(paiementId: string): Promise<PaiementLogRecord[]> {
-    return this.prisma.paiementLog.findMany({
-      where: { paiementId },
-      orderBy: { dateAction: 'desc' },
-    });
+    return this.prisma.paiement_log.findMany({
+      where: { paiement_id: paiementId },
+      orderBy: { date_action: 'desc' },
+    }) as unknown as Promise<PaiementLogRecord[]>;
   }
 
   newId(): string {

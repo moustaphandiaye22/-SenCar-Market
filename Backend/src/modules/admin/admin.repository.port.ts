@@ -37,6 +37,7 @@ export interface AdminRepositoryPort {
   countTransactionsByStatut(statut: string): Promise<number>;
   countAbonnements(): Promise<number>;
   countAbonnementsActifs(now: Date): Promise<number>;
+  countTradeInByStatut(statut: string[]): Promise<number>;
   findTransactionsByStatut(statut: string): Promise<TransactionRecord[]>;
 
   createNotification(data: {

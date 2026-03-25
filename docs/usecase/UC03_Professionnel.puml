@@ -1,0 +1,138 @@
+@startuml UC03_Professionnel
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+}
+
+title Diagramme de Cas d'Utilisation — PROFESSIONNEL\nSen-Car-Market
+
+' ── ACTEURS ─────────────────────────────────────────────
+actor "UTILISATEUR"   as U
+actor "PROFESSIONNEL\n(Garage / Concess.)" as P
+
+' ── GENERALISATION ──────────────────────────────────────
+' PROFESSIONNEL specialise UTILISATEUR (herite de tous ses UC)
+P --|> U
+
+' ── SYSTEME ─────────────────────────────────────────────
+rectangle "Systeme Sen-Car-Market" {
+
+  package "Authentification" {
+    usecase "S'authentifier\n(JWT)" as UC_AUTH
+  }
+
+  package "Gestion Garage" {
+    usecase "Creer un garage" as UC_CGAR
+    usecase "Saisir infos\ndu garage" as UC_INFOGAR
+    usecase "Modifier\nun garage" as UC_UGAR
+    usecase "Supprimer\nun garage" as UC_DGAR
+    usecase "Mettre a jour\nle logo" as UC_LOGO
+    usecase "Creer un service\nde garage" as UC_CSVC
+    usecase "Associer un service\nau garage" as UC_ASVC
+    usecase "Dissocier un service\ndu garage" as UC_DISSVC
+    usecase "Rechercher\npar ville / proximite" as UC_SEARCHGAR
+    usecase "Attendre validation\npar ADMIN" as UC_ATTVAL
+  }
+
+  package "Location Vehicule (Proprietaire)" {
+    usecase "Creer annonce\nde location" as UC_CLOC
+    usecase "Definir les\ndisponibilites" as UC_DISPOS
+    usecase "Modifier\nl'annonce" as UC_ULOC
+    usecase "Activer / Desactiver\nl'annonce" as UC_ACTLOC
+    usecase "Supprimer\nl'annonce" as UC_DLOC
+    usecase "Voir mes\nannonces location" as UC_MESLOC
+    usecase "Gerer les\nreservations recues" as UC_GRESREC
+    usecase "Accepter\nune reservation" as UC_ACCRES
+    usecase "Refuser\nune reservation" as UC_REFRES
+  }
+
+  package "Trade-In (Reprise)" {
+    usecase "Voir demandes\ntrade-in recues" as UC_GTRADIN
+    usecase "Calculer estimation\nautomatique" as UC_CALCESTIM
+    usecase "Valider\nune demande" as UC_VALTRADIN
+    usecase "Saisir l'offre\nde reprise" as UC_OFFRE
+    usecase "Mettre a jour\nle statut" as UC_STATTRADIN
+    usecase "Notifier\nl'utilisateur" as UC_NOTIFTRAD
+  }
+
+  package "Assurance (Produits)" {
+    usecase "Creer produit\nassurance" as UC_CPROD
+    usecase "Definir les\ngaranties" as UC_GARANT
+    usecase "Modifier produit\nassurance" as UC_UPROD
+    usecase "Supprimer produit\nassurance" as UC_DPROD
+    usecase "Creer option\nassurance" as UC_COPT
+    usecase "Modifier option\nassurance" as UC_UOPT
+    usecase "Supprimer option\nassurance" as UC_DOPT
+  }
+
+}
+
+' ── ASSOCIATIONS ────────────────────────────────────────
+P --> UC_CGAR
+P --> UC_MESLOC
+P --> UC_CLOC
+P --> UC_GRESREC
+P --> UC_GTRADIN
+P --> UC_VALTRADIN
+P --> UC_CPROD
+P --> UC_COPT
+P --> UC_SEARCHGAR
+
+' ── RELATIONS include / extend ───────────────────────────
+' Authentification
+UC_CGAR      ..> UC_AUTH : <<include>>
+UC_CLOC      ..> UC_AUTH : <<include>>
+UC_GRESREC   ..> UC_AUTH : <<include>>
+UC_GTRADIN   ..> UC_AUTH : <<include>>
+UC_VALTRADIN ..> UC_AUTH : <<include>>
+UC_CPROD     ..> UC_AUTH : <<include>>
+UC_COPT      ..> UC_AUTH : <<include>>
+
+' Garage
+UC_CGAR   ..> UC_INFOGAR : <<include>>
+UC_CGAR   ..> UC_ATTVAL  : <<include>>
+UC_UGAR   ..> UC_CGAR    : <<extend>>
+UC_DGAR   ..> UC_CGAR    : <<extend>>
+UC_LOGO   ..> UC_CGAR    : <<extend>>
+UC_CSVC   ..> UC_AUTH    : <<include>>
+UC_ASVC   ..> UC_CSVC    : <<include>>
+UC_DISSVC ..> UC_ASVC    : <<extend>>
+
+' Location
+UC_CLOC   ..> UC_DISPOS  : <<include>>
+UC_ULOC   ..> UC_CLOC    : <<extend>>
+UC_ACTLOC ..> UC_CLOC    : <<extend>>
+UC_DLOC   ..> UC_CLOC    : <<extend>>
+UC_GRESREC ..> UC_ACCRES : <<extend>>
+UC_GRESREC ..> UC_REFRES : <<extend>>
+
+' Trade-In
+UC_VALTRADIN ..> UC_CALCESTIM : <<include>>
+UC_CALCESTIM ..> UC_OFFRE     : <<include>>
+UC_STATTRADIN ..> UC_VALTRADIN : <<extend>>
+UC_NOTIFTRAD  ..> UC_STATTRADIN : <<extend>>
+
+' Assurance
+UC_CPROD ..> UC_GARANT : <<include>>
+UC_UPROD ..> UC_CPROD  : <<extend>>
+UC_DPROD ..> UC_CPROD  : <<extend>>
+UC_COPT  ..> UC_CPROD  : <<include>>
+UC_UOPT  ..> UC_COPT   : <<extend>>
+UC_DOPT  ..> UC_COPT   : <<extend>>
+
+note bottom of U
+  Le PROFESSIONNEL herite de
+  tous les cas d'utilisation
+  de l'UTILISATEUR (relation
+  de generalisation/specialisation)
+end note
+
+@enduml

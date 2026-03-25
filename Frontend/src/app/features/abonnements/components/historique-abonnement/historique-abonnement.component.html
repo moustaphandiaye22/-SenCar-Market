@@ -1,0 +1,68 @@
+<div class="max-w-5xl mx-auto p-6">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+        <lucide-angular [img]="icons.History" class="text-primary-600"></lucide-angular>
+        Historique de mes abonnements
+      </h1>
+      <p class="text-gray-500 mt-1">Consultez vos anciennes souscriptions et vos boosts.</p>
+    </div>
+    <a routerLink="/abonnements/plans" class="bg-primary-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary-200 hover:bg-primary-700 transition-all">
+      Gérer mon plan actuel
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center p-12">
+    <div class="animate-spin rounded-full h-10 w-10 border-4 border-primary-500 border-t-transparent"></div>
+  </div>
+
+  <div *ngIf="!isLoading" class="space-y-4">
+    <div *ngFor="let item of history" class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center flex-shrink-0">
+            <lucide-angular [img]="icons.Package" size="24"></lucide-angular>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-900">{{ item.abonnement?.nom }}</h3>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+              <span class="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <lucide-angular [img]="icons.Calendar" size="14"></lucide-angular>
+                {{ item.dateDebut | date:'dd MMM yyyy' }}
+              </span>
+              <span class="text-gray-300">•</span>
+              <span class="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                <lucide-angular [img]="icons.Clock" size="14"></lucide-angular>
+                Expire le {{ item.dateFin | date:'dd MMM yyyy' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <div class="text-right hidden md:block">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Montant payé</p>
+            <p class="font-bold text-gray-900">{{ item.abonnement?.prixMensuel | number }} FCFA</p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <span [class]="getStatusClass(item.statut)" class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+              {{ item.statut }}
+            </span>
+            <button class="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-50 rounded-lg transition-all">
+              <lucide-angular [img]="icons.AlertCircle" size="20"></lucide-angular>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="history.length === 0" class="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+      <div class="mb-4 flex justify-center">
+        <lucide-angular [img]="icons.History" class="text-gray-300" size="48"></lucide-angular>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900">Aucun historique</h3>
+      <p class="text-gray-500 max-w-xs mx-auto mt-2 text-sm">Vous n'avez pas encore souscrit à un plan d'abonnement ou acheté de boost.</p>
+    </div>
+  </div>
+</div>

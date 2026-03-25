@@ -1,0 +1,108 @@
+<div class="min-h-screen bg-neutral-50 py-12 px-4">
+  <div class="max-w-3xl mx-auto">
+    <!-- Back Button -->
+    <button routerLink="/locations" class="flex items-center gap-2 text-neutral-500 hover:text-primary-600 transition-colors mb-8 font-bold">
+      <lucide-angular [img]="icons.X" size="18"></lucide-angular>
+      Annuler et retourner
+    </button>
+
+    <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-neutral-200/50 border border-neutral-100">
+      <div class="mb-10 text-center">
+        <div class="w-16 h-16 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <lucide-angular [img]="icons.Car" size="32"></lucide-angular>
+        </div>
+        <h1 class="text-3xl font-black text-neutral-900 mb-2">
+          {{ isEdit ? 'Modifier mon annonce' : 'Mettre mon véhicule en location' }}
+        </h1>
+        <p class="text-neutral-500">Rentabilisez votre véhicule en le louant en toute sécurité sur notre plateforme.</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 font-bold animate-in fade-in slide-in-from-top-4 duration-300">
+        <lucide-angular [img]="icons.Info" size="20"></lucide-angular>
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3 text-green-700 font-bold animate-in fade-in slide-in-from-top-4 duration-300">
+        <lucide-angular [img]="icons.Info" size="20"></lucide-angular>
+        {{ successMessage }}
+      </div>
+
+      <form [formGroup]="rentalForm" (ngSubmit)="onSubmit()" class="space-y-8">
+        <!-- Vehicule Selection -->
+        <div class="space-y-2">
+          <label class="text-sm font-bold text-neutral-600 uppercase tracking-wider">Sélectionnez votre véhicule</label>
+          <div class="relative">
+            <lucide-angular [img]="icons.Car" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></lucide-angular>
+            <select formControlName="vehiculeId" class="w-full pl-12 pr-5 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium appearance-none">
+              <option value="" disabled>Choisir un véhicule...</option>
+              <option *ngFor="let v of mesVehicules" [value]="v.id">{{ v.marque }} {{ v.modele }} ({{ v.anneeFabrication }})</option>
+            </select>
+          </div>
+          <div *ngIf="rentalForm.get('vehiculeId')?.invalid && rentalForm.get('vehiculeId')?.touched" class="text-xs text-red-500 font-bold mt-1">
+            Veuillez sélectionner un véhicule.
+          </div>
+        </div>
+
+        <!-- Tarifs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-sm font-bold text-neutral-600 uppercase tracking-wider">Tarif Journalier (FCFA)</label>
+            <div class="relative">
+              <lucide-angular [img]="icons.DollarSign" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></lucide-angular>
+              <input type="number" formControlName="tarifJournalier" class="w-full pl-12 pr-5 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium">
+            </div>
+            <div *ngIf="rentalForm.get('tarifJournalier')?.invalid && rentalForm.get('tarifJournalier')?.touched" class="text-xs text-red-500 font-bold mt-1">
+              Tarif journalier requis (minimum 5 000 FCFA).
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-bold text-neutral-600 uppercase tracking-wider">Caution (FCFA)</label>
+            <div class="relative">
+              <lucide-angular [img]="icons.Shield" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></lucide-angular>
+              <input type="number" formControlName="caution" class="w-full pl-12 pr-5 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium">
+            </div>
+            <div *ngIf="rentalForm.get('caution')?.invalid && rentalForm.get('caution')?.touched" class="text-xs text-red-500 font-bold mt-1">
+              Caution requise (montant valide).
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+          <label class="text-sm font-bold text-neutral-600 uppercase tracking-wider">Description de l'annonce</label>
+          <div class="relative">
+            <lucide-angular [img]="icons.Info" size="18" class="absolute left-4 top-4 text-neutral-400"></lucide-angular>
+            <textarea formControlName="description" rows="3" placeholder="Présentez les points forts de votre véhicule..." class="w-full pl-12 pr-5 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium resize-none"></textarea>
+          </div>
+          <div *ngIf="rentalForm.get('description')?.invalid && rentalForm.get('description')?.touched" class="text-xs text-red-500 font-bold mt-1">
+            Veuillez fournir une description de l'annonce.
+          </div>
+        </div>
+
+        <!-- Conditions -->
+        <div class="space-y-2">
+          <label class="text-sm font-bold text-neutral-600 uppercase tracking-wider">Conditions de location</label>
+          <div class="relative">
+            <lucide-angular [img]="icons.Info" size="18" class="absolute left-4 top-4 text-neutral-400"></lucide-angular>
+            <textarea formControlName="conditions" rows="3" placeholder="Ex: Permis de conduire > 3 ans, Non fumeur, Pas d'animaux..." class="w-full pl-12 pr-5 py-4 bg-neutral-50 border border-neutral-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium resize-none"></textarea>
+          </div>
+          <div *ngIf="rentalForm.get('conditions')?.invalid && rentalForm.get('conditions')?.touched" class="text-xs text-red-500 font-bold mt-1">
+            Veuillez spécifier vos conditions.
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="pt-6">
+          <button type="submit" 
+                  [disabled]="rentalForm.invalid || isLoading"
+                  class="w-full py-5 bg-primary-600 text-white rounded-2xl font-bold text-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-3">
+            <lucide-angular *ngIf="!isLoading" [img]="icons.Save"></lucide-angular>
+            <span *ngIf="!isLoading">{{ isEdit ? 'Sauvegarder les modifications' : 'Publier mon annonce' }}</span>
+            <span *ngIf="isLoading" class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

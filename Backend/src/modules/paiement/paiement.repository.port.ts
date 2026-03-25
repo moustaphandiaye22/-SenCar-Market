@@ -20,6 +20,7 @@ export interface PaiementRepositoryPort {
   findUserByEmail(email: string): Promise<UserRecord | null>;
   findUserById(id: string): Promise<UserRecord | null>;
   findReservationById(id: string): Promise<ReservationRecord | null>;
+  updateReservationStatus(id: string, statut: string): Promise<void>;
 
   createPaiement(data: CreatePaiementInput): Promise<PaiementRecord>;
   updatePaiement(id: string, data: UpdatePaiementInput): Promise<PaiementRecord>;

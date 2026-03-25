@@ -24,43 +24,52 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
   findUserByEmail(email: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { email },
-      include: { typeUtilisateur: true },
-    });
+      include: { type_utilisateur: true },
+    }) as unknown as Promise<UserRecord | null>;
   }
 
   findUserById(id: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
       where: { id },
-      include: { typeUtilisateur: true },
-    });
+      include: { type_utilisateur: true },
+    }) as unknown as Promise<UserRecord | null>;
   }
 
   createConversation(data: CreateConversationInput): Promise<ConversationRecord> {
-    return this.prisma.conversation.create({ data });
+    return this.prisma.conversation.create({
+      data: {
+        id: data.id || randomUUID(),
+        titre: data.titre,
+        type_conversation: data.type_conversation,
+        annonce_id: data.annonce_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      } as any,
+    }) as unknown as Promise<ConversationRecord>;
   }
 
   updateConversation(id: string, data: UpdateConversationInput): Promise<ConversationRecord> {
-    return this.prisma.conversation.update({ where: { id }, data });
+    return this.prisma.conversation.update({ where: { id }, data }) as unknown as Promise<ConversationRecord>;
   }
 
   findConversationById(id: string): Promise<ConversationRecord | null> {
-    return this.prisma.conversation.findUnique({ where: { id } });
+    return this.prisma.conversation.findUnique({ where: { id } }) as unknown as Promise<ConversationRecord | null>;
   }
 
   findDirectConversation(utilisateurId1: string, utilisateurId2: string): Promise<ConversationRecord | null> {
     return this.prisma.conversation.findFirst({
       where: {
-        typeConversation: 'DIRECT',
-        participants: {
-          some: { utilisateurId: utilisateurId1 },
+        type_conversation: 'DIRECT',
+        conversation_participant: {
+          some: { utilisateur_id: utilisateurId1 },
         },
         AND: {
-          participants: {
-            some: { utilisateurId: utilisateurId2 },
+          conversation_participant: {
+            some: { utilisateur_id: utilisateurId2 },
           },
         },
       },
-    });
+    }) as unknown as Promise<ConversationRecord | null>;
   }
 
   findConversationsByParticipantPaged(
@@ -68,13 +77,13 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
     page: number,
     size: number,
   ): Promise<{ items: ConversationRecord[]; total: number }> {
-    const where = { participants: { some: { utilisateurId } } };
+    const where = { conversation_participant: { some: { utilisateur_id: utilisateurId } } };
     return Promise.all([
       this.prisma.conversation.findMany({
         where,
         skip: page * size,
         take: size,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { updated_at: 'desc' },
       }),
       this.prisma.conversation.count({ where }),
     ]).then(([items, total]) => ({ items, total }));
@@ -83,48 +92,56 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
   searchConversations(utilisateurId: string, query: string): Promise<ConversationRecord[]> {
     return this.prisma.conversation.findMany({
       where: {
-        participants: { some: { utilisateurId } },
+        conversation_participant: { some: { utilisateur_id: utilisateurId } },
         titre: { contains: query, mode: 'insensitive' },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updated_at: 'desc' },
       take: 50,
     });
   }
 
   createParticipant(data: CreateParticipantInput): Promise<ParticipantRecord> {
-    return this.prisma.conversationParticipant.create({
-      data,
-      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photoProfilUrl: true } } },
-    });
+    return this.prisma.conversation_participant.create({
+      data: {
+        id: data.id || randomUUID(),
+        conversation_id: data.conversation_id,
+        utilisateur_id: data.utilisateur_id,
+        date_join: data.date_join,
+        est_admin: data.est_admin,
+        est_mute: data.est_mute,
+        nombre_non_lus: data.nombre_non_lus,
+      } as any,
+      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photo_profil_url: true } } },
+    }) as unknown as Promise<ParticipantRecord>;
   }
 
   findParticipantsByConversationId(conversationId: string): Promise<ParticipantRecord[]> {
-    return this.prisma.conversationParticipant.findMany({
-      where: { conversationId },
-      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photoProfilUrl: true } } },
-      orderBy: { dateJoin: 'asc' },
-    });
+    return this.prisma.conversation_participant.findMany({
+      where: { conversation_id: conversationId },
+      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photo_profil_url: true } } },
+      orderBy: { date_join: 'asc' },
+    }) as unknown as Promise<ParticipantRecord[]>;
   }
 
   findParticipant(conversationId: string, utilisateurId: string): Promise<ParticipantRecord | null> {
-    return this.prisma.conversationParticipant.findUnique({
+    return this.prisma.conversation_participant.findUnique({
       where: {
-        conversationId_utilisateurId: {
-          conversationId,
-          utilisateurId,
+        conversation_id_utilisateur_id: {
+          conversation_id: conversationId,
+          utilisateur_id: utilisateurId,
         },
       },
-      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photoProfilUrl: true } } },
-    });
+      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photo_profil_url: true } } },
+    }) as unknown as Promise<ParticipantRecord | null>;
   }
 
   existsParticipant(conversationId: string, utilisateurId: string): Promise<boolean> {
-    return this.prisma.conversationParticipant
+    return this.prisma.conversation_participant
       .findUnique({
         where: {
-          conversationId_utilisateurId: {
-            conversationId,
-            utilisateurId,
+          conversation_id_utilisateur_id: {
+            conversation_id: conversationId,
+            utilisateur_id: utilisateurId,
           },
         },
         select: { id: true },
@@ -133,38 +150,53 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
   }
 
   countAdmins(conversationId: string): Promise<number> {
-    return this.prisma.conversationParticipant.count({
-      where: { conversationId, estAdmin: true },
+    return this.prisma.conversation_participant.count({
+      where: { conversation_id: conversationId, est_admin: true },
     });
   }
 
   deleteParticipant(id: string): Promise<ParticipantRecord> {
-    return this.prisma.conversationParticipant.delete({
+    return this.prisma.conversation_participant.delete({
       where: { id },
-      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photoProfilUrl: true } } },
-    });
+      include: { utilisateur: { select: { id: true, nom: true, prenom: true, photo_profil_url: true } } },
+    }) as unknown as Promise<ParticipantRecord>;
   }
 
   createMessage(data: CreateMessageInput): Promise<MessageRecord> {
     return this.prisma.message.create({
-      data,
+      data: {
+        id: data.id || randomUUID(),
+        conversation_id: data.conversation_id,
+        utilisateur_id: data.utilisateur_id,
+        contenu: data.contenu,
+        date_envoi: data.date_envoi,
+        est_lu: data.est_lu,
+        est_supprime: data.est_supprime,
+        est_epingle: data.est_epingle,
+        type_message: data.type_message,
+      } as any,
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
-    });
+    }) as unknown as Promise<MessageRecord>;
   }
 
   updateMessage(id: string, data: UpdateMessageInput): Promise<MessageRecord> {
     return this.prisma.message.update({
       where: { id },
-      data,
+      data: {
+        est_supprime: data.est_supprime,
+        est_epingle: data.est_epingle,
+        est_lu: data.est_lu,
+        date_lecture: data.date_lecture,
+      } as any,
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
-    });
+    }) as unknown as Promise<MessageRecord>;
   }
 
   findMessageById(id: string): Promise<MessageRecord | null> {
     return this.prisma.message.findUnique({
       where: { id },
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
-    });
+    }) as unknown as Promise<MessageRecord | null>;
   }
 
   findMessagesByConversationPaged(
@@ -172,13 +204,13 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
     page: number,
     size: number,
   ): Promise<{ items: MessageRecord[]; total: number }> {
-    const where = { conversationId, estSupprime: false };
+    const where = { conversation_id: conversationId, est_supprime: false };
     return Promise.all([
       this.prisma.message.findMany({
         where,
         skip: page * size,
         take: size,
-        orderBy: { dateEnvoi: 'desc' },
+        orderBy: { date_envoi: 'desc' },
         include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
       this.prisma.message.count({ where }),
@@ -192,8 +224,8 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
     size: number,
   ): Promise<{ items: MessageRecord[]; total: number }> {
     const where = {
-      conversationId,
-      estSupprime: false,
+      conversation_id: conversationId,
+      est_supprime: false,
       contenu: { contains: query, mode: 'insensitive' as const },
     };
 
@@ -202,7 +234,7 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
         where,
         skip: page * size,
         take: size,
-        orderBy: { dateEnvoi: 'desc' },
+        orderBy: { date_envoi: 'desc' },
         include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
       }),
       this.prisma.message.count({ where }),
@@ -211,8 +243,8 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
 
   findLastMessage(conversationId: string): Promise<MessageRecord | null> {
     return this.prisma.message.findFirst({
-      where: { conversationId, estSupprime: false },
-      orderBy: { dateEnvoi: 'desc' },
+      where: { conversation_id: conversationId, est_supprime: false },
+      orderBy: { date_envoi: 'desc' },
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
     });
   }
@@ -220,10 +252,10 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
   countUnread(conversationId: string, utilisateurId: string): Promise<number> {
     return this.prisma.message.count({
       where: {
-        conversationId,
-        utilisateurId: { not: utilisateurId },
-        estSupprime: false,
-        estLu: false,
+        conversation_id: conversationId,
+        utilisateur_id: { not: utilisateurId },
+        est_supprime: false,
+        est_lu: false,
       },
     });
   }
@@ -231,14 +263,14 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
   markAllAsRead(conversationId: string, utilisateurId: string): Promise<{ count: number }> {
     return this.prisma.message.updateMany({
       where: {
-        conversationId,
-        utilisateurId: { not: utilisateurId },
-        estSupprime: false,
-        estLu: false,
+        conversation_id: conversationId,
+        utilisateur_id: { not: utilisateurId },
+        est_supprime: false,
+        est_lu: false,
       },
       data: {
-        estLu: true,
-        dateLecture: new Date(),
+        est_lu: true,
+        date_lecture: new Date(),
       },
     });
   }

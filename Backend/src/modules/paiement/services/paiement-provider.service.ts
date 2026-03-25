@@ -45,8 +45,8 @@ export class PaiementProviderService {
   ): Promise<PaiementResponseDto> {
     const paiement = await this.coreService.createPaiement(request, user);
     const updated = await this.repository.updatePaiement(paiement.id, {
-      urlPaiement: this.buildPaymentUrl(this.wavePayUrlBase),
-      updatedAt: new Date(),
+      url_paiement: this.buildPaymentUrl(this.wavePayUrlBase),
+      updated_at: new Date(),
     });
     return this.toPaiementResponse(updated);
   }
@@ -60,8 +60,8 @@ export class PaiementProviderService {
   ): Promise<PaiementResponseDto> {
     const paiement = await this.coreService.createPaiement(request, user);
     const updated = await this.repository.updatePaiement(paiement.id, {
-      urlPaiement: this.buildPaymentUrl(this.omPayUrlBase),
-      updatedAt: new Date(),
+      url_paiement: this.buildPaymentUrl(this.omPayUrlBase),
+      updated_at: new Date(),
     });
     return this.toPaiementResponse(updated);
   }
@@ -85,20 +85,20 @@ export class PaiementProviderService {
   ): Promise<PaiementResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const paiement = await this.mustFindPaiement(id);
-    this.assertOwnerOrAdmin(currentUser, paiement.utilisateurId);
+    this.assertOwnerOrAdmin(currentUser, paiement.utilisateur_id);
 
-    if (paiement.isEscrow !== true) {
+    if (paiement.is_escrow !== true) {
       throw new DomainException('Libération possible uniquement pour un paiement escrow', 400, 'ESCROW_NOT_ENABLED');
     }
     if (paiement.statut !== 'CONFIRME') {
       throw new DomainException('Paiement doit être confirmé avant libération', 400, 'ESCROW_RELEASE_REQUIRES_CONFIRMED_PAYMENT');
     }
-    const reference = paiement.referenceTransaction;
+    const reference = paiement.reference_transaction;
     if (!reference) {
       throw new DomainException('Référence transaction manquante', 400, 'ESCROW_REFERENCE_MISSING');
     }
 
-    const proprietaireId = paiement.reservation?.annonceLocation?.proprietaireId;
+    const proprietaireId = paiement.reservation?.annonce_location?.proprietaire_id;
     if (proprietaireId) {
       const alreadyReleased = await this.repository.hasEscrowReleaseTransaction(proprietaireId, reference);
       if (alreadyReleased) {
@@ -174,7 +174,7 @@ export class PaiementProviderService {
 
   private assertOwnerOrAdmin(currentUser: UserRecord, ownerId: string | null): void {
     // Admin roles can perform this action
-    if (hasAnyRole(currentUser.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION)) {
+    if (hasAnyRole(currentUser.type_utilisateur?.nom, ROLES_ADMIN_MODERATION)) {
       return;
     }
     // Otherwise, check ownership

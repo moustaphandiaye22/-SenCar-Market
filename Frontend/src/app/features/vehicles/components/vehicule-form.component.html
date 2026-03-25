@@ -1,0 +1,271 @@
+<div class="min-h-screen bg-gray-50/50 pb-20 pt-10">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+          {{ isEditMode ? 'Modifier mon annonce' : 'Vendre mon véhicule' }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Remplissez les détails ci-dessous pour présenter votre véhicule au mieux.
+        </p>
+      </div>
+      <a routerLink="/vehicles" class="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center">
+        <lucide-angular [img]="icons.X" class="mr-2" size="16"></lucide-angular>
+        Annuler
+      </a>
+    </div>
+
+    <!-- Error Alert -->
+    <div *ngIf="errorMessage" class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+      <lucide-angular [img]="icons.AlertCircle" size="20" class="text-red-600 shrink-0 mt-0.5"></lucide-angular>
+      <p class="text-sm text-red-700 font-medium">{{ errorMessage }}</p>
+    </div>
+
+    <form [formGroup]="vehiculeForm" (ngSubmit)="onSubmit()" class="space-y-8">
+      
+      <!-- Informations Générales -->
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/30 flex items-center gap-2">
+          <lucide-angular [img]="icons.Info" size="18" class="text-primary-600"></lucide-angular>
+          <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Informations Générales</h2>
+        </div>
+        
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Titre de l'annonce</label>
+            <input type="text" formControlName="titre" placeholder="ex: Peugeot 508 en excellent état..." 
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            <p class="mt-1 text-xs text-gray-400">Optionnel &mdash; Un titre accrocheur attire plus de clients.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Marque *</label>
+            <input type="text" formControlName="marque" placeholder="Saisir la marque..." 
+                   [class.border-red-500]="hasError('marque', 'required')"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            <p *ngIf="hasError('marque', 'required')" class="mt-1 text-xs text-red-600">La marque est obligatoire.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Modèle *</label>
+            <input type="text" formControlName="modele" placeholder="Saisir le modèle..." 
+                   [class.border-red-500]="hasError('modele', 'required')"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            <p *ngIf="hasError('modele', 'required')" class="mt-1 text-xs text-red-600">Le modèle est obligatoire.</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Année *</label>
+              <input type="number" formControlName="anneeFabrication" 
+                     [class.border-red-500]="hasError('anneeFabrication', 'required') || hasError('anneeFabrication', 'min')"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+              <p *ngIf="hasError('anneeFabrication', 'required')" class="mt-1 text-xs text-red-600">L'année est requise.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Kilométrage (KM)*</label>
+              <input type="number" formControlName="kilometrage" 
+                     [class.border-red-500]="hasError('kilometrage', 'required') || hasError('kilometrage', 'min')"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+              <p *ngIf="hasError('kilometrage', 'required')" class="mt-1 text-xs text-red-600">Le kilométrage est requis.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Carburant *</label>
+              <select formControlName="carburantId" 
+                      [class.border-red-500]="hasError('carburantId', 'required')"
+                      class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all">
+
+                <option value="" disabled>Choisir</option>
+                <option *ngFor="let c of carburants" [value]="c.id">{{c.nom}}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Boite *</label>
+              <select formControlName="boiteVitesseId" 
+                      [class.border-red-500]="hasError('boiteVitesseId', 'required')"
+                      class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all">
+
+                <option value="" disabled>Choisir</option>
+                <option *ngFor="let b of boites" [value]="b.id">{{b.nom}}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre de Portes</label>
+              <input type="number" formControlName="nombrePortes" 
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre de Places</label>
+              <input type="number" formControlName="nombrePlaces" 
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Cylindrée</label>
+              <input type="text" formControlName="cylindree" placeholder="ex: 2.0L, 1600cc"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Puissance Fiscale</label>
+              <input type="text" formControlName="puissanceFiscale" placeholder="ex: 7 CV"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Couleur *</label>
+              <input type="text" formControlName="couleur" placeholder="ex: Blanc, Noir..." 
+                     [class.border-red-500]="hasError('couleur', 'required')"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Immatriculation</label>
+              <input type="text" formControlName="immatriculation" placeholder="ex: DK-1234-AB" 
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Numéro VIN (Châssis) *</label>
+            <input type="text" formControlName="numeroVin" placeholder="Saisir le numéro VIN..." 
+                   [class.border-red-500]="hasError('numeroVin', 'required')"
+                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+          </div>
+
+          <div class="md:col-span-2 flex flex-col gap-4 border-t border-gray-50 pt-4">
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <div class="relative flex items-center">
+                <input type="checkbox" formControlName="estGarantie" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:bg-green-500 checked:border-green-500" />
+                <lucide-angular [img]="icons.Check" size="12" class="absolute left-1 text-white opacity-0 peer-checked:opacity-100 transition-opacity"></lucide-angular>
+              </div>
+              <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Le véhicule est sous garantie</span>
+            </label>
+
+            <div *ngIf="vehiculeForm.get('estGarantie')?.value" class="animate-in fade-in slide-in-from-left-2 duration-200">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Durée de la garantie (mois)</label>
+              <input type="number" formControlName="garantieMois" 
+                     class="w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Prix & Description -->
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/30 flex items-center gap-2">
+          <lucide-angular [img]="icons.Car" size="18" class="text-primary-600"></lucide-angular>
+          <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Prix & Détails</h2>
+        </div>
+        
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Prix de vente (FCFA) *</label>
+              <input type="number" formControlName="prixVente" placeholder="ex: 5000000" 
+                     [class.border-red-500]="hasError('prixVente', 'required') || hasError('prixVente', 'min')"
+                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-bold text-primary-600" />
+              <p *ngIf="hasError('prixVente', 'required')" class="mt-1 text-xs text-red-600">Le prix est obligatoire.</p>
+            </div>
+            <div class="flex flex-col gap-4 pt-2">
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <div class="relative flex items-center">
+                  <input type="checkbox" formControlName="prixNegociable" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:bg-primary-500 checked:border-primary-500" />
+                  <lucide-angular [img]="icons.Check" size="12" class="absolute left-1 text-white opacity-0 peer-checked:opacity-100 transition-opacity"></lucide-angular>
+                </div>
+                <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Prix négociable</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <div class="relative flex items-center">
+                  <input type="checkbox" formControlName="certifie" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:bg-blue-500 checked:border-blue-500" />
+                  <lucide-angular [img]="icons.Check" size="12" class="absolute left-1 text-white opacity-0 peer-checked:opacity-100 transition-opacity"></lucide-angular>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Véhicule certifié</span>
+                  <span class="text-[10px] text-gray-400 font-normal">Sera vérifié par nos experts</span>
+                </div>
+              </label>
+              
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <div class="relative flex items-center">
+                  <input type="checkbox" formControlName="enregistrerEnBrouillon" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:bg-gray-500 checked:border-gray-500" />
+                  <lucide-angular [img]="icons.Check" size="12" class="absolute left-1 text-white opacity-0 peer-checked:opacity-100 transition-opacity"></lucide-angular>
+                </div>
+                <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Enregistrer en tant que brouillon</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Description détaillée *</label>
+            <textarea formControlName="description" rows="5" placeholder="Décrivez l'état du véhicule, les options, l'entretien..." 
+                      [class.border-red-500]="hasError('description', 'required') || hasError('description', 'minlength')"
+                      class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"></textarea>
+            <p *ngIf="hasError('description', 'required')" class="mt-1 text-xs text-red-600">La description est obligatoire.</p>
+            <p *ngIf="hasError('description', 'minlength')" class="mt-1 text-xs text-red-600">Trop court (min 20 caractères).</p>
+            <p class="mt-2 text-xs text-gray-500">Une bonne description aide à vendre plus vite.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Photos -->
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/30 flex items-center gap-2">
+          <lucide-angular [img]="icons.Image" size="18" class="text-primary-600"></lucide-angular>
+          <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Photos du véhicule</h2>
+        </div>
+        
+        <div class="p-6">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Photos du véhicule</label>
+          <input 
+            type="file"
+            multiple
+            accept="image/*"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+            (change)="onPhotosChange($event)"
+           />
+          <p class="mt-2 text-xs text-gray-500">Sélectionnez les images de votre véhicule.</p>
+          
+          <div class="mt-4 grid grid-cols-4 gap-4" *ngIf="vehiculeForm.get('photosUrls')?.value?.length">
+            <div *ngFor="let url of vehiculeForm.get('photosUrls')?.value; let i = index" class="relative group h-24 rounded-lg overflow-hidden border border-gray-100">
+              <img [src]="getImageUrl(url)" class="w-full h-full object-cover">
+              <button type="button" (click)="removePhoto(i)" class="absolute top-1 right-1 bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <lucide-angular [img]="icons.X" size="14" class="text-red-500 hover:text-red-700 bg-red-100/50 rounded-full"></lucide-angular>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Submit -->
+      <div class="flex items-center justify-end gap-4">
+        <button 
+          type="button" 
+          routerLink="/vehicles"
+          class="px-6 py-3 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all"
+        >
+          Annuler
+        </button>
+        <button 
+          type="submit" 
+          [disabled]="submitting || vehiculeForm.invalid"
+          class="px-8 py-3 bg-primary-600 text-white rounded-xl shadow-lg shadow-primary-200 hover:bg-primary-700 disabled:opacity-50 transition-all flex items-center gap-2"
+        >
+          <span *ngIf="submitting">Enregistrement...</span>
+          <span *ngIf="!submitting">{{ isEditMode ? 'Enregistrer les modifications' : 'Publier mon annonce' }}</span>
+          <lucide-angular *ngIf="!submitting" [img]="icons.ArrowRight" size="18"></lucide-angular>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

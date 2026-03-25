@@ -68,10 +68,10 @@ export class CertificationService {
       utilisateur: { connect: { id: current.id } },
       vehicule: { connect: { id: request.vehiculeId } },
       statut: 'EN_ATTENTE',
-      montantPaiement: this.montantInspection,
-      dateSoumission: now,
-      createdAt: now,
-      updatedAt: now,
+      montant_paiement: this.montantInspection,
+      date_soumission: now,
+      created_at: now,
+      updated_at: now,
     });
 
     return this.mapper.toDemandeResponse(created);
@@ -80,17 +80,17 @@ export class CertificationService {
   async processPayment(demandeId: string, paiementId: string, user: AuthenticatedUser): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(demandeId);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
 
     if (demande.statut !== 'EN_ATTENTE') {
       throw new DomainException('Paiement impossible dans cet état', 400, 'CERTIFICATION_PAYMENT_INVALID_STATE');
     }
 
     const updated = await this.repository.updateDemande(demandeId, {
-      paiementId,
+      paiement_id: paiementId,
       statut: 'PAYEE',
-      dateTraitement: new Date(),
-      updatedAt: new Date(),
+      date_traitement: new Date(),
+      updated_at: new Date(),
     });
 
     return this.mapper.toDemandeResponse(updated);
@@ -98,7 +98,7 @@ export class CertificationService {
 
   async assignInspector(demandeId: string, inspecteurId: string, user: AuthenticatedUser): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const [demande, inspecteur] = await Promise.all([
       this.requireDemande(demandeId),
@@ -108,7 +108,7 @@ export class CertificationService {
     if (!inspecteur) {
       throw new DomainException('Inspecteur non trouvé', 404, 'INSPECTOR_NOT_FOUND');
     }
-    if (inspecteur.typeUtilisateur?.nom !== ROLE_EXPERT) {
+    if (inspecteur.type_utilisateur?.nom !== ROLE_EXPERT) {
       throw new DomainException('Utilisateur inspecteur invalide', 400, 'CERTIFICATION_INVALID_INSPECTOR_ROLE');
     }
     if (demande.statut !== 'PAYEE') {
@@ -116,9 +116,9 @@ export class CertificationService {
     }
 
     const updated = await this.repository.updateDemande(demandeId, {
-      inspecteur: { connect: { id: inspecteurId } },
+      utilisateur_demande_certification_inspecteur_idToutilisateur: { connect: { id: inspecteurId } },
       statut: 'INSPECTION_PROGRAMMEE',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     });
 
     return this.mapper.toDemandeResponse(updated);
@@ -130,15 +130,15 @@ export class CertificationService {
     user: AuthenticatedUser,
   ): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const demande = await this.requireDemande(demandeId);
     this.workflowService.validateTransition(demande.statut as StatutDemandeCertification, statut);
 
     const updated = await this.repository.updateDemande(demandeId, {
       statut,
-      ...(statut === 'REJETEE' ? { dateTraitement: new Date() } : {}),
-      updatedAt: new Date(),
+      ...(statut === 'REJETEE' ? { date_traitement: new Date() } : {}),
+      updated_at: new Date(),
     });
 
     return this.mapper.toDemandeResponse(updated);
@@ -160,20 +160,20 @@ export class CertificationService {
   ): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(id);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
 
     if (demande.statut !== 'EN_ATTENTE') {
       throw new DomainException('Seule une demande EN_ATTENTE peut être modifiée', 400, 'CERTIFICATION_ONLY_PENDING_UPDATE');
     }
 
-    const updated = await this.repository.updateDemande(id, { updatedAt: new Date() });
+    const updated = await this.repository.updateDemande(id, { updated_at: new Date() });
     return this.mapper.toDemandeResponse(updated);
   }
 
   async deleteDemandeCertification(id: string, user: AuthenticatedUser): Promise<void> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(id);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
 
     if (demande.statut === 'CERTIFIEE') {
       throw new DomainException('Impossible de supprimer une demande certifiée', 400, 'CERTIFICATION_CANNOT_DELETE_CERTIFIED');
@@ -188,44 +188,44 @@ export class CertificationService {
     user: AuthenticatedUser,
   ): Promise<InspectionResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
 
     const demande = await this.requireDemande(demandeId);
     if (demande.statut !== 'INSPECTION_PROGRAMMEE') {
       throw new DomainException('La demande doit être INSPECTION_PROGRAMMEE', 400, 'CERTIFICATION_REQUIRES_SCHEDULED_INSPECTION');
     }
-    if (!demande.inspecteurId) {
+    if (!demande.inspecteur_id) {
       throw new DomainException('Aucun inspecteur attribué à cette demande', 400, 'CERTIFICATION_INSPECTOR_NOT_ASSIGNED');
     }
-    this.securityService.ensureInspectionAccess(current, demande.inspecteurId);
+    this.securityService.ensureInspectionAccess(current, demande.inspecteur_id);
 
     const when = new Date(request.dateInspection);
     this.documentService.assertValidDate(when, 'CERTIFICATION_INVALID_INSPECTION_DATE');
     const now = new Date();
     const created = await this.repository.createInspection({
       id: this.repository.newId(),
-      demandeCertification: { connect: { id: demandeId } },
-      inspecteur: { connect: { id: demande.inspecteurId } },
-      dateInspection: when,
+      demande_certification: { connect: { id: demandeId } },
+      utilisateur: { connect: { id: demande.inspecteur_id } },
+      date_inspection: when,
       resultat: 'EN_COURS',
       ...(request.commentaire ? { commentaire: request.commentaire } : {}),
       ...(request.kilometrage != null ? { kilometrage: request.kilometrage } : {}),
-      ...(request.etatMoteur ? { etatMoteur: request.etatMoteur } : {}),
-      ...(request.etatGenerateur ? { etatGenerateur: request.etatGenerateur } : {}),
-      ...(request.etatFreinage ? { etatFreinage: request.etatFreinage } : {}),
-      ...(request.etatSuspension ? { etatSuspension: request.etatSuspension } : {}),
-      ...(request.etatTransmission ? { etatTransmission: request.etatTransmission } : {}),
-      ...(request.etatPneus ? { etatPneus: request.etatPneus } : {}),
-      ...(request.etatCarrosserie ? { etatCarrosserie: request.etatCarrosserie } : {}),
-      ...(request.etatInterieur ? { etatInterieur: request.etatInterieur } : {}),
-      createdAt: now,
-      updatedAt: now,
+      ...(request.etatMoteur ? { etat_moteur: request.etatMoteur } : {}),
+      ...(request.etatGenerateur ? { etat_generateur: request.etatGenerateur } : {}),
+      ...(request.etatFreinage ? { etat_freinage: request.etatFreinage } : {}),
+      ...(request.etatSuspension ? { etat_suspension: request.etatSuspension } : {}),
+      ...(request.etatTransmission ? { etat_transmission: request.etatTransmission } : {}),
+      ...(request.etatPneus ? { etat_pneus: request.etatPneus } : {}),
+      ...(request.etatCarrosserie ? { etat_carrosserie: request.etatCarrosserie } : {}),
+      ...(request.etatInterieur ? { etat_interieur: request.etatInterieur } : {}),
+      created_at: now,
+      updated_at: now,
     });
 
     await this.repository.updateDemande(demandeId, {
       statut: 'INSPECTE',
-      dateInspection: when,
-      updatedAt: new Date(),
+      date_inspection: when,
+      updated_at: new Date(),
     });
 
     return this.mapper.toInspectionResponse(created);
@@ -233,13 +233,13 @@ export class CertificationService {
 
   async getInspectionById(id: string, user: AuthenticatedUser): Promise<InspectionResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
 
     const inspection = await this.repository.findInspectionById(id);
     if (!inspection) {
       throw new DomainException('Inspection non trouvée', 404, 'CERTIFICATION_INSPECTION_NOT_FOUND');
     }
-    this.securityService.ensureInspectionAccess(current, inspection.inspecteurId);
+    this.securityService.ensureInspectionAccess(current, inspection.inspecteur_id);
     return this.mapper.toInspectionResponse(inspection);
   }
 
@@ -250,7 +250,7 @@ export class CertificationService {
     user: AuthenticatedUser,
   ): Promise<PaginatedResponseDto<InspectionResponseDto>> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
     this.securityService.ensureInspectionAccess(current, inspecteurId);
 
     const safePage = clampPage(page);
@@ -266,13 +266,13 @@ export class CertificationService {
 
   async updateInspection(id: string, request: CreateInspectionRequestDto, user: AuthenticatedUser): Promise<InspectionResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
 
     const inspection = await this.repository.findInspectionById(id);
     if (!inspection) {
       throw new DomainException('Inspection non trouvée', 404, 'CERTIFICATION_INSPECTION_NOT_FOUND');
     }
-    this.securityService.ensureInspectionAccess(current, inspection.inspecteurId);
+    this.securityService.ensureInspectionAccess(current, inspection.inspecteur_id);
 
     if (inspection.resultat === 'REUSSI' || inspection.resultat === 'ECHEC') {
       throw new DomainException('Impossible de modifier une inspection terminée', 400, 'CERTIFICATION_CANNOT_UPDATE_FINISHED_INSPECTION');
@@ -281,7 +281,7 @@ export class CertificationService {
     this.documentService.assertValidDate(newInspectionDate, 'CERTIFICATION_INVALID_INSPECTION_DATE');
 
     const updated = await this.repository.updateInspection(id, {
-      dateInspection: newInspectionDate,
+      date_inspection: newInspectionDate,
       ...(request.kilometrage != null ? { kilometrage: request.kilometrage } : {}),
       ...(request.etatMoteur ? { etatMoteur: request.etatMoteur } : {}),
       ...(request.etatGenerateur ? { etatGenerateur: request.etatGenerateur } : {}),
@@ -289,9 +289,9 @@ export class CertificationService {
       ...(request.etatSuspension ? { etatSuspension: request.etatSuspension } : {}),
       ...(request.etatTransmission ? { etatTransmission: request.etatTransmission } : {}),
       ...(request.etatPneus ? { etatPneus: request.etatPneus } : {}),
-      ...(request.etatCarrosserie ? { etatCarrosserie: request.etatCarrosserie } : {}),
-      ...(request.etatInterieur ? { etatInterieur: request.etatInterieur } : {}),
-      updatedAt: new Date(),
+      ...(request.etatCarrosserie ? { etat_carrosserie: request.etatCarrosserie } : {}),
+      ...(request.etatInterieur ? { etat_interieur: request.etatInterieur } : {}),
+      updated_at: new Date(),
     });
 
     return this.mapper.toInspectionResponse(updated);
@@ -299,7 +299,7 @@ export class CertificationService {
 
   async deleteInspection(id: string, user: AuthenticatedUser): Promise<void> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const inspection = await this.repository.findInspectionById(id);
     if (!inspection) {
@@ -311,7 +311,7 @@ export class CertificationService {
 
   async uploadRapportPdf(inspectionId: string, file: UploadedFileLike, user: AuthenticatedUser): Promise<RapportInspectionResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
     if (!file?.buffer?.length) {
       throw new DomainException('Fichier PDF requis', 400, 'CERTIFICATION_REPORT_FILE_REQUIRED');
     }
@@ -320,16 +320,16 @@ export class CertificationService {
     if (!inspection) {
       throw new DomainException('Inspection non trouvée', 404, 'CERTIFICATION_INSPECTION_NOT_FOUND');
     }
-    this.securityService.ensureInspectionAccess(current, inspection.inspecteurId);
+    this.securityService.ensureInspectionAccess(current, inspection.inspecteur_id);
 
     const storedPath = await this.documentService.storePdf(file);
     const existing = await this.repository.findRapportByInspectionId(inspectionId);
 
     if (existing) {
       const updated = await this.repository.updateRapport(existing.id, {
-        urlRapportPdf: storedPath,
-        dateGeneration: new Date(),
-        updatedAt: new Date(),
+        url_rapport_pdf: storedPath,
+        date_generation: new Date(),
+        updated_at: new Date(),
       });
       return this.mapper.toRapportResponse(updated);
     }
@@ -338,10 +338,10 @@ export class CertificationService {
     const created = await this.repository.createRapport({
       id: this.repository.newId(),
       inspection: { connect: { id: inspectionId } },
-      urlRapportPdf: storedPath,
-      dateGeneration: now,
-      createdAt: now,
-      updatedAt: now,
+      url_rapport_pdf: storedPath,
+      date_generation: now,
+      created_at: now,
+      updated_at: now,
     });
     return this.mapper.toRapportResponse(created);
   }
@@ -352,13 +352,13 @@ export class CertificationService {
     user: AuthenticatedUser,
   ): Promise<InspectionResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_INSPECTION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_INSPECTION);
 
     const inspection = await this.repository.findInspectionById(inspectionId);
     if (!inspection) {
       throw new DomainException('Inspection non trouvée', 404, 'CERTIFICATION_INSPECTION_NOT_FOUND');
     }
-    this.securityService.ensureInspectionAccess(current, inspection.inspecteurId);
+    this.securityService.ensureInspectionAccess(current, inspection.inspecteur_id);
 
     if (!RESULTAT_INSPECTION_VALUES.includes(request.resultat)) {
       throw new DomainException('Résultat inspection invalide', 400, 'CERTIFICATION_RESULT_INVALID');
@@ -367,53 +367,53 @@ export class CertificationService {
     const existing = await this.repository.findRapportByInspectionId(inspectionId);
     if (existing) {
       await this.repository.updateRapport(existing.id, {
-        ...(request.scoreGlobale != null ? { scoreGlobale: request.scoreGlobale } : {}),
+        ...(request.scoreGlobale != null ? { score_globale: request.scoreGlobale } : {}),
         ...(request.recommendations ? { recommendations: request.recommendations } : {}),
         ...(request.conclusion ? { conclusion: request.conclusion } : {}),
-        ...(request.estApprouve != null ? { estApprouve: request.estApprouve } : {}),
-        dateGeneration: new Date(),
-        updatedAt: new Date(),
+        ...(request.estApprouve != null ? { est_approuve: request.estApprouve } : {}),
+        date_generation: new Date(),
+        updated_at: new Date(),
       });
     } else {
       const now = new Date();
       await this.repository.createRapport({
         id: this.repository.newId(),
         inspection: { connect: { id: inspectionId } },
-        ...(request.scoreGlobale != null ? { scoreGlobale: request.scoreGlobale } : {}),
+        ...(request.scoreGlobale != null ? { score_globale: request.scoreGlobale } : {}),
         ...(request.recommendations ? { recommendations: request.recommendations } : {}),
         ...(request.conclusion ? { conclusion: request.conclusion } : {}),
-        ...(request.estApprouve != null ? { estApprouve: request.estApprouve } : {}),
-        dateGeneration: now,
-        createdAt: now,
-        updatedAt: now,
+        ...(request.estApprouve != null ? { est_approuve: request.estApprouve } : {}),
+        date_generation: now,
+        created_at: now,
+        updated_at: now,
       });
     }
 
     const updatedInspection = await this.repository.updateInspection(inspectionId, {
       resultat: request.resultat,
       ...(request.conclusion ? { commentaire: request.conclusion } : {}),
-      ...(request.scoreGlobale != null ? { scoreTotal: request.scoreGlobale } : {}),
-      updatedAt: new Date(),
+      ...(request.scoreGlobale != null ? { score_total: request.scoreGlobale } : {}),
+      updated_at: new Date(),
     });
 
     if (request.resultat === 'REUSSI') {
-      await this.repository.updateDemande(inspection.demandeCertificationId, {
+      await this.repository.updateDemande(inspection.demande_certification_id, {
         statut: 'CERTIFIEE',
-        dateTraitement: new Date(),
-        updatedAt: new Date(),
+        date_traitement: new Date(),
+        updated_at: new Date(),
       });
     } else if (request.resultat === 'ECHEC') {
-      await this.repository.updateDemande(inspection.demandeCertificationId, {
+      await this.repository.updateDemande(inspection.demande_certification_id, {
         statut: 'REJETEE',
-        ...(request.conclusion ? { motifRejet: request.conclusion } : {}),
-        dateTraitement: new Date(),
-        updatedAt: new Date(),
+        ...(request.conclusion ? { motif_rejet: request.conclusion } : {}),
+        date_traitement: new Date(),
+        updated_at: new Date(),
       });
     } else {
-      await this.repository.updateDemande(inspection.demandeCertificationId, {
+      await this.repository.updateDemande(inspection.demande_certification_id, {
         statut: 'INSPECTE',
-        dateTraitement: new Date(),
-        updatedAt: new Date(),
+        date_traitement: new Date(),
+        updated_at: new Date(),
       });
     }
 
@@ -422,7 +422,7 @@ export class CertificationService {
 
   async generateBadge(demandeId: string, user: AuthenticatedUser): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const demande = await this.requireDemande(demandeId);
     if (demande.statut !== 'CERTIFIEE') {
@@ -431,8 +431,8 @@ export class CertificationService {
 
     const badgeUrl = this.documentService.generateBadgeUrl(demandeId);
     const updated = await this.repository.updateDemande(demandeId, {
-      badgeCertifieUrl: badgeUrl,
-      updatedAt: new Date(),
+      badge_certifie_url: badgeUrl,
+      updated_at: new Date(),
     });
 
     return this.mapper.toDemandeResponse(updated);
@@ -441,13 +441,13 @@ export class CertificationService {
   async getDemandeById(demandeId: string, user: AuthenticatedUser): Promise<DemandeCertificationResponseDto> {
     const current = await this.requireCurrentUser(user.email);
     const demande = await this.requireDemande(demandeId);
-    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateurId);
+    this.securityService.ensureOwnerOrAdmin(current, demande.utilisateur_id);
     return this.mapper.toDemandeResponse(demande);
   }
 
   async getAllDemandes(page: number, size: number, user: AuthenticatedUser): Promise<PaginatedResponseDto<DemandeCertificationResponseDto>> {
     const current = await this.requireCurrentUser(user.email);
-    this.securityService.ensureRole(current.typeUtilisateur?.nom, ROLES_ADMIN_MODERATION);
+    this.securityService.ensureRole(current.type_utilisateur?.nom, ROLES_ADMIN_MODERATION);
 
     const safePage = clampPage(page);
     const safeSize = clampSize(size, 10);

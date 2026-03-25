@@ -1,0 +1,1065 @@
+import { hash } from 'bcryptjs';
+
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const IDS = {
+  roles: {
+    utilisateur: '00000000-0000-4000-8000-000000000001',
+    professionnel: '00000000-0000-4000-8000-000000000004',
+    admin: '00000000-0000-4000-8000-000000000006',
+    expert: '00000000-0000-4000-8000-000000000009',
+  },
+  users: {
+    admin: '10000000-0000-4000-8000-000000000001',
+    moderateur: '10000000-0000-4000-8000-000000000002',
+    inspecteur: '10000000-0000-4000-8000-000000000003',
+    vendeur: '10000000-0000-4000-8000-000000000004',
+    acheteur: '10000000-0000-4000-8000-000000000005',
+    proprioLoueur: '10000000-0000-4000-8000-000000000006',
+    garageOwner: '10000000-0000-4000-8000-000000000007',
+    assuranceManager: '10000000-0000-4000-8000-000000000008',
+  },
+  marqueToyota: '20000000-0000-4000-8000-000000000001',
+  marqueRenault: '20000000-0000-4000-8000-000000000002',
+  modeleCorolla: '21000000-0000-4000-8000-000000000001',
+  modeleClio: '21000000-0000-4000-8000-000000000002',
+  carburantEssence: '22000000-0000-4000-8000-000000000001',
+  carburantDiesel: '22000000-0000-4000-8000-000000000002',
+  boiteManuelle: '23000000-0000-4000-8000-000000000001',
+  boiteAuto: '23000000-0000-4000-8000-000000000002',
+  vehiculeVendeur: '30000000-0000-4000-8000-000000000001',
+  vehiculeLoueur: '30000000-0000-4000-8000-000000000002',
+  photoVehicule1: '31000000-0000-4000-8000-000000000001',
+  photoVehicule2: '31000000-0000-4000-8000-000000000002',
+  garage: '40000000-0000-4000-8000-000000000001',
+  serviceGarage: '41000000-0000-4000-8000-000000000001',
+  garageServiceAssociation: '42000000-0000-4000-8000-000000000001',
+  avisVehicule: '43000000-0000-4000-8000-000000000001',
+  annonceLocation: '50000000-0000-4000-8000-000000000001',
+  disponibiliteLocation: '51000000-0000-4000-8000-000000000001',
+  reservationLocation: '52000000-0000-4000-8000-000000000001',
+  historiqueStatutReservation: '53000000-0000-4000-8000-000000000001',
+  portefeuilleAcheteur: '60000000-0000-4000-8000-000000000001',
+  portefeuilleLoueur: '60000000-0000-4000-8000-000000000002',
+  transactionCredit: '61000000-0000-4000-8000-000000000001',
+  transactionEscrow: '61000000-0000-4000-8000-000000000002',
+  paiementReservation: '62000000-0000-4000-8000-000000000001',
+  paiementLog: '63000000-0000-4000-8000-000000000001',
+  abonnementPremium: '70000000-0000-4000-8000-000000000001',
+  utilisateurAbonnement: '71000000-0000-4000-8000-000000000001',
+  boostAnnonce: '72000000-0000-4000-8000-000000000001',
+  produitAssurance: '80000000-0000-4000-8000-000000000001',
+  optionAssistance: '81000000-0000-4000-8000-000000000001',
+  souscriptionAssurance: '82000000-0000-4000-8000-000000000001',
+  demandeTradeIn: '83000000-0000-4000-8000-000000000001',
+  historiqueEstimation: '84000000-0000-4000-8000-000000000001',
+  demandeCertification: '85000000-0000-4000-8000-000000000001',
+  inspection: '86000000-0000-4000-8000-000000000001',
+  rapportInspection: '87000000-0000-4000-8000-000000000001',
+  vehiculeFavori: '88000000-0000-4000-8000-000000000001',
+  notification: '90000000-0000-4000-8000-000000000001',
+  signalement: '91000000-0000-4000-8000-000000000001',
+  otpCode: '92000000-0000-4000-8000-000000000001',
+  conversation: '93000000-0000-4000-8000-000000000001',
+  conversation_participant1: '94000000-0000-4000-8000-000000000001',
+  conversation_participant2: '94000000-0000-4000-8000-000000000002',
+  message: '95000000-0000-4000-8000-000000000001',
+} as const;
+
+async function main(): Promise<void> {
+  const now = new Date();
+  const nextMonth = new Date(now);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const nextYear = new Date(now);
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
+
+  const passwordHash = await hash('Password123!', 10);
+
+  // 4 rôles uniques post-refactoring
+  const roleEntries = [
+    { id: IDS.roles.utilisateur, nom: 'UTILISATEUR', description: 'Utilisateur standard' },
+    { id: IDS.roles.professionnel, nom: 'PROFESSIONNEL', description: 'Professionnel auto' },
+    { id: IDS.roles.admin, nom: 'ADMIN', description: 'Administrateur' },
+    { id: IDS.roles.expert, nom: 'EXPERT', description: 'Expert / Inspecteur' },
+  ];
+
+  for (const role of roleEntries) {
+    await prisma.typeUtilisateur.upsert({
+      where: { id: role.id },
+      update: { nom: role.nom, description: role.description },
+      create: role,
+    });
+  }
+
+  const users = [
+    {
+      id: IDS.users.admin,
+      email: 'admin@sen-car.test',
+      telephone: '+221770000001',
+      prenom: 'Admin',
+      nom: 'Systeme',
+      typeUtilisateurId: IDS.roles.admin,
+    },
+    {
+      id: IDS.users.moderateur,
+      email: 'moderateur@sen-car.test',
+      telephone: '+221770000002',
+      prenom: 'Mod',
+      nom: 'Systeme',
+      typeUtilisateurId: IDS.roles.admin,  // moderateur => ADMIN
+    },
+    {
+      id: IDS.users.inspecteur,
+      email: 'inspecteur@sen-car.test',
+      telephone: '+221770000003',
+      prenom: 'Inspecteur',
+      nom: 'Technique',
+      typeUtilisateurId: IDS.roles.expert,  // inspecteur => EXPERT
+    },
+    {
+      id: IDS.users.vendeur,
+      email: 'vendeur@sen-car.test',
+      telephone: '+221770000004',
+      prenom: 'Vendeur',
+      nom: 'Demo',
+      typeUtilisateurId: IDS.roles.utilisateur,  // vendeur => UTILISATEUR
+    },
+    {
+      id: IDS.users.acheteur,
+      email: 'acheteur@sen-car.test',
+      telephone: '+221770000005',
+      prenom: 'Acheteur',
+      nom: 'Demo',
+      typeUtilisateurId: IDS.roles.utilisateur,  // acheteur => UTILISATEUR
+    },
+    {
+      id: IDS.users.proprioLoueur,
+      email: 'loueur@sen-car.test',
+      telephone: '+221770000006',
+      prenom: 'Loueur',
+      nom: 'Demo',
+      typeUtilisateurId: IDS.roles.professionnel,  // loueur => PROFESSIONNEL
+    },
+    {
+      id: IDS.users.garageOwner,
+      email: 'garage@sen-car.test',
+      telephone: '+221770000007',
+      prenom: 'Garage',
+      nom: 'Demo',
+      typeUtilisateurId: IDS.roles.professionnel,  // garage => PROFESSIONNEL
+    },
+    {
+      id: IDS.users.assuranceManager,
+      email: 'assurance@sen-car.test',
+      telephone: '+221770000008',
+      prenom: 'Assureur',
+      nom: 'Demo',
+      typeUtilisateurId: IDS.roles.professionnel,  // assurance => PROFESSIONNEL
+    },
+  ];
+
+  for (const user of users) {
+    await prisma.utilisateur.upsert({
+      where: { email: user.email },
+      update: {
+        ...user,
+        motDePasseHash: passwordHash,
+        emailVerifie: true,
+        telephoneVerifie: true,
+        doubleAuthActive: false,
+        statutVerification: 'VERIFIE',
+      },
+      create: {
+        ...user,
+        motDePasseHash: passwordHash,
+        emailVerifie: true,
+        telephoneVerifie: true,
+        doubleAuthActive: false,
+        statutVerification: 'VERIFIE',
+      },
+    });
+  }
+
+  await prisma.otpCode.upsert({
+    where: { id: IDS.otpCode },
+    update: {
+      utilisateurId: IDS.users.acheteur,
+      code: '123456',
+      type: 'VERIFICATION_EMAIL',
+      expiration: nextMonth,
+      utilise: false,
+      tentatives: 0,
+    },
+    create: {
+      id: IDS.otpCode,
+      utilisateurId: IDS.users.acheteur,
+      code: '123456',
+      type: 'VERIFICATION_EMAIL',
+      expiration: nextMonth,
+      utilise: false,
+      tentatives: 0,
+    },
+  });
+
+  await prisma.marque.upsert({ where: { id: IDS.marqueToyota }, update: { nom: 'Toyota' }, create: { id: IDS.marqueToyota, nom: 'Toyota' } });
+  await prisma.marque.upsert({ where: { id: IDS.marqueRenault }, update: { nom: 'Renault' }, create: { id: IDS.marqueRenault, nom: 'Renault' } });
+
+  await prisma.modele.upsert({
+    where: { id: IDS.modeleCorolla },
+    update: { nom: 'Corolla', marqueId: IDS.marqueToyota },
+    create: { id: IDS.modeleCorolla, nom: 'Corolla', marqueId: IDS.marqueToyota },
+  });
+  await prisma.modele.upsert({
+    where: { id: IDS.modeleClio },
+    update: { nom: 'Clio', marqueId: IDS.marqueRenault },
+    create: { id: IDS.modeleClio, nom: 'Clio', marqueId: IDS.marqueRenault },
+  });
+
+  await prisma.carburant.upsert({ where: { id: IDS.carburantEssence }, update: { nom: 'Essence' }, create: { id: IDS.carburantEssence, nom: 'Essence' } });
+  await prisma.carburant.upsert({ where: { id: IDS.carburantDiesel }, update: { nom: 'Diesel' }, create: { id: IDS.carburantDiesel, nom: 'Diesel' } });
+  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteManuelle }, update: { nom: 'Manuelle' }, create: { id: IDS.boiteManuelle, nom: 'Manuelle' } });
+  await prisma.boiteVitesse.upsert({ where: { id: IDS.boiteAuto }, update: { nom: 'Automatique' }, create: { id: IDS.boiteAuto, nom: 'Automatique' } });
+
+  await prisma.vehicule.upsert({
+    where: { id: IDS.vehiculeVendeur },
+    update: {
+      proprietaireId: IDS.users.vendeur,
+      marqueId: IDS.marqueToyota,
+      modeleId: IDS.modeleCorolla,
+      anneeFabrication: 2020,
+      kilometrage: 50000,
+      carburantId: IDS.carburantEssence,
+      boiteVitesseId: IDS.boiteManuelle,
+      couleur: 'Gris',
+      prixVente: '8500000',
+      description: 'Vehicule en bon etat',
+      numeroVin: 'VIN-DEMO-0001',
+      immatriculation: 'DK-1234-AA',
+      statut: 'PUBLIE',
+      estBoost: false,
+      vues: 20,
+      nombreFavoris: 1,
+    },
+    create: {
+      id: IDS.vehiculeVendeur,
+      proprietaireId: IDS.users.vendeur,
+      marqueId: IDS.marqueToyota,
+      modeleId: IDS.modeleCorolla,
+      anneeFabrication: 2020,
+      kilometrage: 50000,
+      carburantId: IDS.carburantEssence,
+      boiteVitesseId: IDS.boiteManuelle,
+      couleur: 'Gris',
+      prixVente: '8500000',
+      description: 'Vehicule en bon etat',
+      numeroVin: 'VIN-DEMO-0001',
+      immatriculation: 'DK-1234-AA',
+      statut: 'PUBLIE',
+      estBoost: false,
+      vues: 20,
+      nombreFavoris: 1,
+    },
+  });
+
+  await prisma.vehicule.upsert({
+    where: { id: IDS.vehiculeLoueur },
+    update: {
+      proprietaireId: IDS.users.proprioLoueur,
+      marqueId: IDS.marqueRenault,
+      modeleId: IDS.modeleClio,
+      anneeFabrication: 2021,
+      kilometrage: 32000,
+      carburantId: IDS.carburantDiesel,
+      boiteVitesseId: IDS.boiteAuto,
+      couleur: 'Bleu',
+      prixVente: '9200000',
+      numeroVin: 'VIN-DEMO-0002',
+      immatriculation: 'DK-5678-BB',
+      statut: 'PUBLIE',
+      estBoost: true,
+      boostDebut: now,
+      boostFin: nextMonth,
+      vues: 45,
+      nombreFavoris: 0,
+    },
+    create: {
+      id: IDS.vehiculeLoueur,
+      proprietaireId: IDS.users.proprioLoueur,
+      marqueId: IDS.marqueRenault,
+      modeleId: IDS.modeleClio,
+      anneeFabrication: 2021,
+      kilometrage: 32000,
+      carburantId: IDS.carburantDiesel,
+      boiteVitesseId: IDS.boiteAuto,
+      couleur: 'Bleu',
+      prixVente: '9200000',
+      numeroVin: 'VIN-DEMO-0002',
+      immatriculation: 'DK-5678-BB',
+      statut: 'PUBLIE',
+      estBoost: true,
+      boostDebut: now,
+      boostFin: nextMonth,
+      vues: 45,
+      nombreFavoris: 0,
+    },
+  });
+
+  await prisma.photoVehicule.upsert({
+    where: { id: IDS.photoVehicule1 },
+    update: { vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule1, vehiculeId: IDS.vehiculeVendeur, url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+  });
+  await prisma.photoVehicule.upsert({
+    where: { id: IDS.photoVehicule2 },
+    update: { vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+    create: { id: IDS.photoVehicule2, vehiculeId: IDS.vehiculeLoueur, url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', estPrincipale: true, ordre: 0 },
+  });
+
+  await prisma.garage.upsert({
+    where: { id: IDS.garage },
+    update: {
+      nom: 'Garage Dakar Pro',
+      adresse: 'Sicap Liberte 6, Dakar',
+      telephone: '+221338001122',
+      email: 'contact@garage-dakar.test',
+      ville: 'Dakar',
+      pays: 'Senegal',
+      statutValidation: 'ACTIF',
+      utilisateurId: IDS.users.garageOwner,
+    },
+    create: {
+      id: IDS.garage,
+      nom: 'Garage Dakar Pro',
+      adresse: 'Sicap Liberte 6, Dakar',
+      telephone: '+221338001122',
+      email: 'contact@garage-dakar.test',
+      ville: 'Dakar',
+      pays: 'Senegal',
+      statutValidation: 'ACTIF',
+      utilisateurId: IDS.users.garageOwner,
+    },
+  });
+
+  await prisma.serviceGarage.upsert({
+    where: { id: IDS.serviceGarage },
+    update: {
+      nom: 'Vidange complete',
+      description: 'Vidange moteur + filtres',
+      prix: '25000',
+      dureeEstimee: 60,
+      categorie: 'ENTRETIEN',
+      actif: true,
+    },
+    create: {
+      id: IDS.serviceGarage,
+      nom: 'Vidange complete',
+      description: 'Vidange moteur + filtres',
+      prix: '25000',
+      dureeEstimee: 60,
+      categorie: 'ENTRETIEN',
+      actif: true,
+    },
+  });
+
+  await prisma.garageServiceAssociation.upsert({
+    where: { id: IDS.garageServiceAssociation },
+    update: {
+      garageId: IDS.garage,
+      serviceId: IDS.serviceGarage,
+      prix: '23000',
+      dureeEstimee: 50,
+      actif: true,
+    },
+    create: {
+      id: IDS.garageServiceAssociation,
+      garageId: IDS.garage,
+      serviceId: IDS.serviceGarage,
+      prix: '23000',
+      dureeEstimee: 50,
+      actif: true,
+    },
+  });
+
+  await prisma.annonceLocation.upsert({
+    where: { id: IDS.annonceLocation },
+    update: {
+      proprietaireId: IDS.users.proprioLoueur,
+      vehiculeId: IDS.vehiculeLoueur,
+      tarifJournalier: '35000',
+      statut: 'ACTIF',
+      description: 'Location climatisee',
+      conditions: 'Permis valide requis',
+      caution: '100000',
+      kilometrageInclus: 150,
+      tarifKmSupplementaire: '250',
+      actif: true,
+    },
+    create: {
+      id: IDS.annonceLocation,
+      proprietaireId: IDS.users.proprioLoueur,
+      vehiculeId: IDS.vehiculeLoueur,
+      tarifJournalier: '35000',
+      statut: 'ACTIF',
+      description: 'Location climatisee',
+      conditions: 'Permis valide requis',
+      caution: '100000',
+      kilometrageInclus: 150,
+      tarifKmSupplementaire: '250',
+      actif: true,
+    },
+  });
+
+  await prisma.disponibiliteLocation.upsert({
+    where: { id: IDS.disponibiliteLocation },
+    update: { annonceLocationId: IDS.annonceLocation, date: nextMonth, estDisponible: true },
+    create: { id: IDS.disponibiliteLocation, annonceLocationId: IDS.annonceLocation, date: nextMonth, estDisponible: true },
+  });
+
+  await prisma.reservationLocation.upsert({
+    where: { id: IDS.reservationLocation },
+    update: {
+      annonceLocationId: IDS.annonceLocation,
+      locataireId: IDS.users.acheteur,
+      statut: 'CONFIRME',
+      coutTotal: '70000',
+      dateDebut: now,
+      dateFin: nextMonth,
+      dateCreation: now,
+    },
+    create: {
+      id: IDS.reservationLocation,
+      annonceLocationId: IDS.annonceLocation,
+      locataireId: IDS.users.acheteur,
+      statut: 'CONFIRME',
+      coutTotal: '70000',
+      dateDebut: now,
+      dateFin: nextMonth,
+      dateCreation: now,
+    },
+  });
+
+  await prisma.historiqueStatutReservation.upsert({
+    where: { id: IDS.historiqueStatutReservation },
+    update: {
+      reservationId: IDS.reservationLocation,
+      ancienStatutId: '00000000-0000-4000-8000-00000000aa01',
+      nouveauStatutId: '00000000-0000-4000-8000-00000000aa02',
+    },
+    create: {
+      id: IDS.historiqueStatutReservation,
+      reservationId: IDS.reservationLocation,
+      ancienStatutId: '00000000-0000-4000-8000-00000000aa01',
+      nouveauStatutId: '00000000-0000-4000-8000-00000000aa02',
+    },
+  });
+
+  await prisma.portefeuille.upsert({
+    where: { utilisateurId: IDS.users.acheteur },
+    update: { id: IDS.portefeuilleAcheteur, solde: '250000', soldeBloque: '70000', isActif: true, dateDerniereRecharge: now },
+    create: { id: IDS.portefeuilleAcheteur, utilisateurId: IDS.users.acheteur, solde: '250000', soldeBloque: '70000', isActif: true, dateDerniereRecharge: now },
+  });
+
+  await prisma.portefeuille.upsert({
+    where: { utilisateurId: IDS.users.proprioLoueur },
+    update: { id: IDS.portefeuilleLoueur, solde: '120000', soldeBloque: '0', isActif: true, dateDerniereRecharge: now },
+    create: { id: IDS.portefeuilleLoueur, utilisateurId: IDS.users.proprioLoueur, solde: '120000', soldeBloque: '0', isActif: true, dateDerniereRecharge: now },
+  });
+
+  await prisma.transactionPortefeuille.upsert({
+    where: { id: IDS.transactionCredit },
+    update: {
+      portefeuilleId: IDS.portefeuilleAcheteur,
+      montant: '250000',
+      typeTransaction: 'CREDIT',
+      statut: 'CONFIRMEE',
+      description: 'Recharge initiale',
+      referenceExterne: 'REF-CREDIT-001',
+    },
+    create: {
+      id: IDS.transactionCredit,
+      portefeuilleId: IDS.portefeuilleAcheteur,
+      montant: '250000',
+      typeTransaction: 'CREDIT',
+      statut: 'CONFIRMEE',
+      description: 'Recharge initiale',
+      referenceExterne: 'REF-CREDIT-001',
+    },
+  });
+
+  await prisma.transactionPortefeuille.upsert({
+    where: { id: IDS.transactionEscrow },
+    update: {
+      portefeuilleId: IDS.portefeuilleAcheteur,
+      montant: '-70000',
+      typeTransaction: 'DEBIT',
+      statut: 'CONFIRMEE',
+      description: 'Blocage escrow location',
+      referenceExterne: 'REF-ESCROW-001',
+    },
+    create: {
+      id: IDS.transactionEscrow,
+      portefeuilleId: IDS.portefeuilleAcheteur,
+      montant: '-70000',
+      typeTransaction: 'DEBIT',
+      statut: 'CONFIRMEE',
+      description: 'Blocage escrow location',
+      referenceExterne: 'REF-ESCROW-001',
+    },
+  });
+
+  await prisma.paiement.upsert({
+    where: { id: IDS.paiementReservation },
+    update: {
+      utilisateurId: IDS.users.acheteur,
+      reservationId: IDS.reservationLocation,
+      montant: '70000',
+      montantEscrow: '66500',
+      commission: '3500',
+      methodePaiement: 'WAVE',
+      statut: 'CONFIRME',
+      isEscrow: true,
+      referenceTransaction: 'TX-RES-001',
+      referenceExterne: 'EXT-RES-001',
+      urlPaiement: 'https://pay.example.test/tx-res-001',
+      datePaiement: now,
+      dateExpiration: nextMonth,
+    },
+    create: {
+      id: IDS.paiementReservation,
+      utilisateurId: IDS.users.acheteur,
+      reservationId: IDS.reservationLocation,
+      montant: '70000',
+      montantEscrow: '66500',
+      commission: '3500',
+      methodePaiement: 'WAVE',
+      statut: 'CONFIRME',
+      isEscrow: true,
+      referenceTransaction: 'TX-RES-001',
+      referenceExterne: 'EXT-RES-001',
+      urlPaiement: 'https://pay.example.test/tx-res-001',
+      datePaiement: now,
+      dateExpiration: nextMonth,
+    },
+  });
+
+  await prisma.paiementLog.upsert({
+    where: { id: IDS.paiementLog },
+    update: {
+      paiementId: IDS.paiementReservation,
+      action: 'CREATION',
+      details: 'Paiement seed initialise',
+      dateAction: now,
+    },
+    create: {
+      id: IDS.paiementLog,
+      paiementId: IDS.paiementReservation,
+      action: 'CREATION',
+      details: 'Paiement seed initialise',
+      dateAction: now,
+    },
+  });
+
+  await prisma.abonnement.upsert({
+    where: { id: IDS.abonnementPremium },
+    update: {
+      nom: 'Premium',
+      description: 'Plan premium vendeur',
+      prixMensuel: '15000',
+      dureeJours: 30,
+      nombreAnnonces: 25,
+      estVedette: true,
+      estCertifie: true,
+      type: 'PREMIUM',
+      estActif: true,
+      avantages: 'Boosts, priorite, support',
+      prixAnnuel: '150000',
+      nombreBoostsGratuits: 3,
+      accesPrioritaire: true,
+      supportPrioritaire: true,
+    },
+    create: {
+      id: IDS.abonnementPremium,
+      nom: 'Premium',
+      description: 'Plan premium vendeur',
+      prixMensuel: '15000',
+      dureeJours: 30,
+      nombreAnnonces: 25,
+      estVedette: true,
+      estCertifie: true,
+      type: 'PREMIUM',
+      estActif: true,
+      avantages: 'Boosts, priorite, support',
+      prixAnnuel: '150000',
+      nombreBoostsGratuits: 3,
+      accesPrioritaire: true,
+      supportPrioritaire: true,
+    },
+  });
+
+  await prisma.utilisateurAbonnement.upsert({
+    where: { id: IDS.utilisateurAbonnement },
+    update: {
+      utilisateurId: IDS.users.vendeur,
+      abonnementId: IDS.abonnementPremium,
+      dateDebut: now,
+      dateFin: nextMonth,
+      statut: 'ACTIF',
+      nombreAnnoncesUtilisees: 2,
+      estEssaiGratuit: false,
+    },
+    create: {
+      id: IDS.utilisateurAbonnement,
+      utilisateurId: IDS.users.vendeur,
+      abonnementId: IDS.abonnementPremium,
+      dateDebut: now,
+      dateFin: nextMonth,
+      statut: 'ACTIF',
+      nombreAnnoncesUtilisees: 2,
+      estEssaiGratuit: false,
+    },
+  });
+
+  await prisma.boostAnnonce.upsert({
+    where: { id: IDS.boostAnnonce },
+    update: {
+      annonceLocationId: IDS.annonceLocation,
+      dateDebut: now,
+      dateFin: nextMonth,
+      niveauBoost: 'GOLD',
+    },
+    create: {
+      id: IDS.boostAnnonce,
+      annonceLocationId: IDS.annonceLocation,
+      dateDebut: now,
+      dateFin: nextMonth,
+      niveauBoost: 'GOLD',
+    },
+  });
+
+  await prisma.produitAssurance.upsert({
+    where: { id: IDS.produitAssurance },
+    update: {
+      nom: 'Assurance Tous Risques',
+      description: 'Couverture complete annuelle',
+      prixBase: '120000',
+      typeAssurance: 'TOUS_RISQUES',
+      dureeMois: 12,
+      estActif: true,
+    },
+    create: {
+      id: IDS.produitAssurance,
+      nom: 'Assurance Tous Risques',
+      description: 'Couverture complete annuelle',
+      prixBase: '120000',
+      typeAssurance: 'TOUS_RISQUES',
+      dureeMois: 12,
+      estActif: true,
+    },
+  });
+
+  await prisma.optionAssurance.upsert({
+    where: { id: IDS.optionAssistance },
+    update: {
+      produitAssuranceId: IDS.produitAssurance,
+      nom: 'Assistance depannage',
+      description: 'Depannage 24/7',
+      prixSupplementaire: '15000',
+      estActif: true,
+    },
+    create: {
+      id: IDS.optionAssistance,
+      produitAssuranceId: IDS.produitAssurance,
+      nom: 'Assistance depannage',
+      description: 'Depannage 24/7',
+      prixSupplementaire: '15000',
+      estActif: true,
+    },
+  });
+
+  await prisma.souscriptionAssurance.upsert({
+    where: { id: IDS.souscriptionAssurance },
+    update: {
+      utilisateurId: IDS.users.vendeur,
+      produitAssuranceId: IDS.produitAssurance,
+      vehiculeId: IDS.vehiculeVendeur,
+      statut: 'PAYEE',
+      montantTotal: '135000',
+      dateDebut: now,
+      dateFin: nextYear,
+      numeroContrat: 'CTR-2026-0001',
+      documentUrl: 'https://cdn.sen-car.test/assurance/contrat-0001.pdf',
+      paiementId: IDS.paiementReservation,
+    },
+    create: {
+      id: IDS.souscriptionAssurance,
+      utilisateurId: IDS.users.vendeur,
+      produitAssuranceId: IDS.produitAssurance,
+      vehiculeId: IDS.vehiculeVendeur,
+      statut: 'PAYEE',
+      montantTotal: '135000',
+      dateDebut: now,
+      dateFin: nextYear,
+      numeroContrat: 'CTR-2026-0001',
+      documentUrl: 'https://cdn.sen-car.test/assurance/contrat-0001.pdf',
+      paiementId: IDS.paiementReservation,
+    },
+  });
+
+  await prisma.souscriptionOption.upsert({
+    where: {
+      souscriptionId_optionId: {
+        souscriptionId: IDS.souscriptionAssurance,
+        optionId: IDS.optionAssistance,
+      },
+    },
+    update: {},
+    create: {
+      souscriptionId: IDS.souscriptionAssurance,
+      optionId: IDS.optionAssistance,
+    },
+  });
+
+  await prisma.demandeTradeIn.upsert({
+    where: { id: IDS.demandeTradeIn },
+    update: {
+      utilisateurId: IDS.users.vendeur,
+      vehiculeActuelId: IDS.vehiculeVendeur,
+      vehiculeSouhaiteId: IDS.vehiculeLoueur,
+      statut: 'EVALUATION_TERMINEE',
+      prixEstime: '8100000',
+      prixPropose: '8000000',
+      kilometrageActuel: 50000,
+      etatVehicule: 'bon',
+      dateSoumission: now,
+      dateTraitement: now,
+      dateEvaluation: now,
+      commentaireAdmin: 'Dossier complet',
+      estNotifie: true,
+    },
+    create: {
+      id: IDS.demandeTradeIn,
+      utilisateurId: IDS.users.vendeur,
+      vehiculeActuelId: IDS.vehiculeVendeur,
+      vehiculeSouhaiteId: IDS.vehiculeLoueur,
+      statut: 'EVALUATION_TERMINEE',
+      prixEstime: '8100000',
+      prixPropose: '8000000',
+      kilometrageActuel: 50000,
+      etatVehicule: 'bon',
+      dateSoumission: now,
+      dateTraitement: now,
+      dateEvaluation: now,
+      commentaireAdmin: 'Dossier complet',
+      estNotifie: true,
+    },
+  });
+
+  await prisma.historiqueEstimation.upsert({
+    where: { id: IDS.historiqueEstimation },
+    update: {
+      vehiculeId: IDS.vehiculeVendeur,
+      marque: 'Toyota',
+      modele: 'Corolla',
+      anneeFabrication: 2020,
+      kilometrage: 50000,
+      etatVehicule: 'bon',
+      prixEstime: '8100000',
+      prixMinimum: '7600000',
+      prixMaximum: '8600000',
+      scoreCondition: 82.5,
+      recommandation: 'Vehicule en bon etat',
+      dateEstimation: now,
+    },
+    create: {
+      id: IDS.historiqueEstimation,
+      vehiculeId: IDS.vehiculeVendeur,
+      marque: 'Toyota',
+      modele: 'Corolla',
+      anneeFabrication: 2020,
+      kilometrage: 50000,
+      etatVehicule: 'bon',
+      prixEstime: '8100000',
+      prixMinimum: '7600000',
+      prixMaximum: '8600000',
+      scoreCondition: 82.5,
+      recommandation: 'Vehicule en bon etat',
+      dateEstimation: now,
+    },
+  });
+
+  await prisma.demandeCertification.upsert({
+    where: { id: IDS.demandeCertification },
+    update: {
+      utilisateurId: IDS.users.vendeur,
+      vehiculeId: IDS.vehiculeVendeur,
+      statut: 'CERTIFIEE',
+      montantPaiement: '50000',
+      paiementId: IDS.paiementReservation,
+      inspecteurId: IDS.users.inspecteur,
+      dateSoumission: now,
+      dateTraitement: now,
+      dateInspection: now,
+      badgeCertifieUrl: 'https://cdn.sen-car.test/certifications/badge-0001.png',
+    },
+    create: {
+      id: IDS.demandeCertification,
+      utilisateurId: IDS.users.vendeur,
+      vehiculeId: IDS.vehiculeVendeur,
+      statut: 'CERTIFIEE',
+      montantPaiement: '50000',
+      paiementId: IDS.paiementReservation,
+      inspecteurId: IDS.users.inspecteur,
+      dateSoumission: now,
+      dateTraitement: now,
+      dateInspection: now,
+      badgeCertifieUrl: 'https://cdn.sen-car.test/certifications/badge-0001.png',
+    },
+  });
+
+  await prisma.inspection.upsert({
+    where: { id: IDS.inspection },
+    update: {
+      demandeCertificationId: IDS.demandeCertification,
+      inspecteurId: IDS.users.inspecteur,
+      dateInspection: now,
+      resultat: 'REUSSI',
+      commentaire: 'Inspection validee',
+      kilometrage: 50000,
+      etatMoteur: 'BON',
+      etatFreinage: 'BON',
+      etatSuspension: 'BON',
+      scoreTotal: 88,
+    },
+    create: {
+      id: IDS.inspection,
+      demandeCertificationId: IDS.demandeCertification,
+      inspecteurId: IDS.users.inspecteur,
+      dateInspection: now,
+      resultat: 'REUSSI',
+      commentaire: 'Inspection validee',
+      kilometrage: 50000,
+      etatMoteur: 'BON',
+      etatFreinage: 'BON',
+      etatSuspension: 'BON',
+      scoreTotal: 88,
+    },
+  });
+
+  await prisma.rapportInspection.upsert({
+    where: { inspectionId: IDS.inspection },
+    update: {
+      id: IDS.rapportInspection,
+      urlRapportPdf: 'https://cdn.sen-car.test/certifications/rapport-0001.pdf',
+      dateGeneration: now,
+      scoreGlobale: 88,
+      recommendations: 'Entretien regulier recommande',
+      conclusion: 'Vehicule certifiable',
+      estApprouve: true,
+    },
+    create: {
+      id: IDS.rapportInspection,
+      inspectionId: IDS.inspection,
+      urlRapportPdf: 'https://cdn.sen-car.test/certifications/rapport-0001.pdf',
+      dateGeneration: now,
+      scoreGlobale: 88,
+      recommendations: 'Entretien regulier recommande',
+      conclusion: 'Vehicule certifiable',
+      estApprouve: true,
+    },
+  });
+
+  await prisma.vehiculeFavori.upsert({
+    where: { id: IDS.vehiculeFavori },
+    update: { utilisateurId: IDS.users.acheteur, vehiculeId: IDS.vehiculeVendeur },
+    create: { id: IDS.vehiculeFavori, utilisateurId: IDS.users.acheteur, vehiculeId: IDS.vehiculeVendeur },
+  });
+
+  await prisma.notification.upsert({
+    where: { id: IDS.notification },
+    update: {
+      utilisateurId: IDS.users.acheteur,
+      titre: 'Paiement confirme',
+      message: 'Votre paiement a ete confirme avec succes.',
+      type: 'PAIEMENT',
+      estLu: false,
+      referenceId: IDS.paiementReservation,
+      referenceType: 'PAIEMENT',
+      dateCreation: now,
+    },
+    create: {
+      id: IDS.notification,
+      utilisateurId: IDS.users.acheteur,
+      titre: 'Paiement confirme',
+      message: 'Votre paiement a ete confirme avec succes.',
+      type: 'PAIEMENT',
+      estLu: false,
+      referenceId: IDS.paiementReservation,
+      referenceType: 'PAIEMENT',
+      dateCreation: now,
+    },
+  });
+
+  await prisma.signalement.upsert({
+    where: { id: IDS.signalement },
+    update: {
+      utilisateurId: IDS.users.acheteur,
+      typeEntite: 'ANNONCE',
+      entiteId: IDS.annonceLocation,
+      motif: 'CONTENU_INAPPROPRIE',
+      description: 'Annonce a verifier.',
+      statutTraitement: 'EN_ATTENTE',
+      adminId: IDS.users.moderateur,
+      dateSignalement: now,
+    },
+    create: {
+      id: IDS.signalement,
+      utilisateurId: IDS.users.acheteur,
+      typeEntite: 'ANNONCE',
+      entiteId: IDS.annonceLocation,
+      motif: 'CONTENU_INAPPROPRIE',
+      description: 'Annonce a verifier.',
+      statutTraitement: 'EN_ATTENTE',
+      adminId: IDS.users.moderateur,
+      dateSignalement: now,
+    },
+  });
+
+  await prisma.conversation.upsert({
+    where: { id: IDS.conversation },
+    update: {
+      titre: 'Discussion location',
+      typeConversation: 'DIRECT',
+      annonceId: IDS.annonceLocation,
+      avatarUrl: 'https://cdn.sen-car.test/conversations/default.png',
+      creeParId: IDS.users.acheteur,
+      estGroupe: false,
+    },
+    create: {
+      id: IDS.conversation,
+      titre: 'Discussion location',
+      typeConversation: 'DIRECT',
+      annonceId: IDS.annonceLocation,
+      avatarUrl: 'https://cdn.sen-car.test/conversations/default.png',
+      creeParId: IDS.users.acheteur,
+      estGroupe: false,
+    },
+  });
+
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant1 },
+    update: {
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.acheteur,
+      dateJoin: now,
+      estAdmin: true,
+      estMute: false,
+      nombreNonLus: 0,
+      aRejointLe: now,
+    },
+    create: {
+      id: IDS.conversation_participant1,
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.acheteur,
+      dateJoin: now,
+      estAdmin: true,
+      estMute: false,
+      nombreNonLus: 0,
+      aRejointLe: now,
+    },
+  });
+
+  await prisma.conversation_participant.upsert({
+    where: { id: IDS.conversation_participant2 },
+    update: {
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.proprioLoueur,
+      dateJoin: now,
+      estAdmin: false,
+      estMute: false,
+      nombreNonLus: 1,
+      aRejointLe: now,
+    },
+    create: {
+      id: IDS.conversation_participant2,
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.proprioLoueur,
+      dateJoin: now,
+      estAdmin: false,
+      estMute: false,
+      nombreNonLus: 1,
+      aRejointLe: now,
+    },
+  });
+
+  await prisma.message.upsert({
+    where: { id: IDS.message },
+    update: {
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.acheteur,
+      contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
+      dateEnvoi: now,
+      estLu: false,
+      estSupprime: false,
+      estEpingle: false,
+      typeMessage: 'TEXTE',
+    },
+    create: {
+      id: IDS.message,
+      conversation_id: IDS.conversation,
+      utilisateurId: IDS.users.acheteur,
+      contenu: 'Bonjour, le vehicule est-il toujours disponible ?',
+      dateEnvoi: now,
+      estLu: false,
+      estSupprime: false,
+      estEpingle: false,
+      typeMessage: 'TEXTE',
+    },
+  });
+
+  await prisma.conversation.update({
+    where: { id: IDS.conversation },
+    data: { message_epingle_id: IDS.message },
+  });
+
+  await prisma.avis.upsert({
+    where: { id: IDS.avisVehicule },
+    update: {
+      auteur_id: IDS.users.acheteur,
+      cibleUtilisateurId: IDS.users.vendeur,
+      vehiculeId: IDS.vehiculeVendeur,
+      garageId: null,
+      typeAvis: 'ACHAT_VEHICULE',
+      transactionId: IDS.paiementReservation,
+      note: 5,
+      commentaire: 'Tres bonne experience',
+      statut: 'PUBLIE',
+      createdAt: now,
+    },
+    create: {
+      id: IDS.avisVehicule,
+      auteur_id: IDS.users.acheteur,
+      cibleUtilisateurId: IDS.users.vendeur,
+      vehiculeId: IDS.vehiculeVendeur,
+      garageId: null,
+      typeAvis: 'ACHAT_VEHICULE',
+      transactionId: IDS.paiementReservation,
+      note: 5,
+      commentaire: 'Tres bonne experience',
+      statut: 'PUBLIE',
+      createdAt: now,
+    },
+  });
+
+  console.log('Seed termine avec succes.');
+}
+
+main()
+  .catch((error) => {
+    console.error('Erreur seed:', error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

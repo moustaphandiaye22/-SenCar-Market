@@ -114,9 +114,9 @@ describe('NotificationService', () => {
       entiteId: '00000000-0000-4000-8000-000000000011',
       motif: 'SPAM',
       description: 'desc',
-      statutTraitement: 'EN_ATTENTE',
-      adminId: null,
-      dateTraitement: null,
+      statut_traitement: 'EN_ATTENTE',
+      admin_id: null,
+      date_traitement: null,
       dateSignalement: new Date(),
       utilisateur: { nom: 'User', prenom: 'U' },
     } as never);
@@ -127,9 +127,9 @@ describe('NotificationService', () => {
       entiteId: '00000000-0000-4000-8000-000000000011',
       motif: 'SPAM',
       description: 'desc',
-      statutTraitement: data.statutTraitement,
-      adminId: data.adminId ?? null,
-      dateTraitement: data.dateTraitement ?? null,
+      statut_traitement: data.statut_traitement,
+      admin_id: data.admin_id ?? null,
+      date_traitement: data.date_traitement ?? null,
       dateSignalement: new Date(),
       utilisateur: { nom: 'User', prenom: 'U' },
     }) as never);
@@ -147,7 +147,7 @@ describe('NotificationService', () => {
       },
     );
 
-    expect(result.statutTraitement).toBe('TRAITE');
+    expect(result.statut_traitement).toBe('TRAITE');
   });
 
   it('should use requested nouveauStatut instead of inferring from actionAdmin', async () => {
@@ -165,9 +165,9 @@ describe('NotificationService', () => {
       entiteId: '00000000-0000-4000-8000-000000000011',
       motif: 'SPAM',
       description: 'desc',
-      statutTraitement: 'EN_ATTENTE',
-      adminId: null,
-      dateTraitement: null,
+      statut_traitement: 'EN_ATTENTE',
+      admin_id: null,
+      date_traitement: null,
       dateSignalement: new Date(),
       utilisateur: { nom: 'User', prenom: 'U' },
     } as never);
@@ -178,9 +178,9 @@ describe('NotificationService', () => {
       entiteId: '00000000-0000-4000-8000-000000000011',
       motif: 'SPAM',
       description: 'desc',
-      statutTraitement: data.statutTraitement,
-      adminId: data.adminId ?? null,
-      dateTraitement: data.dateTraitement ?? null,
+      statut_traitement: data.statut_traitement,
+      admin_id: data.admin_id ?? null,
+      date_traitement: data.date_traitement ?? null,
       dateSignalement: new Date(),
       utilisateur: { nom: 'User', prenom: 'U' },
     }) as never);
@@ -198,7 +198,7 @@ describe('NotificationService', () => {
       },
     );
 
-    expect(result.statutTraitement).toBe('RESOLU');
+    expect(result.statut_traitement).toBe('RESOLU');
   });
 
   it('should return sanitized pagination metadata for notifications', async () => {

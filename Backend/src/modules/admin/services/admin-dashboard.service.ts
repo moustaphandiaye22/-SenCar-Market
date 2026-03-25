@@ -39,6 +39,7 @@ export class AdminDashboardService {
       totalAbonnements,
       abonnementsActifs,
       transactionsConfirmees,
+      reprisesEnAttente,
     ] = await Promise.all([
       this.repository.countUtilisateurs(),
       this.repository.countVehicules(),
@@ -50,6 +51,7 @@ export class AdminDashboardService {
       this.repository.countAbonnements(),
       this.repository.countAbonnementsActifs(now),
       this.repository.findTransactionsByStatut('CONFIRMEE'),
+      this.repository.countTradeInByStatut(['EN_ATTENTE', 'EN_COURS_EVALUATION']),
     ]);
 
     const revenusTotaux = transactionsConfirmees.reduce((sum, t) => sum + toNumberOrZero(t.montant), 0);
@@ -60,6 +62,17 @@ export class AdminDashboardService {
       return sum;
     }, 0);
 
+    // Calculate revenue for the last 7 months (6 months ago + current month)
+    const revenusMensuels = Array(7).fill(0);
+    transactionsConfirmees.forEach(t => {
+      if (!t.dateTransaction) return;
+      const tDate = new Date(t.dateTransaction);
+      const monthsDiff = (now.getFullYear() - tDate.getFullYear()) * 12 + now.getMonth() - tDate.getMonth();
+      if (monthsDiff >= 0 && monthsDiff < 7) {
+        revenusMensuels[6 - monthsDiff] += toNumberOrZero(t.montant);
+      }
+    });
+
     return {
       totalUtilisateurs,
       totalAnnonces,
@@ -68,8 +81,11 @@ export class AdminDashboardService {
       reservationsEnAttente,
       revenusTotaux,
       revenusCeMois,
+      revenusMensuels,
+      totalTransactions: totalPaiements,
       totalPaiements,
       paiementsEnAttente,
+      reprisesEnAttente,
       totalAbonnements,
       abonnementsActifs,
     };

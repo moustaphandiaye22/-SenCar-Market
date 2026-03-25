@@ -1,11 +1,11 @@
-import type { StatutAssurance, TypeAssurance } from './types/assurance.types';
+import type { StatutAssurance, TypeAssurance } from "./types/assurance.types";
 
 export type UserRecord = {
   id: string;
   email: string;
   nom: string | null;
   prenom: string | null;
-  typeUtilisateur: { nom: string | null } | null;
+  type_utilisateur: { nom: string | null } | null;
 };
 
 export type VehiculeSummaryRecord = {
@@ -18,108 +18,124 @@ export type ProduitRecord = {
   id: string;
   nom: string;
   description: string | null;
-  prixBase: unknown;
-  typeAssurance: string;
-  dureeMois: number | null;
-  estActif: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  options: OptionRecord[];
+  prix_base: unknown;
+  type_assurance: string;
+  duree_mois: number | null;
+  est_actif: boolean | null;
+  created_at: Date | null;
+  updated_at: Date | null;
+  option_assurance: OptionRecord[];
 };
 
 export type OptionRecord = {
   id: string;
-  produitAssuranceId: string;
+  produit_assurance_id: string;
   nom: string;
   description: string | null;
-  prixSupplementaire: unknown;
-  estActif: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  prix_supplementaire: unknown;
+  est_actif: boolean | null;
+  created_at: Date | null;
+  updated_at: Date | null;
 };
 
 export type SouscriptionRecord = {
   id: string;
-  utilisateurId: string;
-  produitAssuranceId: string;
-  vehiculeId: string;
+  utilisateur_id: string;
+  produit_assurance_id: string;
+  vehicule_id: string;
   statut: string;
-  montantTotal: unknown;
-  dateDebut: Date | null;
-  dateFin: Date | null;
-  numeroContrat: string | null;
-  documentUrl: string | null;
-  paiementId: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  montant_total: unknown;
+  date_debut: Date | null;
+  date_fin: Date | null;
+  numero_contrat: string | null;
+  document_url: string | null;
+  paiement_id: string | null;
+  created_at: Date | null;
+  updated_at: Date | null;
   utilisateur: { id: string; nom: string | null };
-  produitAssurance: { id: string; nom: string };
+  produit_assurance: { id: string; nom: string };
   vehicule: VehiculeSummaryRecord;
-  optionsSelectionnees: Array<{ option: OptionRecord }>;
+  souscription_options: Array<{ option_assurance: OptionRecord }>;
 };
 
-type ConnectById = { connect: { id: string } };
+export type PaiementRecord = {
+  id: string;
+  utilisateur_id: string | null;
+  reservation_id: string | null;
+  montant: unknown;
+  montant_escrow: unknown;
+  commission: unknown;
+  methode_paiement: string | null;
+  statut: string | null;
+  is_escrow: boolean | null;
+  reference_transaction: string | null;
+  reference_externe: string | null;
+  url_paiement: string | null;
+  date_paiement: Date | null;
+  created_at: Date | null;
+  updated_at: Date | null;
+};
 
 export type CreateProduitInput = {
   id: string;
   nom: string;
   description?: string;
-  prixBase: number;
-  typeAssurance: TypeAssurance;
-  dureeMois?: number;
-  estActif: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  prix_base: number;
+  type_assurance: TypeAssurance;
+  duree_mois?: number;
+  est_actif: boolean;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateProduitInput = Partial<{
   nom: string;
   description: string;
-  prixBase: number;
-  typeAssurance: TypeAssurance;
-  dureeMois: number;
-  estActif: boolean;
-  updatedAt: Date;
+  prix_base: number;
+  type_assurance: TypeAssurance;
+  duree_mois: number;
+  est_actif: boolean;
+  updated_at: Date;
 }>;
 
 export type CreateOptionInput = {
   id: string;
-  produitAssurance: ConnectById;
+  produit_assurance_id: string;
   nom: string;
   description?: string;
-  prixSupplementaire: number;
-  estActif: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  prix_supplementaire: number;
+  est_actif: boolean;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateOptionInput = Partial<{
-  produitAssurance: ConnectById;
+  produit_assurance_id: string;
   nom: string;
   description: string;
-  prixSupplementaire: number;
-  estActif: boolean;
-  updatedAt: Date;
+  prix_supplementaire: number;
+  est_actif: boolean;
+  updated_at: Date;
 }>;
 
 export type CreateSouscriptionInput = {
   id: string;
-  utilisateur: ConnectById;
-  produitAssurance: ConnectById;
-  vehicule: ConnectById;
+  utilisateur_id: string;
+  produit_assurance_id: string;
+  vehicule_id: string;
   statut: StatutAssurance;
-  montantTotal: number;
-  dateDebut: Date;
-  dateFin: Date;
-  numeroContrat: string;
-  createdAt: Date;
-  updatedAt: Date;
-  optionsSelectionnees?: { create: Array<{ option: ConnectById }> };
+  montant_total: number;
+  date_debut: Date;
+  date_fin: Date;
+  numero_contrat: string;
+  created_at: Date;
+  updated_at: Date;
+  optionsSelectionnees?: { create: Array<{ option_id: string }> };
 };
 
 export type UpdateSouscriptionInput = Partial<{
   statut: StatutAssurance;
-  paiementId: string;
-  documentUrl: string;
-  updatedAt: Date;
+  paiement_id: string;
+  document_url: string;
+  updated_at: Date;
 }>;

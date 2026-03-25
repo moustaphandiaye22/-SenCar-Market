@@ -45,41 +45,43 @@ export class MessagerieService {
     }
 
     if (type === 'DIRECT' && request.autreUtilisateurId) {
+      console.log('DEBUG: Checking for existing direct conversation between', createur.id, 'and', request.autreUtilisateurId);
       const existing = await this.repository.findDirectConversation(createur.id, request.autreUtilisateurId);
       if (existing) {
-        throw new DomainException('Une conversation directe existe déjà', 400, 'DIRECT_CONVERSATION_EXISTS');
+        console.log('DEBUG: Found existing conversation:', existing.id);
+        return this.assembleConversation(existing, createur.id);
       }
     }
 
     const conversation = await this.repository.createConversation({
       id: this.repository.newId(),
       ...(titre ? { titre } : {}),
-      typeConversation: type,
-      annonceId: request.annonceId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      type_conversation: type,
+      annonce_id: request.annonceId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as any);
 
     await this.repository.createParticipant({
       id: this.repository.newId(),
-      conversation: { connect: { id: conversation.id } },
-      utilisateur: { connect: { id: createur.id } },
-      dateJoin: new Date(),
-      estAdmin: true,
-      estMute: false,
-      nombreNonLus: 0,
-    });
+      conversation_id: conversation.id,
+      utilisateur_id: createur.id,
+      date_join: new Date(),
+      est_admin: true,
+      est_mute: false,
+      nombre_non_lus: 0,
+    } as any);
 
     if (type === 'DIRECT' && request.autreUtilisateurId) {
       await this.repository.createParticipant({
         id: this.repository.newId(),
-        conversation: { connect: { id: conversation.id } },
-        utilisateur: { connect: { id: request.autreUtilisateurId } },
-        dateJoin: new Date(),
-        estAdmin: false,
-        estMute: false,
-        nombreNonLus: 0,
-      });
+        conversation_id: conversation.id,
+        utilisateur_id: request.autreUtilisateurId,
+        date_join: new Date(),
+        est_admin: false,
+        est_mute: false,
+        nombre_non_lus: 0,
+      } as any);
     }
 
     if (type === 'GROUP' && request.participantIds?.length) {
@@ -92,13 +94,13 @@ export class MessagerieService {
 
           await this.repository.createParticipant({
             id: this.repository.newId(),
-            conversation: { connect: { id: conversation.id } },
-            utilisateur: { connect: { id: participantId } },
-            dateJoin: new Date(),
-            estAdmin: false,
-            estMute: false,
-            nombreNonLus: 0,
-          });
+            conversation_id: conversation.id,
+            utilisateur_id: participantId,
+            date_join: new Date(),
+            est_admin: false,
+            est_mute: false,
+            nombre_non_lus: 0,
+          } as any);
         }),
       );
     }
@@ -155,17 +157,17 @@ export class MessagerieService {
 
     const message = await this.repository.createMessage({
       id: this.repository.newId(),
-      conversation: { connect: { id: request.conversationId } },
-      utilisateur: { connect: { id: currentUser.id } },
+      conversation_id: request.conversationId,
+      utilisateur_id: currentUser.id,
       contenu,
-      dateEnvoi: new Date(),
-      estLu: false,
-      estSupprime: false,
-      estEpingle: false,
-      typeMessage: request.typeMessage ?? 'TEXTE',
-    });
+      date_envoi: new Date(),
+      est_lu: false,
+      est_supprime: false,
+      est_epingle: false,
+      type_message: request.typeMessage ?? 'TEXTE',
+    } as any);
 
-    await this.repository.updateConversation(request.conversationId, { updatedAt: new Date() });
+    await this.repository.updateConversation(request.conversationId, { updated_at: new Date() } as any);
     return this.mapper.toMessageResponse(message);
   }
 
@@ -199,24 +201,24 @@ export class MessagerieService {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const message = await this.mustFindMessage(messageId);
 
-    if (message.utilisateurId !== currentUser.id) {
+    if (message.utilisateur_id !== currentUser.id) {
       throw new DomainException('Seul l\'auteur peut supprimer ce message', 403, 'CANNOT_DELETE_MESSAGE');
     }
 
-    await this.repository.updateMessage(messageId, { estSupprime: true });
+    await this.repository.updateMessage(messageId, { est_supprime: true } as any);
   }
 
   async pinMessage(messageId: string, user: AuthenticatedUser): Promise<MessageResponseDto> {
     const currentUser = await this.mustFindCurrentUser(user.email);
     const message = await this.mustFindMessage(messageId);
-    if (message.estSupprime === true) {
+    if (message.est_supprime === true) {
       throw new DomainException('Impossible d\'épingler un message supprimé', 400, 'MESSAGE_DELETED_CANNOT_PIN');
     }
 
-    await this.accessService.ensureConversationAdmin(this.repository, message.conversationId, currentUser.id);
+    await this.accessService.ensureConversationAdmin(this.repository, message.conversation_id, currentUser.id);
     const pinned = await this.repository.updateMessage(messageId, {
-      estEpingle: !(message.estEpingle ?? false),
-    });
+      est_epingle: !(message.est_epingle ?? false),
+    } as any);
 
     return this.mapper.toMessageResponse(pinned);
   }
@@ -260,11 +262,11 @@ export class MessagerieService {
       throw new DomainException('Vous ne participez pas à cette conversation', 403, 'NOT_PARTICIPANT');
     }
 
-    if (conversation.typeConversation === 'DIRECT') {
+    if (conversation.type_conversation === 'DIRECT') {
       throw new DomainException('Impossible de quitter une conversation directe', 400, 'CANNOT_LEAVE_DIRECT');
     }
 
-    if (participant.estAdmin) {
+    if (participant.est_admin) {
       const adminCount = await this.repository.countAdmins(conversationId);
       if (adminCount <= 1) {
         throw new DomainException('Le dernier admin ne peut pas quitter la conversation', 400, 'LAST_ADMIN_CANNOT_LEAVE');

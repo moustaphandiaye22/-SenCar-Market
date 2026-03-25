@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -8,33 +8,715 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum OtpType {
-  INSCRIPTION
-  CONNEXION
-  MOT_DE_PASSE_OUBLIE
-  VERIFICATION_EMAIL
-  VERIFICATION_TELEPHONE
+model abonnement {
+  id                     String                   @id @db.Uuid
+  nom                    String                   @db.VarChar(100)
+  description            String?
+  prix_mensuel           Decimal?                 @db.Decimal(12, 2)
+  duree_jours            Int?
+  nombre_annonces        Int?
+  est_vedette            Boolean?
+  est_certifie           Boolean?
+  type                   TypeAbonnement?
+  est_actif              Boolean?                 @default(true)
+  avantages              String?
+  prix_annuel            Decimal?                 @db.Decimal(12, 2)
+  nombre_boosts_gratuits Int?
+  acces_prioritaire      Boolean?
+  support_prioritaire    Boolean?
+  utilisateur_abonnement utilisateur_abonnement[]
 }
 
-enum TypeAvis {
-  ACHAT_VEHICULE
-  LOCATION_VEHICULE
-  SERVICE_GARAGE
-  UTILISATEUR
+model annonce_location {
+  id                      String                   @id @db.Uuid
+  proprietaire_id         String                   @db.Uuid
+  vehicule_id             String?                  @db.Uuid
+  tarif_journalier        Decimal?                 @db.Decimal(12, 2)
+  statut                  String?                  @db.VarChar(50)
+  description             String?
+  conditions              String?
+  caution                 Decimal?                 @db.Decimal(12, 2)
+  kilometrage_inclus      Int?
+  tarif_km_supplementaire Decimal?                 @db.Decimal(12, 2)
+  actif                   Boolean?
+  created_at              DateTime?                @default(now())
+  updated_at              DateTime?
+  utilisateur             utilisateur              @relation(fields: [proprietaire_id], references: [id])
+  vehicule                vehicule?                @relation(fields: [vehicule_id], references: [id])
+  boost_annonce           boost_annonce[]
+  conversation            conversation[]
+  disponibilite_location  disponibilite_location[]
+  reservation_location    reservation_location[]
+
+  @@index([statut, actif], map: "idx_annonce_location_statut_actif")
 }
 
-enum StatutAvis {
-  EN_ATTENTE
-  PUBLIE
-  SIGNALEE
-  SUPPRIMEE
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model avis {
+  id                                                 String       @id @db.Uuid
+  auteur_id                                          String       @db.Uuid
+  cible_utilisateur_id                               String?      @db.Uuid
+  vehicule_id                                        String?      @db.Uuid
+  garage_id                                          String?      @db.Uuid
+  type_avis                                          TypeAvis?
+  transaction_id                                     String       @db.Uuid
+  note                                               Int
+  commentaire                                        String?
+  statut                                             StatutAvis?
+  created_at                                         DateTime?    @default(now())
+  utilisateur_avis_auteur_idToutilisateur            utilisateur  @relation("avis_auteur_idToutilisateur", fields: [auteur_id], references: [id])
+  utilisateur_avis_cible_utilisateur_idToutilisateur utilisateur? @relation("avis_cible_utilisateur_idToutilisateur", fields: [cible_utilisateur_id], references: [id])
+  garage                                             garage?      @relation(fields: [garage_id], references: [id])
+  vehicule                                           vehicule?    @relation(fields: [vehicule_id], references: [id])
+
+  @@index([cible_utilisateur_id, statut], map: "idx_avis_cible_utilisateur_statut")
+  @@index([garage_id, statut], map: "idx_avis_garage_statut")
+  @@index([transaction_id], map: "idx_avis_transaction")
+  @@index([vehicule_id, statut], map: "idx_avis_vehicule_statut")
 }
 
-enum StatutValidationGarage {
-  EN_ATTENTE
-  ACTIF
-  SUSPENDU
-  REJET
+model boite_vitesse {
+  id       String     @id @db.Uuid
+  nom      String?    @db.VarChar(50)
+  vehicule vehicule[]
+}
+
+model boost_annonce {
+  id                  String           @id @db.Uuid
+  annonce_location_id String           @db.Uuid
+  date_debut          DateTime?
+  date_fin            DateTime?
+  niveau_boost        String?          @db.VarChar(50)
+  annonce_location    annonce_location @relation(fields: [annonce_location_id], references: [id])
+
+  @@index([annonce_location_id], map: "idx_boost_annonce_location")
+}
+
+model carburant {
+  id       String     @id @db.Uuid
+  nom      String?    @db.VarChar(50)
+  vehicule vehicule[]
+}
+
+model conversation {
+  id                                               String                     @id @db.Uuid
+  titre                                            String?                    @db.VarChar(255)
+  type_conversation                                TypeConversation?
+  annonce_id                                       String?                    @db.Uuid
+  message_epingle_id                               String?                    @db.Uuid
+  avatar_url                                       String?
+  cree_par                                         String?                    @db.Uuid
+  est_groupe                                       Boolean?
+  created_at                                       DateTime?                  @default(now())
+  updated_at                                       DateTime?
+  annonce_location                                 annonce_location?          @relation(fields: [annonce_id], references: [id])
+  utilisateur                                      utilisateur?               @relation(fields: [cree_par], references: [id])
+  message_conversation_message_epingle_idTomessage message?                   @relation("conversation_message_epingle_idTomessage", fields: [message_epingle_id], references: [id])
+  conversation_participant                         conversation_participant[]
+  message_message_conversation_idToconversation    message[]                  @relation("message_conversation_idToconversation")
+}
+
+model conversation_participant {
+  id                    String       @id @db.Uuid
+  conversation_id       String       @db.Uuid
+  utilisateur_id        String       @db.Uuid
+  date_join             DateTime?
+  est_admin             Boolean?
+  est_mute              Boolean?
+  derniere_lecture_date DateTime?
+  nombre_non_lus        Int?
+  a_rejoint_le          DateTime?
+  conversation          conversation @relation(fields: [conversation_id], references: [id])
+  utilisateur           utilisateur  @relation(fields: [utilisateur_id], references: [id])
+
+  @@unique([conversation_id, utilisateur_id])
+}
+
+model demande_certification {
+  id                                                            String                     @id @db.Uuid
+  utilisateur_id                                                String                     @db.Uuid
+  vehicule_id                                                   String                     @db.Uuid
+  statut                                                        StatutDemandeCertification
+  montant_paiement                                              Decimal?                   @db.Decimal(12, 2)
+  paiement_id                                                   String?                    @db.Uuid
+  inspecteur_id                                                 String?                    @db.Uuid
+  date_soumission                                               DateTime?
+  date_traitement                                               DateTime?
+  date_inspection                                               DateTime?
+  motif_rejet                                                   String?
+  badge_certifie_url                                            String?                    @db.VarChar(500)
+  created_at                                                    DateTime?                  @default(now())
+  updated_at                                                    DateTime?
+  utilisateur_demande_certification_inspecteur_idToutilisateur  utilisateur?               @relation("demande_certification_inspecteur_idToutilisateur", fields: [inspecteur_id], references: [id])
+  paiement                                                      paiement?                  @relation(fields: [paiement_id], references: [id])
+  utilisateur_demande_certification_utilisateur_idToutilisateur utilisateur                @relation("demande_certification_utilisateur_idToutilisateur", fields: [utilisateur_id], references: [id])
+  vehicule                                                      vehicule                   @relation(fields: [vehicule_id], references: [id])
+  inspection                                                    inspection[]
+
+  @@index([statut], map: "idx_demande_certification_statut")
+  @@index([utilisateur_id], map: "idx_demande_certification_utilisateur")
+  @@index([vehicule_id], map: "idx_demande_certification_vehicule")
+}
+
+model demande_trade_in {
+  id                                                       String               @id @db.Uuid
+  utilisateur_id                                           String               @db.Uuid
+  vehicule_actuel_id                                       String               @db.Uuid
+  vehicule_souhaite_id                                     String?              @db.Uuid
+  statut                                                   StatutTradeIn
+  prix_estime                                              Decimal?             @db.Decimal(12, 2)
+  prix_propose                                             Decimal?             @db.Decimal(12, 2)
+  kilometrage_actuel                                       Int?
+  etat_vehicule                                            EtatVehiculeTradeIn?
+  date_soumission                                          DateTime?
+  date_traitement                                          DateTime?
+  date_evaluation                                          DateTime?
+  motif_rejet                                              String?
+  commentaire_admin                                        String?
+  est_notifie                                              Boolean?             @default(false)
+  created_at                                               DateTime?            @default(now())
+  updated_at                                               DateTime?
+  utilisateur                                              utilisateur          @relation(fields: [utilisateur_id], references: [id])
+  vehicule_demande_trade_in_vehicule_actuel_idTovehicule   vehicule             @relation("demande_trade_in_vehicule_actuel_idTovehicule", fields: [vehicule_actuel_id], references: [id])
+  vehicule_demande_trade_in_vehicule_souhaite_idTovehicule vehicule?            @relation("demande_trade_in_vehicule_souhaite_idTovehicule", fields: [vehicule_souhaite_id], references: [id])
+
+  @@index([est_notifie], map: "idx_demande_trade_in_notifie")
+  @@index([statut], map: "idx_demande_trade_in_statut")
+  @@index([utilisateur_id], map: "idx_demande_trade_in_utilisateur")
+}
+
+model disponibilite_location {
+  id                  String           @id @db.Uuid
+  annonce_location_id String           @db.Uuid
+  date                DateTime?
+  est_disponible      Boolean?
+  annonce_location    annonce_location @relation(fields: [annonce_location_id], references: [id])
+}
+
+model garage {
+  id                         String                       @id @db.Uuid
+  nom                        String                       @db.VarChar(255)
+  adresse                    String                       @db.VarChar(500)
+  telephone                  String                       @db.VarChar(50)
+  email                      String?                      @db.VarChar(255)
+  description                String?
+  horaires_ouverture         String?
+  latitude                   Float?
+  longitude                  Float?
+  ville                      String?                      @db.VarChar(255)
+  pays                       String?                      @db.VarChar(255)
+  logo_url                   String?                      @db.VarChar(500)
+  statut_validation          StatutValidationGarage?
+  commentaire_admin          String?
+  date_validation            DateTime?
+  utilisateur_id             String?                      @db.Uuid
+  created_at                 DateTime?                    @default(now())
+  updated_at                 DateTime?
+  avis                       avis[]
+  utilisateur                utilisateur?                 @relation(fields: [utilisateur_id], references: [id])
+  garage_service_association garage_service_association[]
+  rendez_vous_service        rendez_vous_service[]
+
+  @@index([statut_validation], map: "idx_garage_statut_validation")
+  @@index([utilisateur_id], map: "idx_garage_utilisateur")
+  @@index([ville, statut_validation], map: "idx_garage_ville_statut")
+}
+
+model garage_service_association {
+  id             String         @id @db.Uuid
+  garage_id      String         @db.Uuid
+  service_id     String         @db.Uuid
+  prix           Decimal?       @db.Decimal(12, 2)
+  duree_estimee  Int?
+  actif          Boolean?       @default(true)
+  created_at     DateTime?      @default(now())
+  updated_at     DateTime?
+  garage         garage         @relation(fields: [garage_id], references: [id])
+  service_garage service_garage @relation(fields: [service_id], references: [id])
+
+  @@unique([garage_id, service_id], map: "uk_garage_service")
+  @@index([garage_id], map: "idx_garage_service_garage")
+  @@index([service_id], map: "idx_garage_service_service")
+}
+
+model historique_estimation {
+  id                String               @id @db.Uuid
+  vehicule_id       String               @db.Uuid
+  marque            String?              @db.VarChar(100)
+  modele            String?              @db.VarChar(100)
+  annee_fabrication Int?
+  kilometrage       Int?
+  etat_vehicule     EtatVehiculeTradeIn?
+  prix_estime       Decimal?             @db.Decimal(12, 2)
+  prix_minimum      Decimal?             @db.Decimal(12, 2)
+  prix_maximum      Decimal?             @db.Decimal(12, 2)
+  score_condition   Float?
+  recommandation    String?
+  date_estimation   DateTime?
+  vehicule          vehicule             @relation(fields: [vehicule_id], references: [id])
+
+  @@index([vehicule_id, date_estimation], map: "idx_historique_estimation_vehicule_date")
+}
+
+model historique_statut_reservation {
+  id                   String               @id @db.Uuid
+  reservation_id       String               @db.Uuid
+  ancien_statut_id     String?              @db.Uuid
+  nouveau_statut_id    String?              @db.Uuid
+  created_at           DateTime?            @default(now())
+  reservation_location reservation_location @relation(fields: [reservation_id], references: [id])
+}
+
+model inspection {
+  id                       String                  @id @db.Uuid
+  demande_certification_id String                  @db.Uuid
+  inspecteur_id            String                  @db.Uuid
+  date_inspection          DateTime?
+  resultat                 ResultatInspection?
+  commentaire              String?
+  kilometrage              Int?
+  etat_moteur              EtatVehiculeInspection?
+  etat_generateur          EtatVehiculeInspection?
+  etat_freinage            EtatVehiculeInspection?
+  etat_suspension          EtatVehiculeInspection?
+  etat_transmission        EtatVehiculeInspection?
+  etat_pneus               EtatVehiculeInspection?
+  etat_carrosserie         EtatVehiculeInspection?
+  etat_interieur           EtatVehiculeInspection?
+  score_total              Int?
+  created_at               DateTime?               @default(now())
+  updated_at               DateTime?
+  demande_certification    demande_certification   @relation(fields: [demande_certification_id], references: [id])
+  utilisateur              utilisateur             @relation(fields: [inspecteur_id], references: [id])
+  rapport_inspection       rapport_inspection?
+
+  @@index([demande_certification_id], map: "idx_inspection_demande")
+  @@index([inspecteur_id], map: "idx_inspection_inspecteur")
+}
+
+model marque {
+  id       String     @id @db.Uuid
+  nom      String?    @db.VarChar(100)
+  modele   modele[]
+  vehicule vehicule[]
+}
+
+model message {
+  id                                                    String         @id @db.Uuid
+  conversation_id                                       String         @db.Uuid
+  utilisateur_id                                        String         @db.Uuid
+  contenu                                               String
+  date_envoi                                            DateTime?
+  date_lecture                                          DateTime?
+  est_lu                                                Boolean?
+  est_supprime                                          Boolean?
+  est_epingle                                           Boolean?
+  type_message                                          TypeMessage?
+  created_at                                            DateTime?      @default(now())
+  conversation_conversation_message_epingle_idTomessage conversation[] @relation("conversation_message_epingle_idTomessage")
+  conversation_message_conversation_idToconversation    conversation   @relation("message_conversation_idToconversation", fields: [conversation_id], references: [id])
+  utilisateur                                           utilisateur    @relation(fields: [utilisateur_id], references: [id])
+
+  @@index([conversation_id, date_envoi], map: "idx_message_conversation_date")
+}
+
+model modele {
+  id        String     @id @db.Uuid
+  marque_id String?    @db.Uuid
+  nom       String?    @db.VarChar(100)
+  marque    marque?    @relation(fields: [marque_id], references: [id])
+  vehicule  vehicule[]
+}
+
+model notification {
+  id             String           @id @db.Uuid
+  utilisateur_id String           @db.Uuid
+  titre          String           @db.VarChar(255)
+  message        String
+  type           TypeNotification
+  est_lu         Boolean?         @default(false)
+  reference_id   String?          @db.Uuid
+  reference_type String?          @db.VarChar(50)
+  date_lecture   DateTime?
+  created_at     DateTime?        @default(now())
+  utilisateur    utilisateur      @relation(fields: [utilisateur_id], references: [id])
+
+  @@index([utilisateur_id], map: "idx_notification_utilisateur")
+  @@index([utilisateur_id, est_lu], map: "idx_notification_utilisateur_lu")
+}
+
+model option_assurance {
+  id                   String                 @id @db.Uuid
+  produit_assurance_id String                 @db.Uuid
+  nom                  String                 @db.VarChar(255)
+  description          String?
+  prix_supplementaire  Decimal?               @db.Decimal(12, 2)
+  est_actif            Boolean?               @default(true)
+  created_at           DateTime?              @default(now())
+  updated_at           DateTime?
+  produit_assurance    produit_assurance      @relation(fields: [produit_assurance_id], references: [id])
+  souscription_options souscription_options[]
+
+  @@index([est_actif], map: "idx_option_assurance_actif")
+  @@index([produit_assurance_id], map: "idx_option_assurance_produit")
+}
+
+model otp_code {
+  id             String      @id @db.Uuid
+  utilisateur_id String      @db.Uuid
+  code           String      @db.VarChar(6)
+  type           OtpType
+  expiration     DateTime
+  utilise        Boolean     @default(false)
+  tentatives     Int         @default(0)
+  created_at     DateTime    @default(now())
+  utilisateur    utilisateur @relation(fields: [utilisateur_id], references: [id])
+
+  @@index([utilisateur_id, type], map: "idx_otp_utilisateur")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model paiement {
+  id                                                                 String                   @id @db.Uuid
+  utilisateur_id                                                     String?                  @db.Uuid
+  reservation_id                                                     String?                  @db.Uuid
+  montant                                                            Decimal                  @db.Decimal(15, 2)
+  montant_escrow                                                     Decimal?                 @db.Decimal(15, 2)
+  commission                                                         Decimal?                 @default(0) @db.Decimal(15, 2)
+  methode_paiement                                                   TypePaiement?
+  statut                                                             StatutPaiement
+  is_escrow                                                          Boolean?                 @default(false)
+  reference_transaction                                              String?                  @db.VarChar(100)
+  reference_externe                                                  String?                  @db.VarChar(100)
+  url_paiement                                                       String?                  @db.VarChar(500)
+  date_paiement                                                      DateTime?
+  date_expiration                                                    DateTime?
+  created_at                                                         DateTime?                @default(now())
+  updated_at                                                         DateTime?
+  demande_certification                                              demande_certification[]
+  reservation_location_paiement_reservation_idToreservation_location reservation_location?    @relation("paiement_reservation_idToreservation_location", fields: [reservation_id], references: [id])
+  utilisateur                                                        utilisateur?             @relation(fields: [utilisateur_id], references: [id])
+  paiement_log                                                       paiement_log[]
+  reservation_location_reservation_location_paiement_idTopaiement    reservation_location[]   @relation("reservation_location_paiement_idTopaiement")
+  souscription_assurance                                             souscription_assurance[]
+
+  @@index([statut], map: "idx_paiement_statut")
+  @@index([utilisateur_id], map: "idx_paiement_utilisateur")
+}
+
+model paiement_log {
+  id          String    @id @db.Uuid
+  paiement_id String?   @db.Uuid
+  action      String    @db.VarChar(50)
+  details     String?
+  date_action DateTime? @default(now())
+  paiement    paiement? @relation(fields: [paiement_id], references: [id])
+}
+
+model photo_vehicule {
+  id             String    @id @db.Uuid
+  vehicule_id    String    @db.Uuid
+  url            String    @db.VarChar(500)
+  est_principale Boolean?
+  ordre          Int?
+  created_at     DateTime? @default(now())
+  vehicule       vehicule  @relation(fields: [vehicule_id], references: [id])
+}
+
+model portefeuille {
+  id                       String                     @id @db.Uuid
+  utilisateur_id           String                     @unique @db.Uuid
+  solde                    Decimal?                   @default(0) @db.Decimal(15, 2)
+  solde_bloque             Decimal?                   @default(0) @db.Decimal(15, 2)
+  is_actif                 Boolean?                   @default(true)
+  date_derniere_recharge   DateTime?
+  created_at               DateTime?                  @default(now())
+  updated_at               DateTime?
+  utilisateur              utilisateur                @relation(fields: [utilisateur_id], references: [id])
+  transaction_portefeuille transaction_portefeuille[]
+}
+
+model produit_assurance {
+  id                     String                   @id @db.Uuid
+  nom                    String                   @db.VarChar(255)
+  description            String?
+  prix_base              Decimal                  @db.Decimal(12, 2)
+  type_assurance         TypeAssurance
+  duree_mois             Int?
+  est_actif              Boolean?                 @default(true)
+  created_at             DateTime?                @default(now())
+  updated_at             DateTime?
+  option_assurance       option_assurance[]
+  souscription_assurance souscription_assurance[]
+
+  @@index([est_actif], map: "idx_produit_assurance_actif")
+}
+
+model rapport_inspection {
+  id              String     @id @db.Uuid
+  inspection_id   String     @unique @db.Uuid
+  url_rapport_pdf String?    @db.VarChar(500)
+  date_generation DateTime?
+  score_globale   Int?
+  recommendations String?
+  conclusion      String?
+  est_approuve    Boolean?
+  created_at      DateTime?  @default(now())
+  updated_at      DateTime?
+  inspection      inspection @relation(fields: [inspection_id], references: [id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reservation_location {
+  id                                                     String                          @id @db.Uuid
+  annonce_location_id                                    String                          @db.Uuid
+  locataire_id                                           String                          @db.Uuid
+  statut                                                 StatutReservation?
+  cout_total                                             Decimal?                        @db.Decimal(12, 2)
+  paiement_id                                            String?                         @db.Uuid
+  date_debut                                             DateTime?
+  date_fin                                               DateTime?
+  date_creation                                          DateTime?
+  motif_annulation                                       String?
+  historique_statut_reservation                          historique_statut_reservation[]
+  paiement_paiement_reservation_idToreservation_location paiement[]                      @relation("paiement_reservation_idToreservation_location")
+  annonce_location                                       annonce_location                @relation(fields: [annonce_location_id], references: [id])
+  utilisateur                                            utilisateur                     @relation(fields: [locataire_id], references: [id])
+  paiement_reservation_location_paiement_idTopaiement    paiement?                       @relation("reservation_location_paiement_idTopaiement", fields: [paiement_id], references: [id])
+}
+
+model service_garage {
+  id                         String                       @id @db.Uuid
+  nom                        String                       @db.VarChar(255)
+  description                String?
+  prix                       Decimal?                     @db.Decimal(12, 2)
+  duree_estimee              Int?
+  categorie                  CategorieServiceGarage?
+  actif                      Boolean?                     @default(true)
+  created_at                 DateTime?                    @default(now())
+  updated_at                 DateTime?
+  garage_service_association garage_service_association[]
+  rendez_vous_service         rendez_vous_service[]
+
+  @@index([actif], map: "idx_service_garage_actif")
+  @@index([categorie, actif], map: "idx_service_garage_categorie_actif")
+}
+
+model rendez_vous_service {
+  id                String       @id @db.Uuid
+  garage_id         String       @db.Uuid
+  client_id         String       @db.Uuid
+  service_id        String?      @db.Uuid
+  date_rendez_vous  DateTime?
+  statut            String?      @db.VarChar(50)
+  commentaire       String?
+  created_at        DateTime?    @default(now())
+  updated_at        DateTime?
+  garage            garage       @relation(fields: [garage_id], references: [id])
+  client            utilisateur  @relation(fields: [client_id], references: [id])
+  service           service_garage? @relation(fields: [service_id], references: [id])
+
+  @@index([garage_id], map: "idx_rendez_vous_garage")
+  @@index([client_id], map: "idx_rendez_vous_client")
+  @@index([date_rendez_vous], map: "idx_rendez_vous_date")
+}
+
+model signalement {
+  id                                                  String                      @id @db.Uuid
+  utilisateur_id                                      String                      @db.Uuid
+  type_entite                                         TypeEntiteSignalable
+  entite_id                                           String                      @db.Uuid
+  motif                                               MotifSignalement
+  description                                         String?
+  statut_traitement                                   StatutTraitementSignalement @default(EN_ATTENTE)
+  traite_par                                          String?                     @db.Uuid
+  date_traitement                                     DateTime?
+  created_at                                          DateTime?                   @default(now())
+  utilisateur_signalement_traite_parToutilisateur     utilisateur?                @relation("signalement_traite_parToutilisateur", fields: [traite_par], references: [id])
+  utilisateur_signalement_utilisateur_idToutilisateur utilisateur                 @relation("signalement_utilisateur_idToutilisateur", fields: [utilisateur_id], references: [id])
+
+  @@index([statut_traitement], map: "idx_signalement_statut")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model souscription_assurance {
+  id                   String                 @id @db.Uuid
+  utilisateur_id       String                 @db.Uuid
+  produit_assurance_id String                 @db.Uuid
+  vehicule_id          String                 @db.Uuid
+  statut               StatutAssurance
+  montant_total        Decimal                @db.Decimal(12, 2)
+  date_debut           DateTime?
+  date_fin             DateTime?
+  numero_contrat       String?                @db.VarChar(100)
+  document_url         String?                @db.VarChar(500)
+  paiement_id          String?                @db.Uuid
+  created_at           DateTime?              @default(now())
+  updated_at           DateTime?
+  paiement             paiement?              @relation(fields: [paiement_id], references: [id])
+  produit_assurance    produit_assurance      @relation(fields: [produit_assurance_id], references: [id])
+  utilisateur          utilisateur            @relation(fields: [utilisateur_id], references: [id])
+  vehicule             vehicule               @relation(fields: [vehicule_id], references: [id])
+  souscription_options souscription_options[]
+
+  @@index([statut], map: "idx_souscription_assurance_statut")
+  @@index([utilisateur_id], map: "idx_souscription_assurance_utilisateur")
+  @@index([vehicule_id], map: "idx_souscription_assurance_vehicule")
+}
+
+model souscription_options {
+  souscription_id        String                 @db.Uuid
+  option_id              String                 @db.Uuid
+  option_assurance       option_assurance       @relation(fields: [option_id], references: [id])
+  souscription_assurance souscription_assurance @relation(fields: [souscription_id], references: [id])
+
+  @@id([souscription_id, option_id])
+}
+
+model transaction_portefeuille {
+  id                String            @id @db.Uuid
+  portefeuille_id   String            @db.Uuid
+  montant           Decimal           @db.Decimal(15, 2)
+  type_transaction  TypeTransaction
+  statut            StatutTransaction
+  description       String?
+  reference_externe String?           @db.VarChar(100)
+  date_transaction  DateTime?         @default(now())
+  created_at        DateTime?         @default(now())
+  portefeuille      portefeuille      @relation(fields: [portefeuille_id], references: [id])
+
+  @@index([portefeuille_id], map: "idx_transaction_portefeuille")
+}
+
+model type_utilisateur {
+  id          String        @id @db.Uuid
+  nom         String        @unique @db.VarChar(50)
+  description String?
+  utilisateur utilisateur[]
+}
+
+model utilisateur {
+  id                                                                      String                     @id @db.Uuid
+  email                                                                   String                     @unique @db.VarChar(255)
+  telephone                                                               String                     @unique @db.VarChar(20)
+  mot_de_passe_hash                                                       String                     @db.VarChar(255)
+  prenom                                                                  String?                    @db.VarChar(100)
+  nom                                                                     String?                    @db.VarChar(100)
+  photo_profil_url                                                        String?                    @db.VarChar(500)
+  email_verifie                                                           Boolean?                   @default(false)
+  telephone_verifie                                                       Boolean?                   @default(false)
+  note_moyenne                                                            Decimal?                   @db.Decimal(3, 2)
+  nombre_total_avis                                                       Int?                       @default(0)
+  double_auth_active                                                      Boolean?                   @default(false)
+  type_utilisateur_id                                                     String?                    @db.Uuid
+  statut_verification                                                     String?                    @db.VarChar(50)
+  derniere_connexion                                                      DateTime?
+  created_at                                                              DateTime?                  @default(now())
+  updated_at                                                              DateTime?
+  deleted_at                                                              DateTime?
+  annonce_location                                                        annonce_location[]
+  avis_avis_auteur_idToutilisateur                                        avis[]                     @relation("avis_auteur_idToutilisateur")
+  avis_avis_cible_utilisateur_idToutilisateur                             avis[]                     @relation("avis_cible_utilisateur_idToutilisateur")
+  conversation                                                            conversation[]
+  conversation_participant                                                conversation_participant[]
+  demande_certification_demande_certification_inspecteur_idToutilisateur  demande_certification[]    @relation("demande_certification_inspecteur_idToutilisateur")
+  demande_certification_demande_certification_utilisateur_idToutilisateur demande_certification[]    @relation("demande_certification_utilisateur_idToutilisateur")
+  demande_trade_in                                                        demande_trade_in[]
+  garage                                                                  garage[]
+  inspection                                                              inspection[]
+  message                                                                 message[]
+  notification                                                            notification[]
+  otp_code                                                                otp_code[]
+  paiement                                                                paiement[]
+  portefeuille                                                            portefeuille?
+  reservation_location                                                    reservation_location[]
+  signalement_signalement_traite_parToutilisateur                         signalement[]              @relation("signalement_traite_parToutilisateur")
+  signalement_signalement_utilisateur_idToutilisateur                     signalement[]              @relation("signalement_utilisateur_idToutilisateur")
+  souscription_assurance                                                  souscription_assurance[]
+  type_utilisateur                                                        type_utilisateur?          @relation(fields: [type_utilisateur_id], references: [id])
+  utilisateur_abonnement                                                  utilisateur_abonnement[]
+  vehicule                                                                vehicule[]
+  vehicule_favori                                                         vehicule_favori[]
+  rendez_vous_service                                                     rendez_vous_service[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model utilisateur_abonnement {
+  id                        String           @id @db.Uuid
+  utilisateur_id            String           @db.Uuid
+  abonnement_id             String           @db.Uuid
+  date_debut                DateTime?
+  date_fin                  DateTime?
+  statut                    StatutAbonnement
+  nombre_annonces_utilisees Int?
+  est_essai_gratuit         Boolean?
+  date_fin_essai            DateTime?
+  abonnement                abonnement       @relation(fields: [abonnement_id], references: [id])
+  utilisateur               utilisateur      @relation(fields: [utilisateur_id], references: [id])
+
+  @@index([utilisateur_id], map: "idx_utilisateur_abonnement_utilisateur_id")
+}
+
+model vehicule {
+  id                                                               String                   @id @db.Uuid
+  proprietaire_id                                                  String                   @db.Uuid
+  marque_id                                                        String?                  @db.Uuid
+  modele_id                                                        String?                  @db.Uuid
+  annee_fabrication                                                Int?
+  kilometrage                                                      Int?
+  carburant_id                                                     String?                  @db.Uuid
+  boite_vitesse_id                                                 String?                  @db.Uuid
+  couleur                                                          String?                  @db.VarChar(50)
+  prix_vente                                                       Decimal?                 @db.Decimal(12, 2)
+  description                                                      String?
+  numero_vin                                                       String?
+  immatriculation                                                  String?
+  titre                                                            String?
+  nombre_portes                                                    Int?
+  nombre_places                                                    Int?
+  cylindree                                                        String?
+  puissance_fiscale                                                String?
+  est_garantie                                                     Boolean?
+  garantie_mois                                                    Int?
+  published_at                                                     DateTime?
+  prix_negociable                                                  Boolean?
+  certifie                                                         Boolean?
+  statut                                                           String                   @db.VarChar(50)
+  est_boost                                                        Boolean?
+  boost_debut                                                      DateTime?
+  boost_fin                                                        DateTime?
+  vues                                                             Int?
+  nombre_favoris                                                   Int?
+  created_at                                                       DateTime?                @default(now())
+  updated_at                                                       DateTime?
+  deleted_at                                                       DateTime?
+  annonce_location                                                 annonce_location[]
+  avis                                                             avis[]
+  demande_certification                                            demande_certification[]
+  demande_trade_in_demande_trade_in_vehicule_actuel_idTovehicule   demande_trade_in[]       @relation("demande_trade_in_vehicule_actuel_idTovehicule")
+  demande_trade_in_demande_trade_in_vehicule_souhaite_idTovehicule demande_trade_in[]       @relation("demande_trade_in_vehicule_souhaite_idTovehicule")
+  historique_estimation                                            historique_estimation[]
+  photo_vehicule                                                   photo_vehicule[]
+  souscription_assurance                                           souscription_assurance[]
+  boite_vitesse                                                    boite_vitesse?           @relation(fields: [boite_vitesse_id], references: [id])
+  carburant                                                        carburant?               @relation(fields: [carburant_id], references: [id])
+  marque                                                           marque?                  @relation(fields: [marque_id], references: [id])
+  modele                                                           modele?                  @relation(fields: [modele_id], references: [id])
+  utilisateur                                                      utilisateur              @relation(fields: [proprietaire_id], references: [id])
+  vehicule_favori                                                  vehicule_favori[]
+
+  @@index([statut, created_at], map: "idx_vehicule_statut_created")
+}
+
+model vehicule_favori {
+  id             String      @id @db.Uuid
+  utilisateur_id String      @db.Uuid
+  vehicule_id    String      @db.Uuid
+  created_at     DateTime?   @default(now())
+  utilisateur    utilisateur @relation(fields: [utilisateur_id], references: [id])
+  vehicule       vehicule    @relation(fields: [vehicule_id], references: [id])
+
+  @@unique([utilisateur_id, vehicule_id])
 }
 
 enum CategorieServiceGarage {
@@ -45,14 +727,55 @@ enum CategorieServiceGarage {
   AUTRE
 }
 
-enum TypeAssurance {
-  RESPONSABILITE_CIVILE
-  TOUS_RISQUES
-  VOL
-  INCENDIE
-  BRIS_DE_GLACE
-  ASSISTANCE
-  PROTECTION_JURIDIQUE
+enum EtatVehiculeInspection {
+  BON
+  MOYEN
+  MAUVAIS
+  NON_VERIFIE
+}
+
+enum EtatVehiculeTradeIn {
+  excellent
+  bon
+  moyen
+  mauvais
+}
+
+enum MotifSignalement {
+  CONTENU_INAPPROPRIE
+  FAKE_ANNONCE
+  PRIX_TROMPEUR
+  HARCELEMENT
+  FRAUDE
+  ARNAQUE
+  PHOTO_TROMPEUSE
+  DESCRIPTION_INCORRECTE
+  VEHICULE_ENDOMMAGE
+  SPAM
+  MULTI_POST
+  AUTRE
+}
+
+enum OtpType {
+  INSCRIPTION
+  CONNEXION
+  MOT_DE_PASSE_OUBLIE
+  VERIFICATION_EMAIL
+  VERIFICATION_TELEPHONE
+}
+
+enum ResultatInspection {
+  EN_COURS
+  REUSSI
+  ECHEC
+  A_REVISER
+}
+
+enum StatutAbonnement {
+  ACTIF
+  EXPIRE
+  ANNULE
+  EN_ATTENTE
 }
 
 enum StatutAssurance {
@@ -64,20 +787,11 @@ enum StatutAssurance {
   PAYEE
 }
 
-enum StatutTradeIn {
+enum StatutAvis {
   EN_ATTENTE
-  EN_COURS_EVALUATION
-  EVALUATION_TERMINEE
-  ACCEPTE
-  REJETEE
-  ANNULEE
-}
-
-enum EtatVehiculeTradeIn {
-  excellent
-  bon
-  moyen
-  mauvais
+  PUBLIE
+  SIGNALEE
+  SUPPRIMEE
 }
 
 enum StatutDemandeCertification {
@@ -89,18 +803,13 @@ enum StatutDemandeCertification {
   REJETEE
 }
 
-enum ResultatInspection {
+enum StatutPaiement {
+  EN_ATTENTE
   EN_COURS
-  REUSSI
-  ECHEC
-  A_REVISER
-}
-
-enum EtatVehiculeInspection {
-  BON
-  MOYEN
-  MAUVAIS
-  NON_VERIFIE
+  CONFIRME
+  ECHOUE
+  REMBOURSE
+  ANNULE
 }
 
 enum StatutReservation {
@@ -113,32 +822,21 @@ enum StatutReservation {
   EN_COURS
 }
 
-enum TypePaiement {
-  WAVE
-  ORANGE_MONEY
-  FREE_MONEY
-  CARTE_BANCAIRE
-  ESCROW
+enum StatutTradeIn {
+  EN_ATTENTE
+  EN_COURS_EVALUATION
+  EVALUATION_TERMINEE
+  ACCEPTE
+  REJETEE
+  ANNULEE
 }
 
-enum StatutPaiement {
+enum StatutTraitementSignalement {
   EN_ATTENTE
   EN_COURS
-  CONFIRME
-  ECHOUE
-  REMBOURSE
-  ANNULE
-}
-
-enum TypeTransaction {
-  CREDIT
-  DEBIT
-  RETRAIT
-  REMBOURSEMENT
-  COMMISSION
-  ESCROW_DEPOSIT
-  ESCROW_RELEASE
-  ESCROW_REFUND
+  TRAITE
+  REJETE
+  RESOLU
 }
 
 enum StatutTransaction {
@@ -149,6 +847,13 @@ enum StatutTransaction {
   ANNULEE
 }
 
+enum StatutValidationGarage {
+  EN_ATTENTE
+  ACTIF
+  SUSPENDU
+  REJET
+}
+
 enum TypeAbonnement {
   BASIC
   PREMIUM
@@ -156,16 +861,35 @@ enum TypeAbonnement {
   ENTREPRISE
 }
 
-enum StatutAbonnement {
-  ACTIF
-  EXPIRE
-  ANNULE
-  EN_ATTENTE
+enum TypeAssurance {
+  RESPONSABILITE_CIVILE
+  TOUS_RISQUES
+  VOL
+  INCENDIE
+  BRIS_DE_GLACE
+  ASSISTANCE
+  PROTECTION_JURIDIQUE
+}
+
+enum TypeAvis {
+  ACHAT_VEHICULE
+  LOCATION_VEHICULE
+  SERVICE_GARAGE
+  UTILISATEUR
 }
 
 enum TypeConversation {
   DIRECT
   GROUP
+}
+
+enum TypeEntiteSignalable {
+  ANNONCE
+  UTILISATEUR
+  MESSAGE
+  AVIS
+  VEHICULE
+  COMMENTAIRE
 }
 
 enum TypeMessage {
@@ -201,810 +925,28 @@ enum TypeNotification {
   ASSURANCE
   ASSURANCE_SOUSCRITE
   ASSURANCE_EXPIRE
+  RENDEZ_VOUS_GARAGE
+  RENDEZ_VOUS_CONFIRME
+  RENDEZ_VOUS_ANNULE
   SYSTEM
   MARKETING
 }
 
-enum TypeEntiteSignalable {
-  ANNONCE
-  UTILISATEUR
-  MESSAGE
-  AVIS
-  VEHICULE
-  COMMENTAIRE
+enum TypePaiement {
+  WAVE
+  ORANGE_MONEY
+  FREE_MONEY
+  CARTE_BANCAIRE
+  ESCROW
 }
 
-enum MotifSignalement {
-  CONTENU_INAPPROPRIE
-  FAKE_ANNONCE
-  PRIX_TROMPEUR
-  HARCELEMENT
-  FRAUDE
-  ARNAQUE
-  PHOTO_TROMPEUSE
-  DESCRIPTION_INCORRECTE
-  VEHICULE_ENDOMMAGE
-  SPAM
-  MULTI_POST
-  AUTRE
-}
-
-enum StatutTraitementSignalement {
-  EN_ATTENTE
-  EN_COURS
-  TRAITE
-  REJETE
-  RESOLU
-}
-
-model TypeUtilisateur {
-  id           String        @id @default(uuid()) @db.Uuid
-  nom          String        @unique @db.VarChar(50)
-  description  String?
-  utilisateurs Utilisateur[]
-
-  @@map("type_utilisateur")
-}
-
-model Utilisateur {
-  id                 String    @id @default(uuid()) @db.Uuid
-  email              String    @unique @db.VarChar(255)
-  telephone          String    @unique @db.VarChar(20)
-  motDePasseHash     String    @map("mot_de_passe_hash") @db.VarChar(255)
-  prenom             String?   @db.VarChar(100)
-  nom                String?   @db.VarChar(100)
-  photoProfilUrl     String?   @map("photo_profil_url") @db.VarChar(500)
-  emailVerifie       Boolean?  @default(false) @map("email_verifie")
-  telephoneVerifie   Boolean?  @default(false) @map("telephone_verifie")
-  noteMoyenne        Decimal?  @map("note_moyenne") @db.Decimal(3, 2)
-  nombreTotalAvis    Int?      @default(0) @map("nombre_total_avis")
-  doubleAuthActive   Boolean?  @default(false) @map("double_auth_active")
-  typeUtilisateurId  String?   @map("type_utilisateur_id") @db.Uuid
-  statutVerification String?   @map("statut_verification") @db.VarChar(50)
-  derniereConnexion  DateTime? @map("derniere_connexion")
-  createdAt          DateTime? @default(now()) @map("created_at")
-  updatedAt          DateTime? @updatedAt @map("updated_at")
-  deletedAt          DateTime? @map("deleted_at")
-
-  typeUtilisateur           TypeUtilisateur?          @relation(fields: [typeUtilisateurId], references: [id])
-  otpCodes                  OtpCode[]
-  vehicules                 Vehicule[]
-  vehiculeFavoris           VehiculeFavori[]
-  annoncesLocation          AnnonceLocation[]
-  reservationsLocation      ReservationLocation[]
-  paiements                 Paiement[]
-  portefeuille              Portefeuille?
-  abonnementsUtilisateur    UtilisateurAbonnement[]
-  notifications             Notification[]
-  signalements              Signalement[]             @relation("SignalementAuteur")
-  signalementsTraites       Signalement[]             @relation("SignalementModerateur")
-  conversationsCreees       Conversation[]            @relation("ConversationCreateur")
-  conversationsParticipants ConversationParticipant[]
-  messagesEnvoyes           Message[]
-  avisEcrits                Avis[]                    @relation("AvisAuteur")
-  avisRecus                 Avis[]                    @relation("AvisCibleUtilisateur")
-  garages                   Garage[]
-  souscriptionsAssurance    SouscriptionAssurance[]
-  demandesTradeIn           DemandeTradeIn[]
-  demandesCertification     DemandeCertification[]    @relation("DemandeCertificationUtilisateur")
-  inspectionsAssignees      DemandeCertification[]    @relation("DemandeCertificationInspecteur")
-  inspectionsRealisees      Inspection[]              @relation("InspectionInspecteur")
-
-  @@map("utilisateur")
-}
-
-model OtpCode {
-  id            String   @id @default(uuid()) @db.Uuid
-  utilisateurId String   @map("utilisateur_id") @db.Uuid
-  code          String   @db.VarChar(6)
-  type          OtpType
-  expiration    DateTime
-  utilise       Boolean  @default(false)
-  tentatives    Int      @default(0)
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
-
-  @@index([utilisateurId, type], map: "idx_otp_utilisateur")
-  @@map("otp_code")
-}
-
-model Marque {
-  id        String     @id @default(uuid()) @db.Uuid
-  nom       String?    @db.VarChar(100)
-  vehicules Vehicule[]
-  modeles   Modele[]
-
-  @@map("marque")
-}
-
-model Modele {
-  id        String     @id @default(uuid()) @db.Uuid
-  marqueId  String?    @map("marque_id") @db.Uuid
-  nom       String?    @db.VarChar(100)
-  vehicules Vehicule[]
-  marque    Marque?    @relation(fields: [marqueId], references: [id])
-
-  @@map("modele")
-}
-
-model Carburant {
-  id        String     @id @default(uuid()) @db.Uuid
-  nom       String?    @db.VarChar(50)
-  vehicules Vehicule[]
-
-  @@map("carburant")
-}
-
-model BoiteVitesse {
-  id        String     @id @default(uuid()) @db.Uuid
-  nom       String?    @db.VarChar(50)
-  vehicules Vehicule[]
-
-  @@map("boite_vitesse")
-}
-
-model Vehicule {
-  id               String    @id @default(uuid()) @db.Uuid
-  proprietaireId   String    @map("proprietaire_id") @db.Uuid
-  marqueId         String?   @map("marque_id") @db.Uuid
-  modeleId         String?   @map("modele_id") @db.Uuid
-  anneeFabrication Int?      @map("annee_fabrication")
-  kilometrage      Int?
-  carburantId      String?   @map("carburant_id") @db.Uuid
-  boiteVitesseId   String?   @map("boite_vitesse_id") @db.Uuid
-  couleur          String?   @db.VarChar(50)
-  prixVente        Decimal?  @map("prix_vente") @db.Decimal(12, 2)
-  description      String?
-  numeroVin        String?   @map("numero_vin")
-  immatriculation  String?
-  titre            String?
-  nombrePortes     Int?      @map("nombre_portes")
-  nombrePlaces     Int?      @map("nombre_places")
-  cylindree        String?
-  puissanceFiscale String?   @map("puissance_fiscale")
-  estGarantie      Boolean?  @map("est_garantie")
-  garantieMois     Int?      @map("garantie_mois")
-  publishedAt      DateTime? @map("published_at")
-  prixNegociable   Boolean?  @map("prix_negociable")
-  certifie         Boolean?
-  statut           String    @db.VarChar(50)
-  estBoost         Boolean?  @map("est_boost")
-  boostDebut       DateTime? @map("boost_debut")
-  boostFin         DateTime? @map("boost_fin")
-  vues             Int?
-  nombreFavoris    Int?      @map("nombre_favoris")
-  createdAt        DateTime? @default(now()) @map("created_at")
-  updatedAt        DateTime? @updatedAt @map("updated_at")
-  deletedAt        DateTime? @map("deleted_at")
-
-  proprietaire            Utilisateur             @relation(fields: [proprietaireId], references: [id])
-  marque                  Marque?                 @relation(fields: [marqueId], references: [id])
-  modele                  Modele?                 @relation(fields: [modeleId], references: [id])
-  carburant               Carburant?              @relation(fields: [carburantId], references: [id])
-  boiteVitesse            BoiteVitesse?           @relation(fields: [boiteVitesseId], references: [id])
-  photos                  PhotoVehicule[]
-  favoris                 VehiculeFavori[]
-  annoncesLocation        AnnonceLocation[]
-  avis                    Avis[]
-  souscriptionsAssurance  SouscriptionAssurance[]
-  demandesTradeInActuel   DemandeTradeIn[]        @relation("DemandeTradeInVehiculeActuel")
-  demandesTradeInSouhaite DemandeTradeIn[]        @relation("DemandeTradeInVehiculeSouhaite")
-  historiquesEstimation   HistoriqueEstimation[]
-  demandesCertification   DemandeCertification[]
-
-  @@index([statut, createdAt], map: "idx_vehicule_statut_created")
-  @@map("vehicule")
-}
-
-model PhotoVehicule {
-  id            String    @id @default(uuid()) @db.Uuid
-  vehiculeId    String    @map("vehicule_id") @db.Uuid
-  url           String    @db.VarChar(500)
-  estPrincipale Boolean?  @map("est_principale")
-  ordre         Int?
-  createdAt     DateTime? @default(now()) @map("created_at")
-
-  vehicule Vehicule @relation(fields: [vehiculeId], references: [id])
-
-  @@map("photo_vehicule")
-}
-
-model Avis {
-  id                 String      @id @default(uuid()) @db.Uuid
-  auteurId           String      @map("auteur_id") @db.Uuid
-  cibleUtilisateurId String?     @map("cible_utilisateur_id") @db.Uuid
-  vehiculeId         String?     @map("vehicule_id") @db.Uuid
-  garageId           String?     @map("garage_id") @db.Uuid
-  typeAvis           TypeAvis?   @map("type_avis")
-  transactionId      String      @map("transaction_id") @db.Uuid
-  note               Int
-  commentaire        String?
-  statut             StatutAvis?
-  createdAt          DateTime?   @default(now()) @map("created_at")
-
-  auteur           Utilisateur  @relation("AvisAuteur", fields: [auteurId], references: [id])
-  cibleUtilisateur Utilisateur? @relation("AvisCibleUtilisateur", fields: [cibleUtilisateurId], references: [id])
-  vehicule         Vehicule?    @relation(fields: [vehiculeId], references: [id])
-  garage           Garage?      @relation(fields: [garageId], references: [id])
-
-  @@index([cibleUtilisateurId, statut], map: "idx_avis_cible_utilisateur_statut")
-  @@index([vehiculeId, statut], map: "idx_avis_vehicule_statut")
-  @@index([garageId, statut], map: "idx_avis_garage_statut")
-  @@index([transactionId], map: "idx_avis_transaction")
-  @@map("avis")
-}
-
-model Garage {
-  id                String                  @id @default(uuid()) @db.Uuid
-  nom               String                  @db.VarChar(255)
-  adresse           String                  @db.VarChar(500)
-  telephone         String                  @db.VarChar(50)
-  email             String?                 @db.VarChar(255)
-  description       String?
-  horairesOuverture String?                 @map("horaires_ouverture")
-  latitude          Float?
-  longitude         Float?
-  ville             String?                 @db.VarChar(255)
-  pays              String?                 @db.VarChar(255)
-  logoUrl           String?                 @map("logo_url") @db.VarChar(500)
-  statutValidation  StatutValidationGarage? @map("statut_validation")
-  commentaireAdmin  String?                 @map("commentaire_admin")
-  dateValidation    DateTime?               @map("date_validation")
-  utilisateurId     String?                 @map("utilisateur_id") @db.Uuid
-  createdAt         DateTime?               @default(now()) @map("created_at")
-  updatedAt         DateTime?               @updatedAt @map("updated_at")
-
-  proprietaire Utilisateur?               @relation(fields: [utilisateurId], references: [id])
-  services     GarageServiceAssociation[]
-  avis         Avis[]
-
-  @@index([utilisateurId], map: "idx_garage_utilisateur")
-  @@index([statutValidation], map: "idx_garage_statut_validation")
-  @@index([ville, statutValidation], map: "idx_garage_ville_statut")
-  @@map("garage")
-}
-
-model ServiceGarage {
-  id           String                  @id @default(uuid()) @db.Uuid
-  nom          String                  @db.VarChar(255)
-  description  String?
-  prix         Decimal?                @db.Decimal(12, 2)
-  dureeEstimee Int?                    @map("duree_estimee")
-  categorie    CategorieServiceGarage?
-  actif        Boolean?                @default(true)
-  createdAt    DateTime?               @default(now()) @map("created_at")
-  updatedAt    DateTime?               @updatedAt @map("updated_at")
-
-  garages GarageServiceAssociation[]
-
-  @@index([actif], map: "idx_service_garage_actif")
-  @@index([categorie, actif], map: "idx_service_garage_categorie_actif")
-  @@map("service_garage")
-}
-
-model GarageServiceAssociation {
-  id           String    @id @default(uuid()) @db.Uuid
-  garageId     String    @map("garage_id") @db.Uuid
-  serviceId    String    @map("service_id") @db.Uuid
-  prix         Decimal?  @db.Decimal(12, 2)
-  dureeEstimee Int?      @map("duree_estimee")
-  actif        Boolean?  @default(true)
-  createdAt    DateTime? @default(now()) @map("created_at")
-  updatedAt    DateTime? @updatedAt @map("updated_at")
-
-  garage  Garage        @relation(fields: [garageId], references: [id])
-  service ServiceGarage @relation(fields: [serviceId], references: [id])
-
-  @@unique([garageId, serviceId], map: "uk_garage_service")
-  @@index([garageId], map: "idx_garage_service_garage")
-  @@index([serviceId], map: "idx_garage_service_service")
-  @@map("garage_service_association")
-}
-
-model ProduitAssurance {
-  id            String        @id @default(uuid()) @db.Uuid
-  nom           String        @db.VarChar(255)
-  description   String?
-  prixBase      Decimal       @map("prix_base") @db.Decimal(12, 2)
-  typeAssurance TypeAssurance @map("type_assurance")
-  dureeMois     Int?          @map("duree_mois")
-  estActif      Boolean?      @default(true) @map("est_actif")
-  createdAt     DateTime?     @default(now()) @map("created_at")
-  updatedAt     DateTime?     @updatedAt @map("updated_at")
-
-  options       OptionAssurance[]
-  souscriptions SouscriptionAssurance[]
-
-  @@index([estActif], map: "idx_produit_assurance_actif")
-  @@map("produit_assurance")
-}
-
-model OptionAssurance {
-  id                 String    @id @default(uuid()) @db.Uuid
-  produitAssuranceId String    @map("produit_assurance_id") @db.Uuid
-  nom                String    @db.VarChar(255)
-  description        String?
-  prixSupplementaire Decimal?  @map("prix_supplementaire") @db.Decimal(12, 2)
-  estActif           Boolean?  @default(true) @map("est_actif")
-  createdAt          DateTime? @default(now()) @map("created_at")
-  updatedAt          DateTime? @updatedAt @map("updated_at")
-
-  produitAssurance ProduitAssurance     @relation(fields: [produitAssuranceId], references: [id])
-  souscriptions    SouscriptionOption[]
-
-  @@index([produitAssuranceId], map: "idx_option_assurance_produit")
-  @@index([estActif], map: "idx_option_assurance_actif")
-  @@map("option_assurance")
-}
-
-model SouscriptionAssurance {
-  id                 String          @id @default(uuid()) @db.Uuid
-  utilisateurId      String          @map("utilisateur_id") @db.Uuid
-  produitAssuranceId String          @map("produit_assurance_id") @db.Uuid
-  vehiculeId         String          @map("vehicule_id") @db.Uuid
-  statut             StatutAssurance
-  montantTotal       Decimal         @map("montant_total") @db.Decimal(12, 2)
-  dateDebut          DateTime?       @map("date_debut")
-  dateFin            DateTime?       @map("date_fin")
-  numeroContrat      String?         @map("numero_contrat") @db.VarChar(100)
-  documentUrl        String?         @map("document_url") @db.VarChar(500)
-  paiementId         String?         @map("paiement_id") @db.Uuid
-  createdAt          DateTime?       @default(now()) @map("created_at")
-  updatedAt          DateTime?       @updatedAt @map("updated_at")
-
-  utilisateur          Utilisateur          @relation(fields: [utilisateurId], references: [id])
-  produitAssurance     ProduitAssurance     @relation(fields: [produitAssuranceId], references: [id])
-  vehicule             Vehicule             @relation(fields: [vehiculeId], references: [id])
-  paiement             Paiement?            @relation("PaiementSouscriptionAssurance", fields: [paiementId], references: [id])
-  optionsSelectionnees SouscriptionOption[]
-
-  @@index([utilisateurId], map: "idx_souscription_assurance_utilisateur")
-  @@index([vehiculeId], map: "idx_souscription_assurance_vehicule")
-  @@index([statut], map: "idx_souscription_assurance_statut")
-  @@map("souscription_assurance")
-}
-
-model SouscriptionOption {
-  souscriptionId String @map("souscription_id") @db.Uuid
-  optionId       String @map("option_id") @db.Uuid
-
-  souscription SouscriptionAssurance @relation(fields: [souscriptionId], references: [id])
-  option       OptionAssurance       @relation(fields: [optionId], references: [id])
-
-  @@id([souscriptionId, optionId])
-  @@map("souscription_options")
-}
-
-model DemandeTradeIn {
-  id                 String               @id @default(uuid()) @db.Uuid
-  utilisateurId      String               @map("utilisateur_id") @db.Uuid
-  vehiculeActuelId   String               @map("vehicule_actuel_id") @db.Uuid
-  vehiculeSouhaiteId String?              @map("vehicule_souhaite_id") @db.Uuid
-  statut             StatutTradeIn
-  prixEstime         Decimal?             @map("prix_estime") @db.Decimal(12, 2)
-  prixPropose        Decimal?             @map("prix_propose") @db.Decimal(12, 2)
-  kilometrageActuel  Int?                 @map("kilometrage_actuel")
-  etatVehicule       EtatVehiculeTradeIn? @map("etat_vehicule")
-  dateSoumission     DateTime?            @map("date_soumission")
-  dateTraitement     DateTime?            @map("date_traitement")
-  dateEvaluation     DateTime?            @map("date_evaluation")
-  motifRejet         String?              @map("motif_rejet")
-  commentaireAdmin   String?              @map("commentaire_admin")
-  estNotifie         Boolean?             @default(false) @map("est_notifie")
-  createdAt          DateTime?            @default(now()) @map("created_at")
-  updatedAt          DateTime?            @updatedAt @map("updated_at")
-
-  utilisateur      Utilisateur @relation(fields: [utilisateurId], references: [id])
-  vehiculeActuel   Vehicule    @relation("DemandeTradeInVehiculeActuel", fields: [vehiculeActuelId], references: [id])
-  vehiculeSouhaite Vehicule?   @relation("DemandeTradeInVehiculeSouhaite", fields: [vehiculeSouhaiteId], references: [id])
-
-  @@index([utilisateurId], map: "idx_demande_trade_in_utilisateur")
-  @@index([statut], map: "idx_demande_trade_in_statut")
-  @@index([estNotifie], map: "idx_demande_trade_in_notifie")
-  @@map("demande_trade_in")
-}
-
-model HistoriqueEstimation {
-  id               String               @id @default(uuid()) @db.Uuid
-  vehiculeId       String               @map("vehicule_id") @db.Uuid
-  marque           String?              @db.VarChar(100)
-  modele           String?              @db.VarChar(100)
-  anneeFabrication Int?                 @map("annee_fabrication")
-  kilometrage      Int?
-  etatVehicule     EtatVehiculeTradeIn? @map("etat_vehicule")
-  prixEstime       Decimal?             @map("prix_estime") @db.Decimal(12, 2)
-  prixMinimum      Decimal?             @map("prix_minimum") @db.Decimal(12, 2)
-  prixMaximum      Decimal?             @map("prix_maximum") @db.Decimal(12, 2)
-  scoreCondition   Float?               @map("score_condition")
-  recommandation   String?
-  dateEstimation   DateTime?            @map("date_estimation")
-
-  vehicule Vehicule @relation(fields: [vehiculeId], references: [id])
-
-  @@index([vehiculeId, dateEstimation], map: "idx_historique_estimation_vehicule_date")
-  @@map("historique_estimation")
-}
-
-model DemandeCertification {
-  id               String                     @id @default(uuid()) @db.Uuid
-  utilisateurId    String                     @map("utilisateur_id") @db.Uuid
-  vehiculeId       String                     @map("vehicule_id") @db.Uuid
-  statut           StatutDemandeCertification
-  montantPaiement  Decimal?                   @map("montant_paiement") @db.Decimal(12, 2)
-  paiementId       String?                    @map("paiement_id") @db.Uuid
-  inspecteurId     String?                    @map("inspecteur_id") @db.Uuid
-  dateSoumission   DateTime?                  @map("date_soumission")
-  dateTraitement   DateTime?                  @map("date_traitement")
-  dateInspection   DateTime?                  @map("date_inspection")
-  motifRejet       String?                    @map("motif_rejet")
-  badgeCertifieUrl String?                    @map("badge_certifie_url") @db.VarChar(500)
-  createdAt        DateTime?                  @default(now()) @map("created_at")
-  updatedAt        DateTime?                  @updatedAt @map("updated_at")
-
-  utilisateur Utilisateur  @relation("DemandeCertificationUtilisateur", fields: [utilisateurId], references: [id])
-  vehicule    Vehicule     @relation(fields: [vehiculeId], references: [id])
-  paiement    Paiement?    @relation("PaiementDemandeCertification", fields: [paiementId], references: [id])
-  inspecteur  Utilisateur? @relation("DemandeCertificationInspecteur", fields: [inspecteurId], references: [id])
-  inspections Inspection[]
-
-  @@index([utilisateurId], map: "idx_demande_certification_utilisateur")
-  @@index([vehiculeId], map: "idx_demande_certification_vehicule")
-  @@index([statut], map: "idx_demande_certification_statut")
-  @@map("demande_certification")
-}
-
-model Inspection {
-  id                     String                  @id @default(uuid()) @db.Uuid
-  demandeCertificationId String                  @map("demande_certification_id") @db.Uuid
-  inspecteurId           String                  @map("inspecteur_id") @db.Uuid
-  dateInspection         DateTime?               @map("date_inspection")
-  resultat               ResultatInspection?
-  commentaire            String?
-  kilometrage            Int?
-  etatMoteur             EtatVehiculeInspection? @map("etat_moteur")
-  etatGenerateur         EtatVehiculeInspection? @map("etat_generateur")
-  etatFreinage           EtatVehiculeInspection? @map("etat_freinage")
-  etatSuspension         EtatVehiculeInspection? @map("etat_suspension")
-  etatTransmission       EtatVehiculeInspection? @map("etat_transmission")
-  etatPneus              EtatVehiculeInspection? @map("etat_pneus")
-  etatCarrosserie        EtatVehiculeInspection? @map("etat_carrosserie")
-  etatInterieur          EtatVehiculeInspection? @map("etat_interieur")
-  scoreTotal             Int?                    @map("score_total")
-  createdAt              DateTime?               @default(now()) @map("created_at")
-  updatedAt              DateTime?               @updatedAt @map("updated_at")
-
-  demandeCertification DemandeCertification @relation(fields: [demandeCertificationId], references: [id])
-  inspecteur           Utilisateur          @relation("InspectionInspecteur", fields: [inspecteurId], references: [id])
-  rapport              RapportInspection?
-
-  @@index([demandeCertificationId], map: "idx_inspection_demande")
-  @@index([inspecteurId], map: "idx_inspection_inspecteur")
-  @@map("inspection")
-}
-
-model RapportInspection {
-  id              String    @id @default(uuid()) @db.Uuid
-  inspectionId    String    @unique @map("inspection_id") @db.Uuid
-  urlRapportPdf   String?   @map("url_rapport_pdf") @db.VarChar(500)
-  dateGeneration  DateTime? @map("date_generation")
-  scoreGlobale    Int?      @map("score_globale")
-  recommendations String?
-  conclusion      String?
-  estApprouve     Boolean?  @map("est_approuve")
-  createdAt       DateTime? @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
-
-  inspection Inspection @relation(fields: [inspectionId], references: [id])
-
-  @@map("rapport_inspection")
-}
-
-model VehiculeFavori {
-  id            String    @id @default(uuid()) @db.Uuid
-  utilisateurId String    @map("utilisateur_id") @db.Uuid
-  vehiculeId    String    @map("vehicule_id") @db.Uuid
-  createdAt     DateTime? @default(now()) @map("created_at")
-
-  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
-  vehicule    Vehicule    @relation(fields: [vehiculeId], references: [id])
-
-  @@unique([utilisateurId, vehiculeId])
-  @@map("vehicule_favori")
-}
-
-model AnnonceLocation {
-  id                    String    @id @default(uuid()) @db.Uuid
-  proprietaireId        String    @map("proprietaire_id") @db.Uuid
-  vehiculeId            String?   @map("vehicule_id") @db.Uuid
-  tarifJournalier       Decimal?  @map("tarif_journalier") @db.Decimal(12, 2)
-  statut                String?   @db.VarChar(50)
-  description           String?
-  conditions            String?
-  caution               Decimal?  @db.Decimal(12, 2)
-  kilometrageInclus     Int?      @map("kilometrage_inclus")
-  tarifKmSupplementaire Decimal?  @map("tarif_km_supplementaire") @db.Decimal(12, 2)
-  actif                 Boolean?
-  createdAt             DateTime? @default(now()) @map("created_at")
-  updatedAt             DateTime? @updatedAt @map("updated_at")
-
-  proprietaire   Utilisateur             @relation(fields: [proprietaireId], references: [id])
-  vehicule       Vehicule?               @relation(fields: [vehiculeId], references: [id])
-  reservations   ReservationLocation[]
-  disponibilites DisponibiliteLocation[]
-  boosts         BoostAnnonce[]
-  conversations  Conversation[]
-
-  @@index([statut, actif], map: "idx_annonce_location_statut_actif")
-  @@map("annonce_location")
-}
-
-model ReservationLocation {
-  id                String             @id @default(uuid()) @db.Uuid
-  annonceLocationId String             @map("annonce_location_id") @db.Uuid
-  locataireId       String             @map("locataire_id") @db.Uuid
-  statut            StatutReservation?
-  coutTotal         Decimal?           @map("cout_total") @db.Decimal(12, 2)
-  paiementId        String?            @map("paiement_id") @db.Uuid
-  dateDebut         DateTime?          @map("date_debut")
-  dateFin           DateTime?          @map("date_fin")
-  dateCreation      DateTime?          @map("date_creation")
-  motifAnnulation   String?            @map("motif_annulation")
-
-  annonceLocation   AnnonceLocation               @relation(fields: [annonceLocationId], references: [id])
-  locataire         Utilisateur                   @relation(fields: [locataireId], references: [id])
-  paiementPrincipal Paiement?                     @relation("PaiementPrincipalReservation", fields: [paiementId], references: [id])
-  historiques       HistoriqueStatutReservation[]
-  paiements         Paiement[]                    @relation("PaiementsReservation")
-
-  @@map("reservation_location")
-}
-
-model DisponibiliteLocation {
-  id                String    @id @default(uuid()) @db.Uuid
-  annonceLocationId String    @map("annonce_location_id") @db.Uuid
-  date              DateTime?
-  estDisponible     Boolean?  @map("est_disponible")
-
-  annonceLocation AnnonceLocation @relation(fields: [annonceLocationId], references: [id])
-
-  @@map("disponibilite_location")
-}
-
-model HistoriqueStatutReservation {
-  id              String    @id @default(uuid()) @db.Uuid
-  reservationId   String    @map("reservation_id") @db.Uuid
-  ancienStatutId  String?   @map("ancien_statut_id") @db.Uuid
-  nouveauStatutId String?   @map("nouveau_statut_id") @db.Uuid
-  createdAt       DateTime? @default(now()) @map("created_at")
-
-  reservation ReservationLocation @relation(fields: [reservationId], references: [id])
-
-  @@map("historique_statut_reservation")
-}
-
-model Portefeuille {
-  id                   String    @id @default(uuid()) @db.Uuid
-  utilisateurId        String    @unique @map("utilisateur_id") @db.Uuid
-  solde                Decimal?  @default(0) @db.Decimal(15, 2)
-  soldeBloque          Decimal?  @default(0) @map("solde_bloque") @db.Decimal(15, 2)
-  isActif              Boolean?  @default(true) @map("is_actif")
-  dateDerniereRecharge DateTime? @map("date_derniere_recharge")
-  createdAt            DateTime? @default(now()) @map("created_at")
-  updatedAt            DateTime? @updatedAt @map("updated_at")
-
-  utilisateur  Utilisateur               @relation(fields: [utilisateurId], references: [id])
-  transactions TransactionPortefeuille[]
-
-  @@map("portefeuille")
-}
-
-model TransactionPortefeuille {
-  id               String            @id @default(uuid()) @db.Uuid
-  portefeuilleId   String            @map("portefeuille_id") @db.Uuid
-  montant          Decimal           @db.Decimal(15, 2)
-  typeTransaction  TypeTransaction   @map("type_transaction")
-  statut           StatutTransaction
-  description      String?
-  referenceExterne String?           @map("reference_externe") @db.VarChar(100)
-  dateTransaction  DateTime?         @default(now()) @map("date_transaction")
-  createdAt        DateTime?         @default(now()) @map("created_at")
-
-  portefeuille Portefeuille @relation(fields: [portefeuilleId], references: [id])
-
-  @@index([portefeuilleId], map: "idx_transaction_portefeuille")
-  @@map("transaction_portefeuille")
-}
-
-model Paiement {
-  id                   String         @id @default(uuid()) @db.Uuid
-  utilisateurId        String?        @map("utilisateur_id") @db.Uuid
-  reservationId        String?        @map("reservation_id") @db.Uuid
-  montant              Decimal        @db.Decimal(15, 2)
-  montantEscrow        Decimal?       @map("montant_escrow") @db.Decimal(15, 2)
-  commission           Decimal?       @default(0) @db.Decimal(15, 2)
-  methodePaiement      TypePaiement?  @map("methode_paiement")
-  statut               StatutPaiement
-  isEscrow             Boolean?       @default(false) @map("is_escrow")
-  referenceTransaction String?        @map("reference_transaction") @db.VarChar(100)
-  referenceExterne     String?        @map("reference_externe") @db.VarChar(100)
-  urlPaiement          String?        @map("url_paiement") @db.VarChar(500)
-  datePaiement         DateTime?      @map("date_paiement")
-  dateExpiration       DateTime?      @map("date_expiration")
-  createdAt            DateTime?      @default(now()) @map("created_at")
-  updatedAt            DateTime?      @updatedAt @map("updated_at")
-
-  utilisateur             Utilisateur?            @relation(fields: [utilisateurId], references: [id])
-  reservation             ReservationLocation?    @relation("PaiementsReservation", fields: [reservationId], references: [id])
-  reservationsPrincipales ReservationLocation[]   @relation("PaiementPrincipalReservation")
-  souscriptionsAssurance  SouscriptionAssurance[] @relation("PaiementSouscriptionAssurance")
-  demandesCertification   DemandeCertification[]  @relation("PaiementDemandeCertification")
-  logs                    PaiementLog[]
-
-  @@index([utilisateurId], map: "idx_paiement_utilisateur")
-  @@index([statut], map: "idx_paiement_statut")
-  @@map("paiement")
-}
-
-model PaiementLog {
-  id         String    @id @default(uuid()) @db.Uuid
-  paiementId String?   @map("paiement_id") @db.Uuid
-  action     String    @db.VarChar(50)
-  details    String?
-  dateAction DateTime? @default(now()) @map("date_action")
-
-  paiement Paiement? @relation(fields: [paiementId], references: [id])
-
-  @@map("paiement_log")
-}
-
-model Abonnement {
-  id                   String          @id @default(uuid()) @db.Uuid
-  nom                  String          @db.VarChar(100)
-  description          String?
-  prixMensuel          Decimal?        @map("prix_mensuel") @db.Decimal(12, 2)
-  dureeJours           Int?            @map("duree_jours")
-  nombreAnnonces       Int?            @map("nombre_annonces")
-  estVedette           Boolean?        @map("est_vedette")
-  estCertifie          Boolean?        @map("est_certifie")
-  type                 TypeAbonnement?
-  estActif             Boolean?        @default(true) @map("est_actif")
-  avantages            String?
-  prixAnnuel           Decimal?        @map("prix_annuel") @db.Decimal(12, 2)
-  nombreBoostsGratuits Int?            @map("nombre_boosts_gratuits")
-  accesPrioritaire     Boolean?        @map("acces_prioritaire")
-  supportPrioritaire   Boolean?        @map("support_prioritaire")
-
-  utilisateurs UtilisateurAbonnement[]
-
-  @@map("abonnement")
-}
-
-model UtilisateurAbonnement {
-  id                      String           @id @default(uuid()) @db.Uuid
-  utilisateurId           String           @map("utilisateur_id") @db.Uuid
-  abonnementId            String           @map("abonnement_id") @db.Uuid
-  dateDebut               DateTime?        @map("date_debut")
-  dateFin                 DateTime?        @map("date_fin")
-  statut                  StatutAbonnement
-  nombreAnnoncesUtilisees Int?             @map("nombre_annonces_utilisees")
-  estEssaiGratuit         Boolean?         @map("est_essai_gratuit")
-  dateFinEssai            DateTime?        @map("date_fin_essai")
-
-  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
-  abonnement  Abonnement  @relation(fields: [abonnementId], references: [id])
-
-  @@index([utilisateurId], map: "idx_utilisateur_abonnement_utilisateur_id")
-  @@map("utilisateur_abonnement")
-}
-
-model BoostAnnonce {
-  id                String    @id @default(uuid()) @db.Uuid
-  annonceLocationId String    @map("annonce_location_id") @db.Uuid
-  dateDebut         DateTime? @map("date_debut")
-  dateFin           DateTime? @map("date_fin")
-  niveauBoost       String?   @map("niveau_boost") @db.VarChar(50)
-
-  annonceLocation AnnonceLocation @relation(fields: [annonceLocationId], references: [id])
-
-  @@index([annonceLocationId], map: "idx_boost_annonce_location")
-  @@map("boost_annonce")
-}
-
-model Notification {
-  id            String           @id @default(uuid()) @db.Uuid
-  utilisateurId String           @map("utilisateur_id") @db.Uuid
-  titre         String           @db.VarChar(255)
-  message       String
-  type          TypeNotification
-  estLu         Boolean?         @default(false) @map("est_lu")
-  referenceId   String?          @map("reference_id") @db.Uuid
-  referenceType String?          @map("reference_type") @db.VarChar(50)
-  dateLecture   DateTime?        @map("date_lecture")
-  dateCreation  DateTime?        @default(now()) @map("created_at")
-
-  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id])
-
-  @@index([utilisateurId], map: "idx_notification_utilisateur")
-  @@index([utilisateurId, estLu], map: "idx_notification_utilisateur_lu")
-  @@map("notification")
-}
-
-model Signalement {
-  id               String                      @id @default(uuid()) @db.Uuid
-  utilisateurId    String                      @map("utilisateur_id") @db.Uuid
-  typeEntite       TypeEntiteSignalable        @map("type_entite")
-  entiteId         String                      @map("entite_id") @db.Uuid
-  motif            MotifSignalement
-  description      String?
-  statutTraitement StatutTraitementSignalement @default(EN_ATTENTE) @map("statut_traitement")
-  adminId          String?                     @map("traite_par") @db.Uuid
-  dateTraitement   DateTime?                   @map("date_traitement")
-  dateSignalement  DateTime?                   @default(now()) @map("created_at")
-
-  utilisateur Utilisateur  @relation("SignalementAuteur", fields: [utilisateurId], references: [id])
-  admin       Utilisateur? @relation("SignalementModerateur", fields: [adminId], references: [id])
-
-  @@index([statutTraitement], map: "idx_signalement_statut")
-  @@map("signalement")
-}
-
-model Conversation {
-  id               String            @id @default(uuid()) @db.Uuid
-  titre            String?           @db.VarChar(255)
-  typeConversation TypeConversation? @map("type_conversation")
-  annonceId        String?           @map("annonce_id") @db.Uuid
-  messageEpingleId String?           @map("message_epingle_id") @db.Uuid
-  avatarUrl        String?           @map("avatar_url")
-  creeParId        String?           @map("cree_par") @db.Uuid
-  estGroupe        Boolean?          @map("est_groupe")
-  createdAt        DateTime?         @default(now()) @map("created_at")
-  updatedAt        DateTime?         @updatedAt @map("updated_at")
-
-  creePar         Utilisateur?              @relation("ConversationCreateur", fields: [creeParId], references: [id])
-  annonceLocation AnnonceLocation?          @relation(fields: [annonceId], references: [id])
-  messageEpingle  Message?                  @relation("MessageEpingleConversation", fields: [messageEpingleId], references: [id])
-  participants    ConversationParticipant[]
-  messages        Message[]
-
-  @@map("conversation")
-}
-
-model ConversationParticipant {
-  id                  String    @id @default(uuid()) @db.Uuid
-  conversationId      String    @map("conversation_id") @db.Uuid
-  utilisateurId       String    @map("utilisateur_id") @db.Uuid
-  dateJoin            DateTime? @map("date_join")
-  estAdmin            Boolean?  @map("est_admin")
-  estMute             Boolean?  @map("est_mute")
-  derniereLectureDate DateTime? @map("derniere_lecture_date")
-  nombreNonLus        Int?      @map("nombre_non_lus")
-  aRejointLe          DateTime? @map("a_rejoint_le")
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  utilisateur  Utilisateur  @relation(fields: [utilisateurId], references: [id])
-
-  @@unique([conversationId, utilisateurId])
-  @@map("conversation_participant")
-}
-
-model Message {
-  id             String       @id @default(uuid()) @db.Uuid
-  conversationId String       @map("conversation_id") @db.Uuid
-  utilisateurId  String       @map("utilisateur_id") @db.Uuid
-  contenu        String
-  dateEnvoi      DateTime?    @map("date_envoi")
-  dateLecture    DateTime?    @map("date_lecture")
-  estLu          Boolean?     @map("est_lu")
-  estSupprime    Boolean?     @map("est_supprime")
-  estEpingle     Boolean?     @map("est_epingle")
-  typeMessage    TypeMessage? @map("type_message")
-  createdAt      DateTime?    @default(now()) @map("created_at")
-
-  conversation           Conversation   @relation(fields: [conversationId], references: [id])
-  utilisateur            Utilisateur    @relation(fields: [utilisateurId], references: [id])
-  conversationsEpinglees Conversation[] @relation("MessageEpingleConversation")
-
-  @@index([conversationId, dateEnvoi], map: "idx_message_conversation_date")
-  @@map("message")
+enum TypeTransaction {
+  CREDIT
+  DEBIT
+  RETRAIT
+  REMBOURSEMENT
+  COMMISSION
+  ESCROW_DEPOSIT
+  ESCROW_RELEASE
+  ESCROW_REFUND
 }

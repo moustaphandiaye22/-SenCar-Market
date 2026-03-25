@@ -1,17 +1,17 @@
 import { randomUUID } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
 import {
+  VehiculeRecord,
   CreateVehiculeInput,
   CreateVehiculePhotoInput,
   UpdateVehiculeInput,
-  UserWithRoleRecord,
   VehiculeFavoriRecord,
   VehiculePhotoRecord,
-  VehiculeRecord,
+  UserWithRoleRecord,
 } from './vehicule.models';
 import { VehiculeRepositoryPort } from './vehicule.repository.port';
 
@@ -19,59 +19,114 @@ import { VehiculeRepositoryPort } from './vehicule.repository.port';
 export class VehiculeRepository implements VehiculeRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserByEmail(email: string): Promise<UserWithRoleRecord | null> {
-    return this.prisma.utilisateur.findUnique({
+  async findUserByEmail(email: string): Promise<UserWithRoleRecord | null> {
+    const user = await this.prisma.utilisateur.findUnique({
       where: { email },
-      include: { typeUtilisateur: true },
+      select: {
+        id: true,
+        email: true,
+        type_utilisateur: { select: { nom: true } },
+      },
     });
+    return user as unknown as UserWithRoleRecord | null;
   }
 
-  findVehiculeById(id: string): Promise<VehiculeRecord | null> {
-    return this.prisma.vehicule.findUnique({
-      where: { id },
+  async findVehiculeById(id: string): Promise<VehiculeRecord | null> {
+    const vehicule = await this.prisma.vehicule.findUnique({
+      where: { id, deleted_at: null },
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: true,
-        photos: true,
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
     });
+    return vehicule as unknown as VehiculeRecord | null;
   }
 
-  findMarqueById(id: string): Promise<{ id: string } | null> {
+  async findMarqueById(id: string): Promise<{ id: string } | null> {
     return this.prisma.marque.findUnique({ where: { id }, select: { id: true } });
   }
 
-  findModeleById(id: string): Promise<{ id: string } | null> {
+  async findModeleById(id: string): Promise<{ id: string } | null> {
     return this.prisma.modele.findUnique({ where: { id }, select: { id: true } });
   }
 
-  findCarburantById(id: string): Promise<{ id: string } | null> {
+  async findOrCreateMarque(nom: string): Promise<{ id: string }> {
+    const existing = await this.prisma.marque.findFirst({ where: { nom: { equals: nom, mode: 'insensitive' } }, select: { id: true } });
+    if (existing) return existing;
+    return this.prisma.marque.create({ data: { id: randomUUID(), nom }, select: { id: true } });
+  }
+
+  async findOrCreateModele(marqueId: string, nom: string): Promise<{ id: string }> {
+    const existing = await this.prisma.modele.findFirst({ where: { marque_id: marqueId, nom: { equals: nom, mode: 'insensitive' } }, select: { id: true } });
+    if (existing) return existing;
+    return this.prisma.modele.create({ data: { id: randomUUID(), marque_id: marqueId, nom }, select: { id: true } });
+  }
+
+  async findCarburantById(id: string): Promise<{ id: string } | null> {
     return this.prisma.carburant.findUnique({ where: { id }, select: { id: true } });
   }
 
-  findBoiteVitesseById(id: string): Promise<{ id: string } | null> {
-    return this.prisma.boiteVitesse.findUnique({ where: { id }, select: { id: true } });
+  async findBoiteVitesseById(id: string): Promise<{ id: string } | null> {
+    return this.prisma.boite_vitesse.findUnique({ where: { id }, select: { id: true } });
   }
 
-  createVehicule(data: CreateVehiculeInput): Promise<VehiculeRecord> {
-    return this.prisma.vehicule.create({
+  async findAllMarques(): Promise<{ id: string; nom: string }[]> {
+    const items = await this.prisma.marque.findMany({ 
+      select: { id: true, nom: true }, 
+      orderBy: { nom: 'asc' } 
+    });
+    return items.map(i => ({ id: i.id, nom: i.nom ?? '' }));
+  }
+
+  async findModelesByMarque(marqueId: string): Promise<{ id: string; nom: string }[]> {
+    const items = await this.prisma.modele.findMany({
+      where: { marque_id: marqueId },
+      select: { id: true, nom: true },
+      orderBy: { nom: 'asc' },
+    });
+    return items.map(i => ({ id: i.id, nom: i.nom ?? '' }));
+  }
+
+  async findAllCarburants(): Promise<{ id: string; nom: string }[]> {
+    const items = await this.prisma.carburant.findMany({ 
+      select: { id: true, nom: true }, 
+      orderBy: { nom: 'asc' } 
+    });
+    return items.map(i => ({ id: i.id, nom: i.nom ?? '' }));
+  }
+
+  async findAllBoiteVitesses(): Promise<{ id: string; nom: string }[]> {
+    const items = await this.prisma.boite_vitesse.findMany({ 
+      select: { id: true, nom: true }, 
+      orderBy: { nom: 'asc' } 
+    });
+    return items.map(i => ({ id: i.id, nom: i.nom ?? '' }));
+  }
+
+  async createVehicule(data: CreateVehiculeInput): Promise<VehiculeRecord> {
+    const vehicule = await this.prisma.vehicule.create({
       data,
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: true,
-        photos: true,
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
-    }) as Promise<VehiculeRecord>;
+    });
+    return vehicule as unknown as VehiculeRecord;
   }
 
-  createPhoto(data: CreateVehiculePhotoInput): Promise<VehiculePhotoRecord> {
-    return this.prisma.photoVehicule.create({ data });
+  async createPhoto(data: CreateVehiculePhotoInput): Promise<VehiculePhotoRecord> {
+    return this.prisma.photo_vehicule.create({
+      data: { ...data, id: randomUUID() },
+      select: { url: true },
+    }) as unknown as VehiculePhotoRecord;
   }
 
   async findPublishedPaged(params: {
@@ -80,129 +135,146 @@ export class VehiculeRepository implements VehiculeRepositoryPort {
     orderBy: Record<string, 'asc' | 'desc'>;
     marqueId?: string;
     modeleId?: string;
+    q?: string;
   }): Promise<{ total: number; items: VehiculeRecord[] }> {
-    const where = {
+    const { skip, take, orderBy, marqueId, modeleId, q } = params;
+
+    const where: Prisma.vehiculeWhereInput = {
       statut: 'PUBLIE',
-      ...(params.marqueId ? { marqueId: params.marqueId } : {}),
-      ...(params.modeleId ? { modeleId: params.modeleId } : {}),
+      deleted_at: null,
+      ...(marqueId && { marque_id_equals: { marque_id: marqueId } }), // This depends on how Prisma maps it, but typically:
+      ...(marqueId && { marque_id: marqueId }),
+      ...(modeleId && { modele_id: modeleId }),
+      ...(q && {
+        OR: [
+          { marque: { nom: { contains: q, mode: 'insensitive' } } },
+          { modele: { nom: { contains: q, mode: 'insensitive' } } },
+          { description: { contains: q, mode: 'insensitive' } },
+        ],
+      }),
     };
 
     const [total, items] = await Promise.all([
       this.prisma.vehicule.count({ where }),
       this.prisma.vehicule.findMany({
         where,
-        skip: params.skip,
-        take: params.take,
-        orderBy: [{ estBoost: 'desc' }, params.orderBy],
+        skip,
+        take,
+        orderBy,
         include: {
           marque: true,
           modele: true,
           carburant: true,
-          boiteVitesse: true,
-          proprietaire: true,
-          photos: true,
+          boite_vitesse: true,
+          utilisateur: { select: { id: true, nom: true } },
+          photo_vehicule: { select: { url: true } },
         },
       }),
     ]);
 
-    return { total, items };
+    return { total, items: items as unknown as VehiculeRecord[] };
   }
 
-  findByProprietaireId(proprietaireId: string): Promise<VehiculeRecord[]> {
-    return this.prisma.vehicule.findMany({
-      where: { proprietaireId },
-      orderBy: { createdAt: 'desc' },
+  async findByProprietaireId(proprietaireId: string): Promise<VehiculeRecord[]> {
+    const vehicules = await this.prisma.vehicule.findMany({
+      where: { proprietaire_id: proprietaireId, deleted_at: null },
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: true,
-        photos: true,
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
+      orderBy: { created_at: 'desc' },
     });
+    return vehicules as unknown as VehiculeRecord[];
   }
 
-  updateVehicule(id: string, data: UpdateVehiculeInput): Promise<VehiculeRecord> {
-    return this.prisma.vehicule.update({
+  async updateVehicule(id: string, data: UpdateVehiculeInput): Promise<VehiculeRecord> {
+    const vehicule = await this.prisma.vehicule.update({
       where: { id },
       data,
       include: {
         marque: true,
         modele: true,
         carburant: true,
-        boiteVitesse: true,
-        proprietaire: true,
-        photos: true,
+        boite_vitesse: true,
+        utilisateur: { select: { id: true, nom: true } },
+        photo_vehicule: { select: { url: true } },
       },
     });
+    return vehicule as unknown as VehiculeRecord;
   }
 
-  deleteVehicule(id: string): Promise<{ id: string }> {
-    return this.prisma.vehicule.delete({ where: { id }, select: { id: true } });
-  }
-
-  existsFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
-    return this.prisma.vehiculeFavori.findUnique({
-      where: {
-        utilisateurId_vehiculeId: {
-          utilisateurId,
-          vehiculeId,
-        },
-      },
+  async deleteVehicule(id: string): Promise<{ id: string }> {
+    return this.prisma.vehicule.update({
+      where: { id },
+      data: { deleted_at: new Date() },
       select: { id: true },
     });
   }
 
-  createFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string }> {
-    return this.prisma.vehiculeFavori.create({
-      data: {
-        id: randomUUID(),
-        utilisateur: { connect: { id: utilisateurId } },
-        vehicule: { connect: { id: vehiculeId } },
-      },
+  async existsFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
+    return this.prisma.vehicule_favori.findUnique({
+      where: { utilisateur_id_vehicule_id: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId } },
       select: { id: true },
     });
   }
 
-  deleteFavori(utilisateurId: string, vehiculeId: string): Promise<{ count: number }> {
-    return this.prisma.vehiculeFavori.deleteMany({
-      where: { utilisateurId, vehiculeId },
+  async createFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string }> {
+    return this.prisma.vehicule_favori.create({
+      data: { id: randomUUID(), utilisateur_id: utilisateurId, vehicule_id: vehiculeId },
+      select: { id: true },
     });
   }
 
-  findFavorisByUtilisateur(utilisateurId: string): Promise<VehiculeFavoriRecord[]> {
-    return this.prisma.vehiculeFavori.findMany({
-      where: { utilisateurId },
+  async deleteFavori(utilisateurId: string, vehiculeId: string): Promise<{ count: number }> {
+    return this.prisma.vehicule_favori.deleteMany({
+      where: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId },
+    });
+  }
+
+  async findFavorisByUtilisateur(utilisateurId: string): Promise<VehiculeFavoriRecord[]> {
+    const favoris = await this.prisma.vehicule_favori.findMany({
+      where: { utilisateur_id: utilisateurId },
       include: {
         vehicule: {
           include: {
             marque: true,
             modele: true,
             carburant: true,
-            boiteVitesse: true,
-            proprietaire: true,
-            photos: true,
+            boite_vitesse: true,
+            utilisateur: { select: { id: true, nom: true } },
+            photo_vehicule: { select: { url: true } },
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
+    return favoris as unknown as VehiculeFavoriRecord[];
   }
 
-  isFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
-    return this.prisma.vehiculeFavori.findUnique({
-      where: {
-        utilisateurId_vehiculeId: {
-          utilisateurId,
-          vehiculeId,
-        },
-      },
+  async isFavori(utilisateurId: string, vehiculeId: string): Promise<{ id: string } | null> {
+    return this.prisma.vehicule_favori.findUnique({
+      where: { utilisateur_id_vehicule_id: { utilisateur_id: utilisateurId, vehicule_id: vehiculeId } },
       select: { id: true },
     });
   }
 
-  countFavoris(vehiculeId: string): Promise<number> {
-    return this.prisma.vehiculeFavori.count({ where: { vehiculeId } });
+  async countFavoris(vehiculeId: string): Promise<number> {
+    return this.prisma.vehicule_favori.count({ where: { vehicule_id: vehiculeId } });
+  }
+
+  async updateVehiculePhotos(vehiculeId: string, photosUrls: string[]): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.photo_vehicule.deleteMany({ where: { vehicule_id: vehiculeId } }),
+      this.prisma.photo_vehicule.createMany({
+        data: photosUrls.map((url) => ({
+          id: randomUUID(),
+          vehicule_id: vehiculeId,
+          url,
+        })),
+      }),
+    ]);
   }
 }

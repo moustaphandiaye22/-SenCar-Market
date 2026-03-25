@@ -13,7 +13,10 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -32,13 +35,25 @@ import { ValidationGarageRequestDto } from './dto/validation-garage-request.dto'
 import { GarageService } from './garage.service';
 
 @ApiTags('Garages')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('garages')
 export class GarageController {
   constructor(private readonly service: GarageService) {}
 
+  @Post('upload-logo')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('logo'))
+  @ApiOperation({ summary: 'Uploader le logo d\'un garage' })
+  @ApiResponse({ status: 200, description: 'Logo uploade avec succès' })
+  async uploadLogo(
+    @UploadedFile() file: { originalname?: string; buffer: Buffer },
+  ): Promise<{ url: string }> {
+    const url = await this.service.uploadLogo(file);
+    return { url };
+  }
+
   @Post()
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Créer un garage' })
   @ApiResponse({ status: 201, type: GarageResponseDto, description: 'Garage créé avec succès' })
@@ -76,6 +91,7 @@ export class GarageController {
   }
 
   @Get('en-attente')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Garages en attente' })
   @ApiResponse({ status: 200, type: PaginatedResponseDto, description: 'Garages en attente récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -90,6 +106,7 @@ export class GarageController {
   }
 
   @Get('proprietaire/:proprietaireId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Garages d\'un propriétaire' })
   @ApiResponse({ status: 200, type: GarageResponseDto, isArray: true, description: 'Garages du propriétaire récupérés avec succès' })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
@@ -134,6 +151,7 @@ export class GarageController {
   }
 
   @Post('services')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Créer un service garage' })
   @ApiResponse({ status: 201, type: ServiceGarageResponseDto, description: 'Service garage créé avec succès' })
@@ -166,6 +184,7 @@ export class GarageController {
   }
 
   @Post(':garageId/services')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Associer un service à un garage' })
   @ApiResponse({ status: 201, type: GarageServiceResponseDto, description: 'Service associé au garage avec succès' })
@@ -173,6 +192,7 @@ export class GarageController {
   @ApiResponse({ status: 401, type: ApiErrorResponseDto, description: 'Non autorisé - Token invalide ou expiré' })
   @ApiResponse({ status: 403, type: ApiErrorResponseDto, description: 'Interdit - Accès refusé' })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto, description: 'Garage ou service non trouvé' })
+  @ApiResponse({ status: 409, type: ApiErrorResponseDto, description: 'Conflict - Service déjà associé au garage' })
   @ApiResponse({ status: 500, type: ApiErrorResponseDto, description: 'Erreur serveur interne' })
   associateService(
     @Param('garageId', new ParseUUIDPipe()) garageId: string,
@@ -192,6 +212,7 @@ export class GarageController {
   }
 
   @Delete(':garageId/services/:serviceId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer association service-garage' })
   @ApiResponse({ status: 204, description: 'Association supprimée avec succès' })
@@ -217,6 +238,7 @@ export class GarageController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mettre à jour un garage' })
   @ApiResponse({ status: 200, type: GarageResponseDto, description: 'Garage mis à jour avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données invalides' })
@@ -233,6 +255,7 @@ export class GarageController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un garage' })
   @ApiResponse({ status: 204, description: 'Garage supprimé avec succès' })
@@ -248,6 +271,7 @@ export class GarageController {
   }
 
   @Post(':id/validate')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Valider un garage' })
   @ApiResponse({ status: 200, type: GarageResponseDto, description: 'Garage validé avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'Données de validation invalides' })
@@ -264,6 +288,7 @@ export class GarageController {
   }
 
   @Put(':id/logo')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mettre à jour le logo' })
   @ApiResponse({ status: 200, type: GarageResponseDto, description: 'Logo mis à jour avec succès' })
   @ApiResponse({ status: 400, type: ApiErrorResponseDto, description: 'URL du logo invalide' })

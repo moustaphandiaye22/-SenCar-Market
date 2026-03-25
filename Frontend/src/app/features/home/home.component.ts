@@ -1,0 +1,45 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LucideAngularModule, Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight, RefreshCw, Verified, Home, Shield, Layout, Briefcase, Star, MessageSquare } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
+import { VehiculeService } from '../../core/services/vehicule.service';
+import { VehiculeResponse } from '../../core/models/vehicule.model';
+import { environment } from '../../../environments/environment';
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule, RouterLink],
+  templateUrl: './home.component.html'
+})
+export class HomeComponent implements OnInit {
+  private vehiculeService = inject(VehiculeService);
+  
+  icons = { Search, Tag, MapPin, Gauge, ShieldCheck, Heart, Car, ArrowRight, RefreshCw, Verified, Home, Shield, Layout, Briefcase, Star, MessageSquare };
+  
+  latestVehicules: VehiculeResponse[] = [];
+  isLoading = true;
+  error = false;
+
+  ngOnInit(): void {
+    // Fetch some vehicles for the homepage
+    this.vehiculeService.searchVehicules({ size: 6, sortDir: 'DESC' }).subscribe({
+      next: (res) => {
+        // Handle paginated response structure from backend
+        this.latestVehicules = res?.content || [];
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error fetching vehicles', err);
+        this.error = true;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getImageUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${environment.apiUrl.replace('/api', '')}${url}`;
+  }
+}

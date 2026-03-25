@@ -25,13 +25,11 @@ export class PaiementWalletService {
     const user = await this.mustFindUser(utilisateurId);
     return this.repository.createPortefeuille({
       id: this.repository.newId(),
-      utilisateur: { connect: { id: user.id } },
+      utilisateur_id: user.id,
       solde: 0,
-      soldeBloque: 0,
-      isActif: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      solde_bloque: 0,
+      is_actif: true,
+    } as any);
   }
 
   async crediterPortefeuille(request: TransactionPortefeuilleRequestDto, utilisateurId: string): Promise<PortefeuilleRecord> {
@@ -39,21 +37,20 @@ export class PaiementWalletService {
 
     await this.repository.createTransaction({
       id: this.repository.newId(),
-      portefeuille: { connect: { id: portefeuille.id } },
+      portefeuille_id: portefeuille.id,
       montant: request.montant,
-      typeTransaction: 'CREDIT',
+      type_transaction: 'CREDIT',
       statut: 'CONFIRMEE',
       description: request.description,
-      referenceExterne: request.referencePaiement,
-      dateTransaction: new Date(),
-      createdAt: new Date(),
-    });
+      reference_externe: request.referencePaiement,
+      date_transaction: new Date(),
+    } as any);
 
     const updated = await this.repository.updatePortefeuille(portefeuille.id, {
       solde: toNumberOrZero(portefeuille.solde) + request.montant,
-      dateDerniereRecharge: new Date(),
-      updatedAt: new Date(),
-    });
+      date_derniere_recharge: new Date(),
+      updated_at: new Date(),
+    } as any);
 
     await this.paiementLogService.createLogAction(
       null,
@@ -72,20 +69,19 @@ export class PaiementWalletService {
 
     await this.repository.createTransaction({
       id: this.repository.newId(),
-      portefeuille: { connect: { id: portefeuille.id } },
+      portefeuille_id: portefeuille.id,
       montant: request.montant,
-      typeTransaction: 'DEBIT',
+      type_transaction: 'DEBIT',
       statut: 'CONFIRMEE',
       description: request.description,
-      referenceExterne: request.referencePaiement,
-      dateTransaction: new Date(),
-      createdAt: new Date(),
-    });
+      reference_externe: request.referencePaiement,
+      date_transaction: new Date(),
+    } as any);
 
     const updated = await this.repository.updatePortefeuille(portefeuille.id, {
       solde: toNumberOrZero(portefeuille.solde) - request.montant,
-      updatedAt: new Date(),
-    });
+      updated_at: new Date(),
+    } as any);
 
     await this.paiementLogService.createLogAction(
       null,
@@ -104,19 +100,18 @@ export class PaiementWalletService {
 
     const created = await this.repository.createTransaction({
       id: this.repository.newId(),
-      portefeuille: { connect: { id: portefeuille.id } },
+      portefeuille_id: portefeuille.id,
       montant: request.montant,
-      typeTransaction: 'RETRAIT',
+      type_transaction: 'RETRAIT',
       statut: 'EN_ATTENTE',
       description: `Retrait vers ${request.telephone} - ${request.nomBeneficiaire ?? ''}`.trim(),
-      dateTransaction: new Date(),
-      createdAt: new Date(),
-    });
+      date_transaction: new Date(),
+    } as any);
 
     await this.repository.updatePortefeuille(portefeuille.id, {
-      soldeBloque: toNumberOrZero(portefeuille.soldeBloque) + request.montant,
-      updatedAt: new Date(),
-    });
+      solde_bloque: toNumberOrZero(portefeuille.solde_bloque) + request.montant,
+      updated_at: new Date(),
+    } as any);
 
     return created;
   }
@@ -126,7 +121,7 @@ export class PaiementWalletService {
   }
 
   private availableBalance(portefeuille: PortefeuilleRecord): number {
-    return toNumberOrZero(portefeuille.solde) - toNumberOrZero(portefeuille.soldeBloque);
+    return toNumberOrZero(portefeuille.solde) - toNumberOrZero(portefeuille.solde_bloque);
   }
 
   private async mustFindUser(id: string): Promise<UserRecord> {

@@ -16,8 +16,9 @@
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/seed.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/seed.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

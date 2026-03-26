@@ -1,34 +1,48 @@
-import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
-import { basename, join } from 'path';
+import { randomUUID } from "crypto";
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from "@nestjs/common";
 
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
-import { DomainException } from '../../common/exceptions/domain.exception';
-import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
-import { normalizeOptionalField, normalizeRequiredField } from '../../common/utils/field.util';
-import { buildPaged, parsePaginationParams } from '../../common/utils/pagination-helper.util';
+import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
+import { DomainException } from "../../common/exceptions/domain.exception";
+import type { AuthenticatedUser } from "../../common/types/authenticated-user.type";
+import {
+  normalizeOptionalField,
+  normalizeRequiredField,
+} from "../../common/utils/field.util";
+import {
+  buildPaged,
+  parsePaginationParams,
+} from "../../common/utils/pagination-helper.util";
+import { CloudinaryService } from "../cloudinary/cloudinary.service";
 
-import { CreateVehiculeRequestDto } from './dto/create-vehicule-request.dto';
-import { UpdateVehiculeRequestDto } from './dto/update-vehicule-request.dto';
-import { VehiculeFilterDto } from './dto/vehicule-filter.dto';
-import { VehiculeResponseDto } from './dto/vehicule-response.dto';
-import { VehiculeAccessPolicy } from './services/vehicule-access.policy';
-import { VehiculeMapper } from './services/vehicule.mapper';
-import { VehiculeInputValidator } from './validation/vehicule-input.validator';
-import { UserWithRoleRecord, VehiculeFavoriRecord, VehiculeRecord, UpdateVehiculeInput } from './vehicule.models';
-import { VEHICULE_REPOSITORY_PORT, VehiculeRepositoryPort } from './vehicule.repository.port';
+import { CreateVehiculeRequestDto } from "./dto/create-vehicule-request.dto";
+import { UpdateVehiculeRequestDto } from "./dto/update-vehicule-request.dto";
+import { VehiculeFilterDto } from "./dto/vehicule-filter.dto";
+import { VehiculeResponseDto } from "./dto/vehicule-response.dto";
+import { VehiculeAccessPolicy } from "./services/vehicule-access.policy";
+import { VehiculeMapper } from "./services/vehicule.mapper";
+import { VehiculeInputValidator } from "./validation/vehicule-input.validator";
+import {
+  UserWithRoleRecord,
+  VehiculeFavoriRecord,
+  VehiculeRecord,
+} from "./vehicule.models";
+import {
+  VEHICULE_REPOSITORY_PORT,
+  VehiculeRepositoryPort,
+} from "./vehicule.repository.port";
 
 type UploadedFileLike = { originalname?: string; buffer: Buffer };
 
 @Injectable()
 export class VehiculeService {
   constructor(
-    @Inject(VEHICULE_REPOSITORY_PORT) private readonly repository: VehiculeRepositoryPort,
+    @Inject(VEHICULE_REPOSITORY_PORT)
+    private readonly repository: VehiculeRepositoryPort,
     private readonly inputValidator: VehiculeInputValidator,
     private readonly accessPolicy: VehiculeAccessPolicy,
     private readonly mapper: VehiculeMapper,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async createVehicule(
@@ -37,26 +51,47 @@ export class VehiculeService {
   ): Promise<VehiculeResponseDto> {
     const currentUser = await this.mustFindUser(user.email);
     this.accessPolicy.assertCanCreate(currentUser.type_utilisateur?.nom);
-    const couleur = normalizeRequiredField(request.couleur, 'couleur', 'VEHICULE_INVALID_FIELD');
-    const numeroVin = normalizeRequiredField(request.numeroVin, 'numeroVin', 'VEHICULE_INVALID_FIELD');
+    const couleur = normalizeRequiredField(
+      request.couleur,
+      "couleur",
+      "VEHICULE_INVALID_FIELD",
+    );
+    const numeroVin = normalizeRequiredField(
+      request.numeroVin,
+      "numeroVin",
+      "VEHICULE_INVALID_FIELD",
+    );
     const description = normalizeOptionalField(request.description);
     const immatriculation = normalizeOptionalField(request.immatriculation);
-    const photosUrls = this.inputValidator.normalizePhotosUrls(request.photosUrls);
+    const photosUrls = this.inputValidator.normalizePhotosUrls(
+      request.photosUrls,
+    );
 
     const marque = await this.repository.findOrCreateMarque(request.marque);
-    const modele = await this.repository.findOrCreateModele(marque.id, request.modele);
+    const modele = await this.repository.findOrCreateModele(
+      marque.id,
+      request.modele,
+    );
 
     const [carburant, boiteVitesse] = await Promise.all([
       this.repository.findCarburantById(request.carburantId),
       this.repository.findBoiteVitesseById(request.boiteVitesseId),
     ]);
 
-    if (!carburant) throw new DomainException('Carburant non trouvé', 404, 'CARBURANT_NOT_FOUND');
+    if (!carburant)
+      throw new DomainException(
+        "Carburant non trouvé",
+        404,
+        "CARBURANT_NOT_FOUND",
+      );
     if (!boiteVitesse)
-      throw new DomainException('Boîte de vitesse non trouvée', 404, 'BOITE_VITESSE_NOT_FOUND');
+      throw new DomainException(
+        "Boîte de vitesse non trouvée",
+        404,
+        "BOITE_VITESSE_NOT_FOUND",
+      );
 
-
-    const statut = request.enregistrerEnBrouillon ? 'BROUILLON' : 'PUBLIE';
+    const statut = request.enregistrerEnBrouillon ? "BROUILLON" : "PUBLIE";
     const vehicule = await this.repository.createVehicule({
       id: randomUUID(),
       proprietaire: { connect: { id: currentUser.id } },
@@ -104,11 +139,19 @@ export class VehiculeService {
     return this.mapper.toVehiculeResponse(fullVehicule, false);
   }
 
-  async searchVehicules(filter: VehiculeFilterDto): Promise<PaginatedResponseDto<VehiculeResponseDto>> {
-    const { page, size } = parsePaginationParams(filter.page ?? 0, filter.size ?? 20, { defaultSize: 20 });
+  async searchVehicules(
+    filter: VehiculeFilterDto,
+  ): Promise<PaginatedResponseDto<VehiculeResponseDto>> {
+    const { page, size } = parsePaginationParams(
+      filter.page ?? 0,
+      filter.size ?? 20,
+      { defaultSize: 20 },
+    );
 
-    const sortBy = this.inputValidator.resolveSortBy(filter.sortBy ?? 'createdAt');
-    const sortDir = this.inputValidator.parseSortDir(filter.sortDir ?? 'DESC');
+    const sortBy = this.inputValidator.resolveSortBy(
+      filter.sortBy ?? "createdAt",
+    );
+    const sortDir = this.inputValidator.parseSortDir(filter.sortDir ?? "DESC");
 
     const { items, total } = await this.repository.findPublishedPaged({
       skip: page * size,
@@ -120,33 +163,56 @@ export class VehiculeService {
     });
 
     return buildPaged(
-      items.map((item: VehiculeRecord) => this.mapper.toVehiculeResponse(item, false)),
+      items.map((item: VehiculeRecord) =>
+        this.mapper.toVehiculeResponse(item, false),
+      ),
       page,
       size,
       total,
     );
   }
 
-  async getVehiculeById(id: string, user: AuthenticatedUser): Promise<VehiculeResponseDto> {
+  async getVehiculeById(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<VehiculeResponseDto> {
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
-    this.accessPolicy.assertCanReadVehicule(vehicule, currentUser.id, currentUser.type_utilisateur?.nom);
+    this.accessPolicy.assertCanReadVehicule(
+      vehicule,
+      currentUser.id,
+      currentUser.type_utilisateur?.nom,
+    );
 
     const views = (vehicule.vues ?? 0) + 1;
     await this.repository.updateVehicule(id, { vues: views });
 
-    const isFavori = Boolean(await this.repository.isFavori(currentUser.id, id));
-    return this.mapper.toVehiculeResponse({ ...vehicule, vues: views }, isFavori);
+    const isFavori = Boolean(
+      await this.repository.isFavori(currentUser.id, id),
+    );
+    return this.mapper.toVehiculeResponse(
+      { ...vehicule, vues: views },
+      isFavori,
+    );
   }
 
-  async getMesVehicules(user: AuthenticatedUser): Promise<VehiculeResponseDto[]> {
+  async getMesVehicules(
+    user: AuthenticatedUser,
+  ): Promise<VehiculeResponseDto[]> {
     const currentUser = await this.mustFindUser(user.email);
-    const vehicules = await this.repository.findByProprietaireId(currentUser.id);
+    const vehicules = await this.repository.findByProprietaireId(
+      currentUser.id,
+    );
 
-    return vehicules.map((v: VehiculeRecord) => this.mapper.toVehiculeResponse(v, false));
+    return vehicules.map((v: VehiculeRecord) =>
+      this.mapper.toVehiculeResponse(v, false),
+    );
   }
 
-  async publishVehicule(id: string, user: AuthenticatedUser): Promise<VehiculeResponseDto> {
+  async publishVehicule(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<VehiculeResponseDto> {
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
 
@@ -156,7 +222,7 @@ export class VehiculeService {
       vehicule.proprietaire_id,
     );
 
-    await this.repository.updateVehicule(id, { statut: 'PUBLIE' });
+    await this.repository.updateVehicule(id, { statut: "PUBLIE" });
     const updated = await this.mustFindVehicule(id);
 
     return this.mapper.toVehiculeResponse(updated, false);
@@ -184,66 +250,108 @@ export class VehiculeService {
     }
 
     if (request.modele) {
-      const marqueIdToUse = updateData.marque?.connect?.id || vehicule.marque_id;
+      const marqueIdToUse =
+        updateData.marque?.connect?.id || vehicule.marque_id;
       if (!marqueIdToUse) {
-        throw new DomainException('Impossible de définir le modèle sans marque', 400, 'NO_MARQUE_FOR_MODELE');
+        throw new DomainException(
+          "Impossible de définir le modèle sans marque",
+          400,
+          "NO_MARQUE_FOR_MODELE",
+        );
       }
-      const modele = await this.repository.findOrCreateModele(marqueIdToUse, request.modele);
+      const modele = await this.repository.findOrCreateModele(
+        marqueIdToUse,
+        request.modele,
+      );
       updateData.modele = { connect: { id: modele.id } };
     }
 
     if (request.carburantId) {
-      const carburant = await this.repository.findCarburantById(request.carburantId);
-      if (!carburant) throw new DomainException('Carburant non trouvé', 404, 'CARBURANT_NOT_FOUND');
+      const carburant = await this.repository.findCarburantById(
+        request.carburantId,
+      );
+      if (!carburant)
+        throw new DomainException(
+          "Carburant non trouvé",
+          404,
+          "CARBURANT_NOT_FOUND",
+        );
       updateData.carburant = { connect: { id: request.carburantId } };
     }
 
     if (request.boiteVitesseId) {
-      const boiteVitesse = await this.repository.findBoiteVitesseById(request.boiteVitesseId);
+      const boiteVitesse = await this.repository.findBoiteVitesseById(
+        request.boiteVitesseId,
+      );
       if (!boiteVitesse)
-        throw new DomainException('Boîte de vitesse non trouvée', 404, 'BOITE_VITESSE_NOT_FOUND');
+        throw new DomainException(
+          "Boîte de vitesse non trouvée",
+          404,
+          "BOITE_VITESSE_NOT_FOUND",
+        );
       updateData.boite_vitesse = { connect: { id: request.boiteVitesseId } };
     }
 
-    if (request.anneeFabrication) updateData.annee_fabrication = request.anneeFabrication;
-    if (request.kilometrage !== undefined) updateData.kilometrage = request.kilometrage;
+    if (request.anneeFabrication)
+      updateData.annee_fabrication = request.anneeFabrication;
+    if (request.kilometrage !== undefined)
+      updateData.kilometrage = request.kilometrage;
     if (request.couleur)
-      updateData.couleur = normalizeRequiredField(request.couleur, 'couleur', 'VEHICULE_INVALID_FIELD');
+      updateData.couleur = normalizeRequiredField(
+        request.couleur,
+        "couleur",
+        "VEHICULE_INVALID_FIELD",
+      );
     if (request.prixVente) updateData.prix_vente = request.prixVente;
     if (request.description !== undefined)
       updateData.description = normalizeOptionalField(request.description);
     if (request.numeroVin)
       updateData.numero_vin = normalizeRequiredField(
         request.numeroVin,
-        'numeroVin',
-        'VEHICULE_INVALID_FIELD',
+        "numeroVin",
+        "VEHICULE_INVALID_FIELD",
       );
     if (request.immatriculation !== undefined)
-      updateData.immatriculation = normalizeOptionalField(request.immatriculation);
-    if (request.prixNegociable !== undefined) updateData.prix_negociable = request.prixNegociable;
+      updateData.immatriculation = normalizeOptionalField(
+        request.immatriculation,
+      );
+    if (request.prixNegociable !== undefined)
+      updateData.prix_negociable = request.prixNegociable;
     if (request.certifie !== undefined) updateData.certifie = request.certifie;
     if (request.titre !== undefined) updateData.titre = request.titre;
-    if (request.nombrePortes !== undefined) updateData.nombre_portes = request.nombrePortes;
-    if (request.nombrePlaces !== undefined) updateData.nombre_places = request.nombrePlaces;
-    if (request.cylindree !== undefined) updateData.cylindree = request.cylindree;
-    if (request.puissanceFiscale !== undefined) updateData.puissance_fiscale = request.puissanceFiscale;
-    if (request.estGarantie !== undefined) updateData.est_garantie = request.estGarantie;
-    if (request.garantieMois !== undefined) updateData.garantie_mois = request.garantieMois;
+    if (request.nombrePortes !== undefined)
+      updateData.nombre_portes = request.nombrePortes;
+    if (request.nombrePlaces !== undefined)
+      updateData.nombre_places = request.nombrePlaces;
+    if (request.cylindree !== undefined)
+      updateData.cylindree = request.cylindree;
+    if (request.puissanceFiscale !== undefined)
+      updateData.puissance_fiscale = request.puissanceFiscale;
+    if (request.estGarantie !== undefined)
+      updateData.est_garantie = request.estGarantie;
+    if (request.garantieMois !== undefined)
+      updateData.garantie_mois = request.garantieMois;
 
     if (request.enregistrerEnBrouillon !== undefined) {
-      updateData.statut = request.enregistrerEnBrouillon ? 'BROUILLON' : 'PUBLIE';
+      updateData.statut = request.enregistrerEnBrouillon
+        ? "BROUILLON"
+        : "PUBLIE";
     }
 
     await this.repository.updateVehicule(id, updateData);
 
     // Gérer les photos si fournies
     if (request.photosUrls !== undefined) {
-      const photosUrls = this.inputValidator.normalizePhotosUrls(request.photosUrls);
+      const photosUrls = this.inputValidator.normalizePhotosUrls(
+        request.photosUrls,
+      );
       await this.repository.updateVehiculePhotos(id, photosUrls);
     }
 
     const updated = await this.mustFindVehicule(id);
-    const isFavori = Boolean(await this.repository.isFavori(currentUser.id, id));
+    const isFavori = Boolean(
+      await this.repository.isFavori(currentUser.id, id),
+    );
     return this.mapper.toVehiculeResponse(updated, isFavori);
   }
 
@@ -278,7 +386,9 @@ export class VehiculeService {
 
   async getMesFavoris(user: AuthenticatedUser): Promise<VehiculeResponseDto[]> {
     const currentUser = await this.mustFindUser(user.email);
-    const favoris = await this.repository.findFavorisByUtilisateur(currentUser.id);
+    const favoris = await this.repository.findFavorisByUtilisateur(
+      currentUser.id,
+    );
 
     return favoris.map((favori: VehiculeFavoriRecord) =>
       this.mapper.toVehiculeResponse(favori.vehicule, true),
@@ -289,7 +399,9 @@ export class VehiculeService {
     return this.repository.findAllMarques();
   }
 
-  async getModelesByMarque(marqueId: string): Promise<{ id: string; nom: string }[]> {
+  async getModelesByMarque(
+    marqueId: string,
+  ): Promise<{ id: string; nom: string }[]> {
     return this.repository.findModelesByMarque(marqueId);
   }
 
@@ -307,11 +419,18 @@ export class VehiculeService {
     finIso: string,
     user: AuthenticatedUser,
   ): Promise<VehiculeResponseDto> {
-    const { debut, fin } = this.inputValidator.parseBoostDates(debutIso, finIso);
+    const { debut, fin } = this.inputValidator.parseBoostDates(
+      debutIso,
+      finIso,
+    );
 
     const currentUser = await this.mustFindUser(user.email);
     const vehicule = await this.mustFindVehicule(id);
-    this.accessPolicy.assertAdminOrOwner(currentUser.type_utilisateur?.nom, currentUser.id, vehicule.proprietaire_id);
+    this.accessPolicy.assertAdminOrOwner(
+      currentUser.type_utilisateur?.nom,
+      currentUser.id,
+      vehicule.proprietaire_id,
+    );
 
     await this.repository.updateVehicule(id, {
       est_boost: true,
@@ -325,20 +444,30 @@ export class VehiculeService {
 
   async uploadPhotos(files: UploadedFileLike[]): Promise<string[]> {
     if (!files || !files.length) {
-      throw new DomainException('Fichiers images requis', 400, 'VEHICULE_PHOTOS_REQUIRED');
+      throw new DomainException(
+        "Fichiers images requis",
+        400,
+        "VEHICULE_PHOTOS_REQUIRED",
+      );
     }
-    const uploadDir = join(process.cwd(), 'uploads', 'vehicules');
-    await mkdir(uploadDir, { recursive: true });
-    
+
     const urls: string[] = [];
     for (const file of files) {
       if (!file?.buffer?.length) continue;
-      const safeOriginal = basename(file.originalname || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
-      const filename = `${randomUUID()}_${safeOriginal}`;
-      const filePath = join(uploadDir, filename);
 
-      await writeFile(filePath, file.buffer);
-      urls.push(`/uploads/vehicules/${filename}`);
+      try {
+        const result = await this.cloudinaryService.uploadImage(
+          file,
+          "vehicules",
+        );
+        urls.push(result.secure_url);
+      } catch {
+        throw new DomainException(
+          "Erreur lors de l'upload de l'image",
+          500,
+          "VEHICULE_PHOTO_UPLOAD_ERROR",
+        );
+      }
     }
     return urls;
   }
@@ -350,13 +479,19 @@ export class VehiculeService {
     }
 
     const count = await this.repository.countFavoris(vehiculeId);
-    await this.repository.updateVehicule(vehiculeId, { nombre_favoris: count } as any);
+    await this.repository.updateVehicule(vehiculeId, {
+      nombre_favoris: count,
+    } as any);
   }
 
   private async mustFindUser(email: string): Promise<UserWithRoleRecord> {
     const user = await this.repository.findUserByEmail(email);
     if (!user) {
-      throw new DomainException('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+      throw new DomainException(
+        "Utilisateur non trouvé",
+        404,
+        "USER_NOT_FOUND",
+      );
     }
 
     return user;
@@ -365,10 +500,13 @@ export class VehiculeService {
   private async mustFindVehicule(id: string): Promise<VehiculeRecord> {
     const vehicule = await this.repository.findVehiculeById(id);
     if (!vehicule) {
-      throw new DomainException('Véhicule non trouvé', 404, 'VEHICULE_NOT_FOUND');
+      throw new DomainException(
+        "Véhicule non trouvé",
+        404,
+        "VEHICULE_NOT_FOUND",
+      );
     }
 
     return vehicule;
   }
-
 }

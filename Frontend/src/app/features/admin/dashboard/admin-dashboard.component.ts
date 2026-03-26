@@ -215,7 +215,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!url) return 'assets/placeholder-car.jpg';
     if (url.startsWith('http')) return url;
     // Base backend URL is localhost:8082
-    const base = 'http://localhost:8082';
+    const base = 'https://sencar-market.onrender.com';
     return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
   }
 

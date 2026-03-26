@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 import { VehiculeAccessPolicy } from './services/vehicule-access.policy';
 import { VehiculeMapper } from './services/vehicule.mapper';
 import { VehiculeInputValidator } from './validation/vehicule-input.validator';
@@ -9,6 +11,7 @@ import { VEHICULE_REPOSITORY_PORT } from './vehicule.repository.port';
 import { VehiculeService } from './vehicule.service';
 
 @Module({
+  imports: [CloudinaryModule],
   controllers: [VehiculeController],
   providers: [
     VehiculeService,

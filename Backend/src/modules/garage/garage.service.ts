@@ -1,47 +1,78 @@
-import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
-import { basename, join } from 'path';
+import { Inject, Injectable } from "@nestjs/common";
 
-import { Inject, Injectable } from '@nestjs/common';
+import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
+import { DomainException } from "../../common/exceptions/domain.exception";
+import type { AuthenticatedUser } from "../../common/types/authenticated-user.type";
+import {
+  normalizeOptionalField,
+  normalizeRequiredField,
+} from "../../common/utils/field.util";
+import { toNullableNumber } from "../../common/utils/number.util";
+import {
+  buildPaginatedResponse,
+  clampPage,
+  clampSize,
+} from "../../common/utils/pagination.util";
+import { CloudinaryService } from "../cloudinary/cloudinary.service";
 
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
-import { DomainException } from '../../common/exceptions/domain.exception';
-import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
-import { normalizeOptionalField, normalizeRequiredField } from '../../common/utils/field.util';
-import { toNullableNumber } from '../../common/utils/number.util';
-import { buildPaginatedResponse, clampPage, clampSize } from '../../common/utils/pagination.util';
-
-import { AssociateServiceRequestDto } from './dto/associate-service-request.dto';
-import { CreateGarageRequestDto } from './dto/create-garage-request.dto';
-import { CreateServiceGarageRequestDto } from './dto/create-service-garage-request.dto';
-import { GarageResponseDto } from './dto/garage-response.dto';
-import { GarageServiceResponseDto } from './dto/garage-service-response.dto';
-import { ServiceGarageResponseDto } from './dto/service-garage-response.dto';
-import { ValidationGarageRequestDto } from './dto/validation-garage-request.dto';
-import { GarageRecord, UserRecord } from './garage.models';
-import { GARAGE_REPOSITORY_PORT, GarageRepositoryPort } from './garage.repository.port';
-import { GarageAccessPolicy } from './services/garage-access.policy';
-import { GarageMapper } from './services/garage.mapper';
-import { StatutValidationGarage } from './types/garage.types';
-import { GarageInputValidator } from './validation/garage-input.validator';
+import { AssociateServiceRequestDto } from "./dto/associate-service-request.dto";
+import { CreateGarageRequestDto } from "./dto/create-garage-request.dto";
+import { CreateServiceGarageRequestDto } from "./dto/create-service-garage-request.dto";
+import { GarageResponseDto } from "./dto/garage-response.dto";
+import { GarageServiceResponseDto } from "./dto/garage-service-response.dto";
+import { ServiceGarageResponseDto } from "./dto/service-garage-response.dto";
+import { ValidationGarageRequestDto } from "./dto/validation-garage-request.dto";
+import { GarageRecord, UserRecord } from "./garage.models";
+import {
+  GARAGE_REPOSITORY_PORT,
+  GarageRepositoryPort,
+} from "./garage.repository.port";
+import { GarageAccessPolicy } from "./services/garage-access.policy";
+import { GarageMapper } from "./services/garage.mapper";
+import { StatutValidationGarage } from "./types/garage.types";
+import { GarageInputValidator } from "./validation/garage-input.validator";
 
 @Injectable()
 export class GarageService {
   constructor(
-    @Inject(GARAGE_REPOSITORY_PORT) private readonly repository: GarageRepositoryPort,
+    @Inject(GARAGE_REPOSITORY_PORT)
+    private readonly repository: GarageRepositoryPort,
     private readonly inputValidator: GarageInputValidator,
     private readonly accessPolicy: GarageAccessPolicy,
     private readonly mapper: GarageMapper,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async createGarage(request: CreateGarageRequestDto, user: AuthenticatedUser): Promise<GarageResponseDto> {
+  async createGarage(
+    request: CreateGarageRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<GarageResponseDto> {
     const current = await this.requireCurrentUser(user);
-    this.accessPolicy.assertHasAnyRole(current.type_utilisateur?.nom, ['PROFESSIONNEL', 'ADMIN']);
+    this.accessPolicy.assertHasAnyRole(current.type_utilisateur?.nom, [
+      "PROFESSIONNEL",
+      "ADMIN",
+    ]);
 
-    const nom = normalizeRequiredField(request.nom, 'nom', 'GARAGE_INVALID_FIELD');
-    const adresse = normalizeRequiredField(request.adresse, 'adresse', 'GARAGE_INVALID_FIELD');
-    const telephone = normalizeRequiredField(request.telephone, 'telephone', 'GARAGE_INVALID_FIELD');
-    const ville = normalizeRequiredField(request.ville, 'ville', 'GARAGE_INVALID_FIELD');
+    const nom = normalizeRequiredField(
+      request.nom,
+      "nom",
+      "GARAGE_INVALID_FIELD",
+    );
+    const adresse = normalizeRequiredField(
+      request.adresse,
+      "adresse",
+      "GARAGE_INVALID_FIELD",
+    );
+    const telephone = normalizeRequiredField(
+      request.telephone,
+      "telephone",
+      "GARAGE_INVALID_FIELD",
+    );
+    const ville = normalizeRequiredField(
+      request.ville,
+      "ville",
+      "GARAGE_INVALID_FIELD",
+    );
     const email = normalizeOptionalField(request.email);
     const description = normalizeOptionalField(request.description);
     const horairesOuverture = normalizeOptionalField(request.horairesOuverture);
@@ -63,7 +94,7 @@ export class GarageService {
       ville,
       ...(pays ? { pays } : {}),
       ...(logoUrl ? { logo_url: logoUrl } : {}),
-      statut_validation: 'EN_ATTENTE',
+      statut_validation: "EN_ATTENTE",
       utilisateur_id: current.id,
       created_at: now,
       updated_at: now,
@@ -71,7 +102,9 @@ export class GarageService {
 
     if (request.services && request.services.length > 0) {
       for (const item of request.services) {
-        const serviceDef = await this.repository.findServiceById(item.serviceId);
+        const serviceDef = await this.repository.findServiceById(
+          item.serviceId,
+        );
         if (serviceDef && serviceDef.actif) {
           await this.repository.createAssociation({
             id: this.repository.newId(),
@@ -93,61 +126,124 @@ export class GarageService {
   async getGarageById(id: string): Promise<GarageResponseDto> {
     const garage = await this.repository.findGarageById(id);
     if (!garage) {
-      throw new DomainException('Garage non trouvé', 404, 'GARAGE_NOT_FOUND');
+      throw new DomainException("Garage non trouvé", 404, "GARAGE_NOT_FOUND");
     }
     return this.mapper.toGarageResponse(garage);
   }
 
-  async getAllGarages(page: number, size: number): Promise<PaginatedResponseDto<GarageResponseDto>> {
-    return this.getPagedGarages('all', clampPage(page), clampSize(size, 10));
+  async getAllGarages(
+    page: number,
+    size: number,
+  ): Promise<PaginatedResponseDto<GarageResponseDto>> {
+    return this.getPagedGarages("all", clampPage(page), clampSize(size, 10));
   }
 
-  async getActiveGarages(page: number, size: number): Promise<PaginatedResponseDto<GarageResponseDto>> {
-    return this.getPagedGarages('ACTIF', clampPage(page), clampSize(size, 10));
+  async getActiveGarages(
+    page: number,
+    size: number,
+  ): Promise<PaginatedResponseDto<GarageResponseDto>> {
+    return this.getPagedGarages("ACTIF", clampPage(page), clampSize(size, 10));
   }
 
-  async getGaragesEnAttente(page: number, size: number, user: AuthenticatedUser): Promise<PaginatedResponseDto<GarageResponseDto>> {
+  async getGaragesEnAttente(
+    page: number,
+    size: number,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<GarageResponseDto>> {
     const current = await this.requireCurrentUser(user);
     this.accessPolicy.assertAdmin(current.type_utilisateur?.nom);
-    return this.getPagedGarages('EN_ATTENTE', clampPage(page), clampSize(size, 10));
+    return this.getPagedGarages(
+      "EN_ATTENTE",
+      clampPage(page),
+      clampSize(size, 10),
+    );
   }
 
-  async getGaragesByProprietaire(proprietaireId: string, user: AuthenticatedUser): Promise<GarageResponseDto[]> {
+  async getGaragesByProprietaire(
+    proprietaireId: string,
+    user: AuthenticatedUser,
+  ): Promise<GarageResponseDto[]> {
     const current = await this.requireCurrentUser(user);
-    this.accessPolicy.assertOwnerOrAdmin(current.id, current.type_utilisateur?.nom, proprietaireId);
+    this.accessPolicy.assertOwnerOrAdmin(
+      current.id,
+      current.type_utilisateur?.nom,
+      proprietaireId,
+    );
 
-    const garages = await this.repository.findGaragesByProprietaireId(proprietaireId);
+    const garages =
+      await this.repository.findGaragesByProprietaireId(proprietaireId);
     return garages.map((garage) => this.mapper.toGarageResponse(garage));
   }
 
   async searchByLocalisation(ville: string): Promise<GarageResponseDto[]> {
-    const normalizedVille = normalizeRequiredField(ville, 'ville', 'GARAGE_INVALID_FIELD');
+    const normalizedVille = normalizeRequiredField(
+      ville,
+      "ville",
+      "GARAGE_INVALID_FIELD",
+    );
     const garages = await this.repository.findActiveByVille(normalizedVille);
     return garages.map((garage) => this.mapper.toGarageResponse(garage));
   }
 
-  async searchByProximity(latitude: number, longitude: number, rayonKm: number): Promise<GarageResponseDto[]> {
+  async searchByProximity(
+    latitude: number,
+    longitude: number,
+    rayonKm: number,
+  ): Promise<GarageResponseDto[]> {
     this.inputValidator.validateProximityInputs(latitude, longitude, rayonKm);
     const bounds = this.calculateSearchBounds(latitude, longitude, rayonKm);
-    const garages = await this.repository.findByLocation(bounds[0], bounds[1], bounds[2], bounds[3]);
+    const garages = await this.repository.findByLocation(
+      bounds[0],
+      bounds[1],
+      bounds[2],
+      bounds[3],
+    );
     return garages.map((garage) => this.mapper.toGarageResponse(garage));
   }
 
   async searchGarages(query: string): Promise<GarageResponseDto[]> {
-    const normalizedQuery = normalizeRequiredField(query, 'query', 'GARAGE_INVALID_FIELD');
+    const normalizedQuery = normalizeRequiredField(
+      query,
+      "query",
+      "GARAGE_INVALID_FIELD",
+    );
     const garages = await this.repository.searchGarages(normalizedQuery);
     return garages.map((garage) => this.mapper.toGarageResponse(garage));
   }
 
-  async updateGarage(id: string, request: CreateGarageRequestDto, user: AuthenticatedUser): Promise<GarageResponseDto> {
+  async updateGarage(
+    id: string,
+    request: CreateGarageRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<GarageResponseDto> {
     const current = await this.requireCurrentUser(user);
     const garage = await this.requireGarage(id);
-    this.accessPolicy.assertGarageOwnerOrAdmin(garage, current.id, current.type_utilisateur?.nom);
+    this.accessPolicy.assertGarageOwnerOrAdmin(
+      garage,
+      current.id,
+      current.type_utilisateur?.nom,
+    );
 
-    const nom = normalizeRequiredField(request.nom, 'nom', 'GARAGE_INVALID_FIELD');
-    const adresse = normalizeRequiredField(request.adresse, 'adresse', 'GARAGE_INVALID_FIELD');
-    const telephone = normalizeRequiredField(request.telephone, 'telephone', 'GARAGE_INVALID_FIELD');
-    const ville = normalizeRequiredField(request.ville, 'ville', 'GARAGE_INVALID_FIELD');
+    const nom = normalizeRequiredField(
+      request.nom,
+      "nom",
+      "GARAGE_INVALID_FIELD",
+    );
+    const adresse = normalizeRequiredField(
+      request.adresse,
+      "adresse",
+      "GARAGE_INVALID_FIELD",
+    );
+    const telephone = normalizeRequiredField(
+      request.telephone,
+      "telephone",
+      "GARAGE_INVALID_FIELD",
+    );
+    const ville = normalizeRequiredField(
+      request.ville,
+      "ville",
+      "GARAGE_INVALID_FIELD",
+    );
     const email = normalizeOptionalField(request.email);
     const description = normalizeOptionalField(request.description);
     const horairesOuverture = normalizeOptionalField(request.horairesOuverture);
@@ -172,21 +268,27 @@ export class GarageService {
     if (request.services !== undefined) {
       const now = new Date();
       // Supprimer les anciennes associations
-      const existingAssociations = await this.repository.findAssociationsByGarageId(id);
+      const existingAssociations =
+        await this.repository.findAssociationsByGarageId(id);
       if (existingAssociations.length > 0) {
-        await this.repository.deleteManyAssociations(existingAssociations.map((a) => a.id));
+        await this.repository.deleteManyAssociations(
+          existingAssociations.map((a) => a.id),
+        );
       }
 
       // Créer les nouvelles associations
       if (request.services.length > 0) {
         for (const item of request.services) {
-          const serviceDef = await this.repository.findServiceById(item.serviceId);
+          const serviceDef = await this.repository.findServiceById(
+            item.serviceId,
+          );
           if (serviceDef && serviceDef.actif) {
             await this.repository.createAssociation({
               id: this.repository.newId(),
               garage: { connect: { id: id } },
               service_garage: { connect: { id: item.serviceId } },
-              prix: item.prix ?? (toNullableNumber(serviceDef.prix) || undefined),
+              prix:
+                item.prix ?? (toNullableNumber(serviceDef.prix) || undefined),
               duree_estimee: serviceDef.duree_estimee ?? undefined,
               actif: true,
               created_at: now,
@@ -203,14 +305,22 @@ export class GarageService {
   async deleteGarage(id: string, user: AuthenticatedUser): Promise<void> {
     const current = await this.requireCurrentUser(user);
     const garage = await this.requireGarage(id);
-    this.accessPolicy.assertGarageOwnerOrAdmin(garage, current.id, current.type_utilisateur?.nom);
+    this.accessPolicy.assertGarageOwnerOrAdmin(
+      garage,
+      current.id,
+      current.type_utilisateur?.nom,
+    );
 
     const associations = await this.repository.findAssociationsByGarageId(id);
     await this.repository.deleteManyAssociations(associations.map((a) => a.id));
     await this.repository.deleteGarage(id);
   }
 
-  async validerGarage(id: string, request: ValidationGarageRequestDto, user: AuthenticatedUser): Promise<GarageResponseDto> {
+  async validerGarage(
+    id: string,
+    request: ValidationGarageRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<GarageResponseDto> {
     const current = await this.requireCurrentUser(user);
     this.accessPolicy.assertAdmin(current.type_utilisateur?.nom);
 
@@ -222,7 +332,9 @@ export class GarageService {
 
     const saved = await this.repository.updateGarage(id, {
       statut_validation: request.nouveauStatut,
-      ...(request.commentaireAdmin !== undefined ? { commentaire_admin: request.commentaireAdmin } : {}),
+      ...(request.commentaireAdmin !== undefined
+        ? { commentaire_admin: request.commentaireAdmin }
+        : {}),
       date_validation: new Date(),
       updated_at: new Date(),
     });
@@ -230,11 +342,23 @@ export class GarageService {
     return this.mapper.toGarageResponse(saved);
   }
 
-  async updateLogo(id: string, logoUrl: string, user: AuthenticatedUser): Promise<GarageResponseDto> {
+  async updateLogo(
+    id: string,
+    logoUrl: string,
+    user: AuthenticatedUser,
+  ): Promise<GarageResponseDto> {
     const current = await this.requireCurrentUser(user);
     const garage = await this.requireGarage(id);
-    this.accessPolicy.assertGarageOwnerOrAdmin(garage, current.id, current.type_utilisateur?.nom);
-    const normalizedLogoUrl = normalizeRequiredField(logoUrl, 'logoUrl', 'GARAGE_INVALID_FIELD');
+    this.accessPolicy.assertGarageOwnerOrAdmin(
+      garage,
+      current.id,
+      current.type_utilisateur?.nom,
+    );
+    const normalizedLogoUrl = normalizeRequiredField(
+      logoUrl,
+      "logoUrl",
+      "GARAGE_INVALID_FIELD",
+    );
 
     const saved = await this.repository.updateGarage(id, {
       logo_url: normalizedLogoUrl,
@@ -243,7 +367,10 @@ export class GarageService {
     return this.mapper.toGarageResponse(saved);
   }
 
-  async createService(request: CreateServiceGarageRequestDto, user: AuthenticatedUser): Promise<ServiceGarageResponseDto> {
+  async createService(
+    request: CreateServiceGarageRequestDto,
+    user: AuthenticatedUser,
+  ): Promise<ServiceGarageResponseDto> {
     const current = await this.requireCurrentUser(user);
     this.accessPolicy.assertAdmin(current.type_utilisateur?.nom);
 
@@ -253,7 +380,9 @@ export class GarageService {
       nom: request.nom,
       ...(request.description ? { description: request.description } : {}),
       ...(request.prix != null ? { prix: request.prix } : {}),
-      ...(request.dureeEstimee != null ? { duree_estimee: request.dureeEstimee } : {}),
+      ...(request.dureeEstimee != null
+        ? { duree_estimee: request.dureeEstimee }
+        : {}),
       ...(request.categorie ? { categorie: request.categorie } : {}),
       actif: true,
       created_at: now,
@@ -271,7 +400,11 @@ export class GarageService {
   async getServiceById(id: string): Promise<ServiceGarageResponseDto> {
     const service = await this.repository.findServiceById(id);
     if (!service) {
-      throw new DomainException('Service non trouvé', 404, 'GARAGE_SERVICE_NOT_FOUND');
+      throw new DomainException(
+        "Service non trouvé",
+        404,
+        "GARAGE_SERVICE_NOT_FOUND",
+      );
     }
     return this.mapper.toServiceResponse(service);
   }
@@ -283,19 +416,38 @@ export class GarageService {
   ): Promise<GarageServiceResponseDto> {
     const current = await this.requireCurrentUser(user);
     const garage = await this.requireGarage(garageId);
-    this.accessPolicy.assertGarageOwnerOrAdmin(garage, current.id, current.type_utilisateur?.nom);
+    this.accessPolicy.assertGarageOwnerOrAdmin(
+      garage,
+      current.id,
+      current.type_utilisateur?.nom,
+    );
 
     const service = await this.repository.findServiceById(request.serviceId);
     if (!service) {
-      throw new DomainException('Service non trouvé', 404, 'GARAGE_SERVICE_NOT_FOUND');
+      throw new DomainException(
+        "Service non trouvé",
+        404,
+        "GARAGE_SERVICE_NOT_FOUND",
+      );
     }
     if (service.actif !== true) {
-      throw new DomainException('Service inactif', 400, 'GARAGE_SERVICE_INACTIVE');
+      throw new DomainException(
+        "Service inactif",
+        400,
+        "GARAGE_SERVICE_INACTIVE",
+      );
     }
 
-    const existing = await this.repository.findAssociationByGarageAndService(garageId, request.serviceId);
+    const existing = await this.repository.findAssociationByGarageAndService(
+      garageId,
+      request.serviceId,
+    );
     if (existing) {
-      throw new DomainException('Service déjà associé à ce garage', 409, 'GARAGE_SERVICE_ALREADY_ASSOCIATED');
+      throw new DomainException(
+        "Service déjà associé à ce garage",
+        409,
+        "GARAGE_SERVICE_ALREADY_ASSOCIATED",
+      );
     }
 
     const now = new Date();
@@ -314,32 +466,51 @@ export class GarageService {
     return this.mapper.toAssociationResponse(saved);
   }
 
-  async getServicesByGarage(garageId: string): Promise<GarageServiceResponseDto[]> {
+  async getServicesByGarage(
+    garageId: string,
+  ): Promise<GarageServiceResponseDto[]> {
     await this.requireGarage(garageId);
     const services = await this.repository.findServicesByGarageId(garageId);
-    return services.map((service) => this.mapper.toAssociationResponse(service));
+    return services.map((service) =>
+      this.mapper.toAssociationResponse(service),
+    );
   }
 
-  async disassociateService(garageId: string, serviceId: string, user: AuthenticatedUser): Promise<void> {
+  async disassociateService(
+    garageId: string,
+    serviceId: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
     const current = await this.requireCurrentUser(user);
     const garage = await this.requireGarage(garageId);
-    this.accessPolicy.assertGarageOwnerOrAdmin(garage, current.id, current.type_utilisateur?.nom);
+    this.accessPolicy.assertGarageOwnerOrAdmin(
+      garage,
+      current.id,
+      current.type_utilisateur?.nom,
+    );
 
-    const association = await this.repository.findAssociationByGarageAndService(garageId, serviceId);
+    const association = await this.repository.findAssociationByGarageAndService(
+      garageId,
+      serviceId,
+    );
     if (!association) {
-      throw new DomainException('Association garage/service non trouvée', 404, 'GARAGE_SERVICE_ASSOCIATION_NOT_FOUND');
+      throw new DomainException(
+        "Association garage/service non trouvée",
+        404,
+        "GARAGE_SERVICE_ASSOCIATION_NOT_FOUND",
+      );
     }
 
     await this.repository.deleteAssociation(association.id);
   }
 
   private async getPagedGarages(
-    mode: 'all' | StatutValidationGarage,
+    mode: "all" | StatutValidationGarage,
     page: number,
     size: number,
   ): Promise<PaginatedResponseDto<GarageResponseDto>> {
     const data =
-      mode === 'all'
+      mode === "all"
         ? await this.repository.findGaragesPaged(page, size)
         : await this.repository.findGaragesByStatutPaged(mode, page, size);
 
@@ -351,10 +522,16 @@ export class GarageService {
     );
   }
 
-  private async requireCurrentUser(user: AuthenticatedUser): Promise<UserRecord> {
+  private async requireCurrentUser(
+    user: AuthenticatedUser,
+  ): Promise<UserRecord> {
     const current = await this.repository.findUserByEmail(user.email);
     if (!current) {
-      throw new DomainException('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+      throw new DomainException(
+        "Utilisateur non trouvé",
+        404,
+        "USER_NOT_FOUND",
+      );
     }
     return current;
   }
@@ -362,29 +539,47 @@ export class GarageService {
   private async requireGarage(garageId: string): Promise<GarageRecord> {
     const garage = await this.repository.findGarageById(garageId);
     if (!garage) {
-      throw new DomainException('Garage non trouvé', 404, 'GARAGE_NOT_FOUND');
+      throw new DomainException("Garage non trouvé", 404, "GARAGE_NOT_FOUND");
     }
     return garage;
   }
 
-  private calculateSearchBounds(latitude: number, longitude: number, rayonKm: number): [number, number, number, number] {
+  private calculateSearchBounds(
+    latitude: number,
+    longitude: number,
+    rayonKm: number,
+  ): [number, number, number, number] {
     const latDelta = rayonKm / 111.0;
     const lonDelta = rayonKm / (111.0 * Math.cos((latitude * Math.PI) / 180));
-    return [latitude - latDelta, latitude + latDelta, longitude - lonDelta, longitude + lonDelta];
+    return [
+      latitude - latDelta,
+      latitude + latDelta,
+      longitude - lonDelta,
+      longitude + lonDelta,
+    ];
   }
 
-  async uploadLogo(file: { originalname?: string; buffer: Buffer }): Promise<string> {
+  async uploadLogo(file: {
+    originalname?: string;
+    buffer: Buffer;
+  }): Promise<string> {
     if (!file || !file.buffer?.length) {
-      throw new DomainException('Fichier image logo requis', 400, 'GARAGE_LOGO_REQUIRED');
+      throw new DomainException(
+        "Fichier image logo requis",
+        400,
+        "GARAGE_LOGO_REQUIRED",
+      );
     }
-    const uploadDir = join(process.cwd(), 'uploads', 'garages');
-    await mkdir(uploadDir, { recursive: true });
 
-    const safeOriginal = basename(file.originalname || 'logo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filename = `${randomUUID()}_${safeOriginal}`;
-    const filePath = join(uploadDir, filename);
-
-    await writeFile(filePath, file.buffer);
-    return `/uploads/garages/${filename}`;
+    try {
+      const result = await this.cloudinaryService.uploadImage(file, "garages");
+      return result.secure_url;
+    } catch {
+      throw new DomainException(
+        "Erreur lors de l'upload du logo",
+        500,
+        "GARAGE_LOGO_UPLOAD_ERROR",
+      );
+    }
   }
 }

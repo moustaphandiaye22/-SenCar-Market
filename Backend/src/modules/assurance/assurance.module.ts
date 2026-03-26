@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 import { AssuranceController } from './assurance.controller';
 import { AssuranceRepository } from './assurance.repository';
 import { ASSURANCE_REPOSITORY_PORT } from './assurance.repository.port';
@@ -10,6 +12,7 @@ import { AssuranceMapper } from './services/assurance.mapper';
 import { AssuranceOptionIdsValidator } from './validation/assurance-option-ids.validator';
 
 @Module({
+  imports: [CloudinaryModule],
   controllers: [AssuranceController],
   providers: [
     AssuranceService,

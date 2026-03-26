@@ -9,6 +9,7 @@ import { AssuranceModule } from './modules/assurance/assurance.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AvisModule } from './modules/avis/avis.module';
 import { CertificationModule } from './modules/certification/certification.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { GarageModule } from './modules/garage/garage.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationModule } from './modules/location/location.module';
@@ -66,6 +67,7 @@ import { PrismaModule } from './prisma/prisma.module';
     NotificationModule,
     MessagerieModule,
     TradeInModule,
+    CloudinaryModule,
   ],
   providers: [SharedUserService],
 })

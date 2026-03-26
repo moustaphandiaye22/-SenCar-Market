@@ -142,7 +142,7 @@ export class ManageTradeInComponent implements OnInit {
   getImageUrl(url: string | null): string {
     if (!url) return 'assets/placeholder-car.jpg';
     if (url.startsWith('http')) return url;
-    const base = 'http://localhost:8082';
+    const base = 'https://sencar-market.onrender.com';
     return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
   }
 

@@ -1,34 +1,44 @@
-import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
-import { basename, join } from 'path';
+import { Injectable } from "@nestjs/common";
 
-import { Injectable } from '@nestjs/common';
-
-import { DomainException } from '../../../common/exceptions/domain.exception';
+import { DomainException } from "../../../common/exceptions/domain.exception";
+import { CloudinaryService } from "../../cloudinary/cloudinary.service";
 
 type UploadedFileLike = { originalname?: string; buffer: Buffer };
 
 @Injectable()
 export class CertificationDocumentService {
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
   assertValidDate(value: Date, code: string): void {
     if (Number.isNaN(value.getTime())) {
-      throw new DomainException('Date inspection invalide', 400, code);
+      throw new DomainException("Date inspection invalide", 400, code);
     }
   }
 
   async storePdf(file: UploadedFileLike): Promise<string> {
-    const uploadDir = join(process.cwd(), 'uploads', 'certifications');
-    await mkdir(uploadDir, { recursive: true });
-
-    if (file.originalname && !file.originalname.toLowerCase().endsWith('.pdf')) {
-      throw new DomainException('Fichier PDF requis', 400, 'CERTIFICATION_REPORT_FILE_REQUIRED');
+    if (
+      file.originalname &&
+      !file.originalname.toLowerCase().endsWith(".pdf")
+    ) {
+      throw new DomainException(
+        "Fichier PDF requis",
+        400,
+        "CERTIFICATION_REPORT_FILE_REQUIRED",
+      );
     }
-    const safeOriginal = basename(file.originalname || 'rapport.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filename = `${randomUUID()}_${safeOriginal}`;
-    const filePath = join(uploadDir, filename);
 
-    await writeFile(filePath, file.buffer);
-    return filePath;
+    try {
+      const result = await this.cloudinaryService.uploadImage(
+        { buffer: file.buffer },
+        "certifications",
+      );
+      return result.secure_url;
+    } catch {
+      throw new DomainException(
+        "Erreur lors de l'upload du document",
+        500,
+        "CERTIFICATION_DOC_UPLOAD_ERROR",
+      );
+    }
   }
 
   generateBadgeUrl(demandeId: string): string {

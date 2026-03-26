@@ -6,11 +6,12 @@ import { LucideAngularModule, Shield, Check, X, Search, Filter, Calendar } from 
 import { ConfirmService } from '../../../../core/services/confirm.service';
 import { PromptService } from '../../../../core/services/prompt.service';
 import { FormsModule } from '@angular/forms';
+import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-manage-certifications',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, FormsModule],
+  imports: [CommonModule, LucideAngularModule, FormsModule, PaginationComponent],
   template: `
     <div class="p-6 lg:p-8 relative overflow-hidden">
       <!-- Decorative background -->
@@ -45,7 +46,7 @@ import { FormsModule } from '@angular/forms';
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-              <tr *ngFor="let d of filteredDemandes" class="hover:bg-primary-50/10 transition-colors group">
+              <tr *ngFor="let d of pagedDemandes" class="hover:bg-primary-50/10 transition-colors group">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-5">
                     <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
@@ -90,6 +91,13 @@ import { FormsModule } from '@angular/forms';
           </table>
         </div>
         
+        <app-pagination
+          [totalItems]="filteredDemandes.length"
+          [pageSize]="PAGE_SIZE"
+          [currentPage]="currentPage"
+          (pageChange)="onPageChange($event)">
+        </app-pagination>
+
         <div *ngIf="filteredDemandes.length === 0" class="py-32 text-center">
           <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <lucide-angular [img]="icons.Calendar" size="40" class="text-gray-200"></lucide-angular>
@@ -109,7 +117,18 @@ export class ManageCertificationsComponent implements OnInit {
   demandes: any[] = [];
   filteredDemandes: any[] = [];
   searchQuery = '';
+  currentPage = 0;
+  readonly PAGE_SIZE = 10;
   icons = { Shield, Check, X, Search, Filter, Calendar };
+
+  get pagedDemandes(): any[] {
+    const start = this.currentPage * this.PAGE_SIZE;
+    return this.filteredDemandes.slice(start, start + this.PAGE_SIZE);
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+  }
 
   ngOnInit() {
     this.loadDemandes();
@@ -126,6 +145,7 @@ export class ManageCertificationsComponent implements OnInit {
   }
 
   filterDemandes() {
+    this.currentPage = 0;
     if (!this.searchQuery) {
       this.filteredDemandes = this.demandes;
     } else {

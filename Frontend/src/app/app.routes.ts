@@ -70,7 +70,12 @@ export const routes: Routes = [
     loadChildren: () => import('./features/certification/certification.routes').then(m => m.CERTIFICATION_ROUTES)
   },
   {
+    path: 'contact',
+    loadComponent: () => import('./features/contact/contact.component').then(m => m.ContactComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }
 ];
+

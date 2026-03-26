@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 import { CertificationController } from './certification.controller';
 import { CertificationRepository } from './certification.repository';
 import { CERTIFICATION_REPOSITORY_PORT } from './certification.repository.port';
@@ -11,6 +13,7 @@ import { CertificationMapper } from './services/certification.mapper';
 import { CertificationStatusValidator } from './validation/certification-status.validator';
 
 @Module({
+  imports: [CloudinaryModule],
   controllers: [CertificationController],
   providers: [
     CertificationService,

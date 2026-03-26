@@ -6,7 +6,7 @@ import { ConfirmDialogComponent } from './core/components/confirm-dialog/confirm
 import { PromptDialogComponent } from './core/components/prompt-dialog/prompt-dialog.component';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
-import { LucideAngularModule, Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified } from 'lucide-angular';
+import { LucideAngularModule, Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified, Facebook, Twitter, Instagram, Linkedin, Phone, Mail } from 'lucide-angular';
 import { filter } from 'rxjs';
 
 @Component({
@@ -34,7 +34,8 @@ export class AppComponent implements OnInit {
   icons = { 
     Car, Home, Search, LogIn, Menu, X, Contact, Briefcase, User, LogOut, 
     ChevronDown, Plus, Heart, Wrench, RefreshCcw, Key, Settings, 
-    LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified
+    LayoutDashboard, Bell, MessageSquare, Zap, ShieldCheck, Verified,
+    Facebook, Twitter, Instagram, Linkedin, Phone, Mail
   };
 
   isUserDropdownOpen = false;

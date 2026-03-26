@@ -4,5 +4,5 @@ export const environment = {
 };
 export const environments = {
   production: true,
-  local: 'http://localhost:8082/api'
+  local: 'https://sencar-market.onrender.com/api'
 };  

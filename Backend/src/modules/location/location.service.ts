@@ -2,8 +2,8 @@ import { createHash } from "crypto";
 
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import { DomainException } from "../../common/exceptions/domain.exception";
 import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
+import { DomainException } from "../../common/exceptions/domain.exception";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user.type";
 
 import { AnnonceLocationResponseDto } from "./dto/annonce-location-response.dto";

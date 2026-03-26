@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { NotificationModule } from '../notification/notification.module';
 
 import { GarageController } from './garage.controller';
@@ -12,9 +13,8 @@ import { GarageMapper } from './services/garage.mapper';
 import { RendezVousService } from './services/rendez-vous.service';
 import { GarageInputValidator } from './validation/garage-input.validator';
 
-
 @Module({
-  imports: [NotificationModule],
+  imports: [NotificationModule, CloudinaryModule],
   controllers: [RendezVousController, GarageController],
   providers: [
     GarageService,

@@ -16,9 +16,9 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user.type';
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { ApiErrorResponseDto } from '../auth/dto/api-error-response.dto';
 
 import { AnnonceLocationResponseDto } from './dto/annonce-location-response.dto';

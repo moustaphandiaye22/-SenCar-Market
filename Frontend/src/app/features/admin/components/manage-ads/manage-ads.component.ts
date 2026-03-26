@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../../core/services/admin.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { environment } from '../../../../../environments/environment';
 import {
   LucideAngularModule,
   Car,
@@ -265,7 +266,7 @@ export class ManageAdsComponent implements OnInit {
   getImageUrl(url: string | null): string {
     if (!url) return 'assets/placeholder-car.jpg';
     if (url.startsWith('http')) return url;
-    const base = 'https://sencar-market.onrender.com';
+    const base = environment.apiUrl.replace('/api', '');
     return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
   }
 

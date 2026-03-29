@@ -105,7 +105,7 @@ describe('VehiculeService', () => {
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
-      proprietaireId: 'user-1',
+      proprietaire_id: 'user-1',
       statut: 'BROUILLON',
     } as never);
 
@@ -125,29 +125,29 @@ describe('VehiculeService', () => {
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
-      proprietaireId: 'user-1',
+      proprietaire_id: 'user-1',
       statut: 'BROUILLON',
       vues: 10,
       marque: { nom: 'Toyota' },
       modele: { nom: 'Yaris' },
       carburant: { nom: 'Essence' },
-      boiteVitesse: { nom: 'Auto' },
-      proprietaire: { id: 'user-1', nom: 'Owner' },
-      photos: [],
-      anneeFabrication: 2022,
+      boite_vitesse: { nom: 'Auto' },
+      utilisateur: { id: 'user-1', nom: 'Owner' },
+      photo_vehicule: [],
+      annee_fabrication: 2022,
       kilometrage: 1000,
       couleur: 'Noir',
-      prixVente: 10000000,
+      prix_vente: 10000000,
       description: null,
-      numeroVin: 'VIN123',
+      numero_vin: 'VIN123',
       immatriculation: null,
-      prixNegociable: false,
+      prix_negociable: false,
       certifie: false,
-      estBoost: false,
-      boostDebut: null,
-      boostFin: null,
-      nombreFavoris: 0,
-      createdAt: new Date(),
+      est_boost: false,
+      boost_debut: null,
+      boost_fin: null,
+      nombre_favoris: 0,
+      created_at: new Date(),
     } as never);
     repository.updateVehicule.mockResolvedValue({} as never);
     repository.isFavori.mockResolvedValue(null);

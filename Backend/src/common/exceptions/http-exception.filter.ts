@@ -42,9 +42,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: error.message,
       stack: error.stack,
     });
-    response.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const responseBody: Record<string, unknown> = {
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      message: "Erreur interne du serveur",
-    });
+      message: isProduction
+        ? "Erreur interne du serveur"
+        : error.message || "Erreur interne du serveur",
+    };
+
+    if (!isProduction) {
+      responseBody.errorName = error.name;
+      responseBody.stack = error.stack;
+    }
+
+    response.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(responseBody);
   }
 }

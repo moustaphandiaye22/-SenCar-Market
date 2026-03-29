@@ -6,6 +6,10 @@ pipeline {
         DOCKER_HUB_REPO = 'moustaphafullstacker/sencar-market-frontend'
     }
 
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -17,50 +21,50 @@ pipeline {
         stage('Install') {
             steps {
                 echo 'Installing frontend dependencies...'
-                sh 'cd frontend && npm ci'
+                sh 'cd Frontend && npm ci'
             }
         }
-
+ 
         stage('Lint') {
             steps {
                 echo 'Running Angular linter...'
-                sh 'cd frontend && npx ng lint'
+                sh 'cd Frontend && npx ng lint'
             }
         }
-
+ 
         stage('Tests') {
             steps {
                 echo 'Running Angular tests...'
-                sh 'cd frontend && npm run test -- --watch=false --browsers=ChromeHeadless'
+                sh 'cd Frontend && npm run test -- --watch=false --browsers=ChromeHeadlessCI'
             }
         }
-
+ 
         stage('Build Production') {
             steps {
                 echo 'Building frontend for production...'
-                sh 'cd frontend && npm run build -- --configuration production'
+                sh 'cd Frontend && npm run build -- --configuration production'
             }
         }
-
+ 
         stage('Docker Build & Push') {
             steps {
                 echo 'Building Docker image...'
-                sh "docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} -t ${DOCKER_IMAGE_NAME}:latest frontend/"
-
+                sh "docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} -t ${DOCKER_IMAGE_NAME}:latest Frontend/"
+ 
                 echo 'Logging into Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-
+ 
                     echo 'Pushing Docker image to Docker Hub...'
                     sh "docker push ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}"
                     sh "docker push ${DOCKER_IMAGE_NAME}:latest"
-
+ 
                     echo 'Logging out from Docker Hub...'
                     sh 'docker logout'
                 }
             }
         }
-
+ 
         stage('Deploy to Vercel') {
             steps {
                 echo 'Deploying frontend to Vercel...'
@@ -70,12 +74,12 @@ pipeline {
             }
         }
     }
-
+ 
     post {
         always {
             echo 'Archiving test reports...'
-            archiveArtifacts artifacts: 'frontend/coverage/**', allowEmptyArchive: true
-            junit 'frontend/coverage/jest-results.xml'
+            archiveArtifacts artifacts: 'Frontend/coverage/**', allowEmptyArchive: true
+            junit 'Frontend/coverage/junit-results.xml'
         }
         failure {
             echo "FRONTEND BUILD FAILED - Build #${BUILD_NUMBER}"

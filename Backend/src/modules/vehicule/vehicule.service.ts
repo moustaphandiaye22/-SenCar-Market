@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PaginatedResponseDto } from "../../common/dto/paginated-response.dto";
 import { DomainException } from "../../common/exceptions/domain.exception";
@@ -36,6 +37,8 @@ type UploadedFileLike = { originalname?: string; buffer: Buffer };
 
 @Injectable()
 export class VehiculeService {
+  private readonly logger = new Logger(VehiculeService.name);
+
   constructor(
     @Inject(VEHICULE_REPOSITORY_PORT)
     private readonly repository: VehiculeRepositoryPort,
@@ -92,41 +95,47 @@ export class VehiculeService {
       );
 
     const statut = request.enregistrerEnBrouillon ? "BROUILLON" : "PUBLIE";
-    const vehicule = await this.repository.createVehicule({
-      id: randomUUID(),
-      proprietaire: { connect: { id: currentUser.id } },
-      marque: { connect: { id: marque.id } },
-      modele: { connect: { id: modele.id } },
-      annee_fabrication: request.anneeFabrication,
-      kilometrage: request.kilometrage,
-      carburant: { connect: { id: request.carburantId } },
-      boite_vitesse: { connect: { id: request.boiteVitesseId } },
-      couleur,
-      prix_vente: request.prixVente,
-      ...(description !== undefined ? { description } : {}),
-      numero_vin: numeroVin,
-      ...(immatriculation !== undefined ? { immatriculation } : {}),
-      prix_negociable: request.prixNegociable ?? false,
-      certifie: request.certifie ?? false,
-      titre: request.titre,
-      nombre_portes: request.nombrePortes,
-      nombre_places: request.nombrePlaces,
-      cylindree: request.cylindree,
-      puissance_fiscale: request.puissanceFiscale,
-      est_garantie: request.estGarantie ?? false,
-      garantie_mois: request.garantieMois,
-      statut,
-      est_boost: false,
-      vues: 0,
-      nombre_favoris: 0,
-    } as any);
+
+    let vehicule;
+    try {
+      vehicule = await this.repository.createVehicule({
+        id: randomUUID(),
+        proprietaire_id: currentUser.id,
+        marque_id: marque.id,
+        modele_id: modele.id,
+        annee_fabrication: request.anneeFabrication,
+        kilometrage: request.kilometrage,
+        carburant_id: request.carburantId,
+        boite_vitesse_id: request.boiteVitesseId,
+        couleur,
+        prix_vente: request.prixVente,
+        ...(description !== undefined ? { description } : {}),
+        numero_vin: numeroVin,
+        ...(immatriculation !== undefined ? { immatriculation } : {}),
+        prix_negociable: request.prixNegociable ?? false,
+        certifie: request.certifie ?? false,
+        titre: request.titre,
+        nombre_portes: request.nombrePortes,
+        nombre_places: request.nombrePlaces,
+        cylindree: request.cylindree,
+        puissance_fiscale: request.puissanceFiscale,
+        est_garantie: request.estGarantie ?? false,
+        garantie_mois: request.garantieMois,
+        statut,
+        est_boost: false,
+        vues: 0,
+        nombre_favoris: 0,
+      });
+    } catch (error) {
+      this.handlePrismaError(error, "createVehicule");
+    }
 
     if (photosUrls.length) {
       await Promise.all(
         photosUrls.map((url, index) =>
           this.repository.createPhoto({
             id: randomUUID(),
-            vehicule_id: vehicule.id,
+            vehicule_id: vehicule!.id,
             url,
             est_principale: index === 0,
             ordre: index,
@@ -135,7 +144,7 @@ export class VehiculeService {
       );
     }
 
-    const fullVehicule = await this.mustFindVehicule(vehicule.id);
+    const fullVehicule = await this.mustFindVehicule(vehicule!.id);
     return this.mapper.toVehiculeResponse(fullVehicule, false);
   }
 
@@ -243,16 +252,16 @@ export class VehiculeService {
     );
 
     const updateData: any = {};
+    let resolvedMarqueId = vehicule.marque_id;
 
     if (request.marque) {
       const marque = await this.repository.findOrCreateMarque(request.marque);
-      updateData.marque = { connect: { id: marque.id } };
+      updateData.marque_id = marque.id;
+      resolvedMarqueId = marque.id;
     }
 
     if (request.modele) {
-      const marqueIdToUse =
-        updateData.marque?.connect?.id || vehicule.marque_id;
-      if (!marqueIdToUse) {
+      if (!resolvedMarqueId) {
         throw new DomainException(
           "Impossible de définir le modèle sans marque",
           400,
@@ -260,10 +269,10 @@ export class VehiculeService {
         );
       }
       const modele = await this.repository.findOrCreateModele(
-        marqueIdToUse,
+        resolvedMarqueId,
         request.modele,
       );
-      updateData.modele = { connect: { id: modele.id } };
+      updateData.modele_id = modele.id;
     }
 
     if (request.carburantId) {
@@ -276,7 +285,7 @@ export class VehiculeService {
           404,
           "CARBURANT_NOT_FOUND",
         );
-      updateData.carburant = { connect: { id: request.carburantId } };
+      updateData.carburant_id = request.carburantId;
     }
 
     if (request.boiteVitesseId) {
@@ -289,7 +298,7 @@ export class VehiculeService {
           404,
           "BOITE_VITESSE_NOT_FOUND",
         );
-      updateData.boite_vitesse = { connect: { id: request.boiteVitesseId } };
+      updateData.boite_vitesse_id = request.boiteVitesseId;
     }
 
     if (request.anneeFabrication)
@@ -436,7 +445,7 @@ export class VehiculeService {
       est_boost: true,
       boost_debut: debut,
       boost_fin: fin,
-    } as any);
+    });
 
     const updated = await this.mustFindVehicule(id);
     return this.mapper.toVehiculeResponse(updated, false);
@@ -481,7 +490,7 @@ export class VehiculeService {
     const count = await this.repository.countFavoris(vehiculeId);
     await this.repository.updateVehicule(vehiculeId, {
       nombre_favoris: count,
-    } as any);
+    });
   }
 
   private async mustFindUser(email: string): Promise<UserWithRoleRecord> {
@@ -508,5 +517,66 @@ export class VehiculeService {
     }
 
     return vehicule;
+  }
+
+  private handlePrismaError(error: unknown, context: string): never {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      this.logger.error(`[${context}] Prisma known error: ${error.code} - ${error.message}`, error.meta);
+      switch (error.code) {
+        case "P2002":
+          throw new DomainException(
+            "Un véhicule avec ces informations existe déjà",
+            409,
+            "VEHICULE_DUPLICATE",
+          );
+        case "P2003":
+          throw new DomainException(
+            "Référence invalide: une des entités liées n'existe pas",
+            400,
+            "VEHICULE_INVALID_REFERENCE",
+          );
+        case "P2025":
+          throw new DomainException(
+            "Une des entités liées est introuvable",
+            404,
+            "VEHICULE_RELATED_NOT_FOUND",
+          );
+        default:
+          throw new DomainException(
+            `Erreur base de données: ${error.message}`,
+            500,
+            "VEHICULE_DB_ERROR",
+          );
+      }
+    }
+
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      this.logger.error(`[${context}] Prisma validation error: ${error.message}`);
+      throw new DomainException(
+        "Données invalides pour la création du véhicule",
+        400,
+        "VEHICULE_VALIDATION_ERROR",
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+      this.logger.error(`[${context}] Prisma unknown error: ${error.message}`);
+      throw new DomainException(
+        "Erreur de connexion à la base de données",
+        500,
+        "VEHICULE_DB_CONNECTION_ERROR",
+      );
+    }
+
+    if (error instanceof DomainException) {
+      throw error;
+    }
+
+    this.logger.error(`[${context}] Unexpected error`, error as Error);
+    throw new DomainException(
+      "Erreur lors de la création du véhicule",
+      500,
+      "VEHICULE_CREATION_ERROR",
+    );
   }
 }

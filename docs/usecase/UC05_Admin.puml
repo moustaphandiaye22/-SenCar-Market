@@ -1,4 +1,6 @@
 @startuml UC05_Admin
+' Diagramme Admin - Format Page A4 Portrait
+' Acteur a droite comme demande
 left to right direction
 skinparam packageStyle rectangle
 skinparam shadowing false
@@ -12,9 +14,10 @@ skinparam actor {
   BorderColor #2C3E50
 }
 
-title Diagramme de Cas d'Utilisation — ADMIN\nSen-Car-Market
+title Diagramme de Cas d'Utilisation — ADMIN (Sen-Car-Market)
 
-' ── ACTEURS ─────────────────────────────────────────────
+' -- ACTEURS (Placés par rapport aux UC pour être à droite) --
+actor "Systeme\n(Notif)" as SYS
 actor "ADMIN" as A
 actor "Systeme\n(Notification)" as SYS
 
@@ -41,6 +44,7 @@ rectangle "Systeme Sen-Car-Market" {
     usecase "Statistiques\ncertifications" as UC_STATC
   }
 
+  ' Rangee 2
   package "Gestion des Utilisateurs" {
     usecase "Lister les\nutilisateurs" as UC_ALLUSERS
     usecase "Voir un\nutilisateur" as UC_GETUSER
@@ -60,6 +64,7 @@ rectangle "Systeme Sen-Car-Market" {
     usecase "Supprimer\nune annonce" as UC_ANNDEL
   }
 
+  ' Rangee 3
   package "Validation Garages" {
     usecase "Voir garages\nen attente" as UC_PENGAR
     usecase "Valider\nun garage" as UC_VGAR
@@ -174,5 +179,6 @@ UC_DPLAN   ..> UC_CPLAN  : <<extend>>
 UC_NOTIFALL  ..> UC_NOTIFCONT : <<include>>
 UC_NOTIFGRP  ..> UC_NOTIFALL  : <<extend>>
 UC_NOTIFGRP  ..> UC_NOTIFDES  : <<include>>
+
 
 @enduml

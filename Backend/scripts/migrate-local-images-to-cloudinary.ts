@@ -11,10 +11,10 @@
 
 import { readdir, readFile } from "fs/promises";
 import { join } from "path";
+
 import { PrismaClient } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 import * as streamifier from "streamifier";
-import { randomUUID } from "crypto";
 
 // Configurer cloudinary
 cloudinary.config({

@@ -1,6 +1,5 @@
 import type { TypeConversation, TypeMessage } from './types/messagerie.types';
 
-type ConnectById = { connect: { id: string } };
 
 export type UserRecord = {
   id: string;

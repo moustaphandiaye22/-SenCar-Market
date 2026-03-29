@@ -311,8 +311,9 @@ this.http.get(`${environment.apiUrl}/vehicules`).subscribe((vehicules) => consol
 1. Connecter le depot GitHub a Vercel
 2. Configurer :
    - Framework Preset : Angular
+   - Root Directory : Frontend (Paramètre crucial)
    - Build Command : npm run build
-   - Output Directory : dist/Frontend/browser
+   - Output Directory : dist/sen-car-market/browser (Vérifiez bien ce chemin)
 3. Deployer
 
 ### Docker

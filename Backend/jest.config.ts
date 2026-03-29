@@ -10,6 +10,16 @@ const config: Config = {
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
   coverageReporters: ['lcov', 'text', 'text-summary'],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: './coverage',
+        outputName: 'junit-results.xml',
+      },
+    ],
+  ],
   testEnvironment: 'node',
 };
 

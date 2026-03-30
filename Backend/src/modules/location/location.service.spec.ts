@@ -80,11 +80,11 @@ describe('LocationService', () => {
     } as never);
     repository.findAnnonceById.mockResolvedValue({
       id: 'ann-1',
-      proprietaireId: 'owner-1',
+      proprietaire_id: 'owner-1',
       actif: false,
-      tarifJournalier: 10000,
-      annonceLocation: {},
-      proprietaire: { id: 'owner-1', email: 'owner@test.com', prenom: 'O', nom: 'W', typeUtilisateur: { nom: 'PROFESSIONNEL' } },
+      tarif_journalier: 10000,
+      annonce_location: {},
+      utilisateur: { id: 'owner-1', email: 'owner@test.com', prenom: 'O', nom: 'W', type_utilisateur: { nom: 'PROFESSIONNEL' } },
     } as never);
 
     const now = new Date();
@@ -113,9 +113,9 @@ describe('LocationService', () => {
     } as never);
     repository.findAnnonceById.mockResolvedValue({
       id: 'ann-1',
-      proprietaireId: 'owner-1',
+      proprietaire_id: 'owner-1',
       actif: true,
-      proprietaire: { id: 'owner-1', email: 'owner@test.com', prenom: 'Owner', nom: 'Test', typeUtilisateur: { nom: 'ADMIN' } },
+      utilisateur: { id: 'owner-1', email: 'owner@test.com', prenom: 'Owner', nom: 'Test', type_utilisateur: { nom: 'ADMIN' } },
     } as never);
 
     await expect(

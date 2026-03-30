@@ -54,7 +54,7 @@ describe('TradeInService', () => {
       email: 'u@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -76,8 +76,8 @@ describe('TradeInService', () => {
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
-      anneeFabrication: 2020,
-      prixVente: 10000000,
+      annee_fabrication: 2020,
+      prix_vente: 10000000,
       marque: { nom: 'Toyota' },
       modele: { nom: 'Corolla' },
     } as never);
@@ -105,35 +105,35 @@ describe('TradeInService', () => {
       email: 'admin@test.com',
       nom: 'Admin',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'ADMIN' },
+      type_utilisateur: { nom: 'ADMIN' },
     } as never);
     repository.findDemandeById.mockResolvedValue({
       id: 'demande-1',
-      utilisateurId: 'user-2',
-      vehiculeActuelId: 'veh-1',
-      vehiculeSouhaiteId: null,
+      utilisateur_id: 'user-2',
+      vehicule_actuel_id: 'veh-1',
+      vehicule_souhaite_id: null,
       statut: 'ACCEPTE',
-      prixEstime: null,
-      prixPropose: null,
-      kilometrageActuel: 50000,
-      etatVehicule: 'bon',
-      dateSoumission: new Date(),
-      dateTraitement: null,
-      dateEvaluation: null,
-      motifRejet: null,
-      commentaireAdmin: null,
-      estNotifie: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      prix_estime: null,
+      prix_propose: null,
+      kilometrage_actuel: 50000,
+      etat_vehicule: 'bon',
+      date_soumission: new Date(),
+      date_traitement: null,
+      date_evaluation: null,
+      motif_rejet: null,
+      commentaire_admin: null,
+      est_notifie: false,
+      created_at: new Date(),
+      updated_at: new Date(),
       utilisateur: { id: 'user-2', nom: 'User' },
-      vehiculeActuel: {
+      vehicule_actuel: {
         id: 'veh-1',
-        anneeFabrication: 2021,
-        prixVente: 15000000,
+        annee_fabrication: 2021,
+        prix_vente: 15000000,
         marque: { nom: 'Renault' },
         modele: { nom: 'Clio' },
       },
-      vehiculeSouhaite: null,
+      vehicule_souhaite: null,
     } as never);
 
     await expect(

@@ -34,6 +34,10 @@ export class TradeInService {
     const current = await this.requireCurrentUser(user.email);
     const etatVehicule = this.estimationService.normalizeEtatVehicule(request.etatVehicule);
 
+    if (request.vehiculeActuelId && request.vehiculeSouhaiteId && request.vehiculeActuelId === request.vehiculeSouhaiteId) {
+      throw new DomainException('Le véhicule souhaité doit être différent du véhicule actuel', 400, 'TRADEIN_SAME_VEHICLE');
+    }
+
     let vehiculeId = request.vehiculeActuelId;
     if (!vehiculeId) {
       if (!request.marque || !request.modele) {

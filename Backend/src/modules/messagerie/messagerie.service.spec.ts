@@ -60,14 +60,14 @@ describe('MessagerieService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      photoProfilUrl: null,
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     repository.findMessageById.mockResolvedValue({
       id: 'msg-1',
-      conversationId: 'conv-1',
-      utilisateurId: 'user-2',
+      conversation_id: 'conv-1',
+      utilisateur_id: 'user-2',
     } as never);
 
     await expect(
@@ -85,8 +85,8 @@ describe('MessagerieService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      photoProfilUrl: null,
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -110,8 +110,8 @@ describe('MessagerieService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      photoProfilUrl: null,
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -135,8 +135,8 @@ describe('MessagerieService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      photoProfilUrl: null,
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     const result = await service.searchConversations(
@@ -158,14 +158,14 @@ describe('MessagerieService', () => {
       email: 'a@test.com',
       nom: 'A',
       prenom: 'B',
-      photoProfilUrl: null,
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findMessageById.mockResolvedValue({
       id: 'msg-1',
-      conversationId: 'conv-1',
-      utilisateurId: 'user-2',
-      estSupprime: true,
+      conversation_id: 'conv-1',
+      utilisateur_id: 'user-2',
+      est_supprime: true,
     } as never);
 
     await expect(

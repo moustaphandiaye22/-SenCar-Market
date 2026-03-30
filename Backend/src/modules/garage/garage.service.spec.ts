@@ -7,6 +7,7 @@ import { GarageService } from './garage.service';
 import { GarageAccessPolicy } from './services/garage-access.policy';
 import { GarageMapper } from './services/garage.mapper';
 import { GarageInputValidator } from './validation/garage-input.validator';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('GarageService', () => {
   let service: GarageService;
@@ -19,6 +20,12 @@ describe('GarageService', () => {
         GarageInputValidator,
         GarageAccessPolicy,
         GarageMapper,
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadImage: jest.fn(),
+          },
+        },
         {
           provide: GARAGE_REPOSITORY_PORT,
           useValue: {
@@ -59,7 +66,7 @@ describe('GarageService', () => {
       email: 'user@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -98,30 +105,30 @@ describe('GarageService', () => {
       telephone: '770000000',
       email: null,
       description: null,
-      horairesOuverture: null,
+      horaires_ouverture: null,
       latitude: null,
       longitude: null,
       ville: 'Dakar',
       pays: null,
-      logoUrl: null,
-      statutValidation: 'ACTIF',
-      commentaireAdmin: null,
-      dateValidation: null,
-      utilisateurId: 'user-1',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      proprietaire: { id: 'user-1', nom: 'Owner' },
+      logo_url: null,
+      statut_validation: 'ACTIF',
+      commentaire_admin: null,
+      date_validation: null,
+      utilisateur_id: 'user-1',
+      created_at: new Date(),
+      updated_at: new Date(),
+      utilisateur: { id: 'user-1', nom: 'Owner' },
     } as never);
     repository.findServiceById.mockResolvedValue({
       id: 'service-1',
       nom: 'Vidange',
       description: null,
       prix: 10000,
-      dureeEstimee: 60,
+      duree_estimee: 60,
       categorie: 'ENTRETIEN',
       actif: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never);
 
     await expect(
@@ -148,19 +155,19 @@ describe('GarageService', () => {
       telephone: '770000000',
       email: null,
       description: null,
-      horairesOuverture: null,
+      horaires_ouverture: null,
       latitude: null,
       longitude: null,
       ville: 'Dakar',
       pays: null,
-      logoUrl: null,
-      statutValidation: 'ACTIF',
-      commentaireAdmin: null,
-      dateValidation: null,
-      utilisateurId: 'user-1',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      proprietaire: { id: 'user-1', nom: 'Owner' },
+      logo_url: null,
+      statut_validation: 'ACTIF',
+      commentaire_admin: null,
+      date_validation: null,
+      utilisateur_id: 'user-1',
+      created_at: new Date(),
+      updated_at: new Date(),
+      utilisateur: { id: 'user-1', nom: 'Owner' },
     } as never);
 
     await expect(

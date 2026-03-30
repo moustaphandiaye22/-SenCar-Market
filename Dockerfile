@@ -3,6 +3,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma during build
+RUN apk add --no-cache openssl
+
 # Copy all backend config files needed for build
 COPY Backend/package*.json ./Backend/
 COPY Backend/tsconfig*.json ./Backend/
@@ -50,4 +53,4 @@ USER nodejs
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "dist/main"]
+CMD ["npm", "run", "start"]

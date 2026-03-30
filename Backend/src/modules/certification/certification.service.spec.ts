@@ -12,6 +12,7 @@ import { CertificationSecurityService } from './services/certification-security.
 import { CertificationWorkflowService } from './services/certification-workflow.service';
 import { CertificationMapper } from './services/certification.mapper';
 import { CertificationStatusValidator } from './validation/certification-status.validator';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('CertificationService', () => {
   let service: CertificationService;
@@ -26,6 +27,12 @@ describe('CertificationService', () => {
         CertificationDocumentService,
         CertificationMapper,
         CertificationStatusValidator,
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadImage: jest.fn(),
+          },
+        },
         {
           provide: CERTIFICATION_REPOSITORY_PORT,
           useValue: {
@@ -63,7 +70,7 @@ describe('CertificationService', () => {
       email: 'u@test.com',
       nom: 'User',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -81,7 +88,7 @@ describe('CertificationService', () => {
       email: 'i@test.com',
       nom: 'Inspecteur',
       prenom: 'Test',
-      typeUtilisateur: { nom: 'EXPERT' },
+      type_utilisateur: { nom: 'EXPERT' },
     } as never);
 
     await expect(
@@ -105,33 +112,33 @@ describe('CertificationService', () => {
       email: 'admin@test.com',
       nom: 'Admin',
       prenom: 'Root',
-      typeUtilisateur: { nom: 'ADMIN' },
+      type_utilisateur: { nom: 'ADMIN' },
     } as never);
     repository.findDemandeById.mockResolvedValue({
       id: 'demande-1',
-      utilisateurId: 'user-1',
-      vehiculeId: 'veh-1',
+      utilisateur_id: 'user-1',
+      vehicule_id: 'veh-1',
       statut: 'PAYEE',
-      montantPaiement: 50000,
-      paiementId: 'pay-1',
-      inspecteurId: null,
-      dateSoumission: new Date(),
-      dateTraitement: null,
-      dateInspection: null,
-      motifRejet: null,
-      badgeCertifieUrl: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      utilisateur: { id: 'user-1', nom: 'User' },
+      montant_paiement: 50000,
+      paiement_id: 'pay-1',
+      inspecteur_id: null,
+      date_soumission: new Date(),
+      date_traitement: null,
+      date_inspection: null,
+      motif_rejet: null,
+      badge_certifie_url: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+      utilisateur_demande_certification_utilisateur_idToutilisateur: { id: 'user-1', nom: 'User' },
       vehicule: { id: 'veh-1', marque: { nom: 'Toyota' }, modele: { nom: 'Yaris' } },
-      inspecteur: null,
+      utilisateur_demande_certification_inspecteur_idToutilisateur: null,
     } as never);
     repository.findUserById.mockResolvedValue({
       id: 'user-2',
       email: 'user2@test.com',
       nom: 'User 2',
       prenom: 'Other',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -149,29 +156,29 @@ describe('CertificationService', () => {
       email: 'i1@test.com',
       nom: 'Inspector 1',
       prenom: 'One',
-      typeUtilisateur: { nom: 'EXPERT' },
+      type_utilisateur: { nom: 'EXPERT' },
     } as never);
     repository.findInspectionById.mockResolvedValue({
       id: 'inspection-1',
-      demandeCertificationId: 'demande-1',
-      inspecteurId: 'inspecteur-2',
-      dateInspection: new Date(),
+      demande_certification_id: 'demande-1',
+      inspecteur_id: 'inspecteur-2',
+      date_inspection: new Date(),
       resultat: 'EN_COURS',
       commentaire: null,
       kilometrage: null,
-      etatMoteur: null,
-      etatGenerateur: null,
-      etatFreinage: null,
-      etatSuspension: null,
-      etatTransmission: null,
-      etatPneus: null,
-      etatCarrosserie: null,
-      etatInterieur: null,
-      scoreTotal: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      demandeCertification: { id: 'demande-1' },
-      inspecteur: { id: 'inspecteur-2', nom: 'Inspector 2' },
+      etat_moteur: null,
+      etat_generateur: null,
+      etat_freinage: null,
+      etat_suspension: null,
+      etat_transmission: null,
+      etat_pneus: null,
+      etat_carrosserie: null,
+      etat_interieur: null,
+      score_total: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+      demande_certification: { id: 'demande-1' },
+      utilisateur: { id: 'inspecteur-2', nom: 'Inspector 2' },
     } as never);
 
     await expect(

@@ -7,6 +7,7 @@ import { VehiculeInputValidator } from './validation/vehicule-input.validator';
 import { VEHICULE_REPOSITORY_PORT } from './vehicule.repository.port';
 import type { VehiculeRepositoryPort } from './vehicule.repository.port';
 import { VehiculeService } from './vehicule.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('VehiculeService', () => {
   let service: VehiculeService;
@@ -19,6 +20,12 @@ describe('VehiculeService', () => {
         VehiculeInputValidator,
         VehiculeAccessPolicy,
         VehiculeMapper,
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadImage: jest.fn(),
+          },
+        },
         {
           provide: VEHICULE_REPOSITORY_PORT,
           useValue: {
@@ -52,7 +59,7 @@ describe('VehiculeService', () => {
   it('should forbid create for non vendeur/concessionnaire roles', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'EXPERT' },
+      type_utilisateur: { nom: 'EXPERT' },
     } as never);
 
     await expect(
@@ -76,7 +83,7 @@ describe('VehiculeService', () => {
   it('should reject vehicle creation with blank photo url', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     await expect(
@@ -101,7 +108,7 @@ describe('VehiculeService', () => {
   it('should forbid reading non published vehicle for non owner non admin', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-2',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',
@@ -121,7 +128,7 @@ describe('VehiculeService', () => {
   it('should allow owner reading non published vehicle and increment views', async () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findVehiculeById.mockResolvedValue({
       id: 'veh-1',

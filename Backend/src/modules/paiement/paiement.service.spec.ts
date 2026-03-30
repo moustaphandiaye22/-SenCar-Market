@@ -68,12 +68,12 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
 
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
-      utilisateurId: 'user-2',
+      utilisateur_id: 'user-2',
     } as never);
 
     await expect(
@@ -89,11 +89,11 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
-      utilisateurId: 'user-1',
+      utilisateur_id: 'user-1',
     } as never);
 
     await expect(
@@ -113,7 +113,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'admin-1',
       email: 'admin@test.com',
-      typeUtilisateur: { nom: 'ADMIN' },
+      type_utilisateur: { nom: 'ADMIN' },
     } as never);
 
     await expect(
@@ -133,7 +133,7 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'admin-1',
       email: 'admin@test.com',
-      typeUtilisateur: { nom: 'ADMIN' },
+      type_utilisateur: { nom: 'ADMIN' },
     } as never);
 
     await expect(
@@ -152,15 +152,15 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
-      utilisateurId: 'user-1',
-      isEscrow: false,
+      utilisateur_id: 'user-1',
+      is_escrow: false,
       statut: 'CONFIRME',
-      referenceTransaction: 'ref-1',
-      reservation: { annonceLocation: { proprietaireId: 'owner-1' } },
+      reference_transaction: 'ref-1',
+      reservation: { annonce_location: { proprietaire_id: 'owner-1' } },
     } as never);
 
     await expect(
@@ -179,16 +179,16 @@ describe('PaiementService', () => {
     repository.findUserByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'a@test.com',
-      typeUtilisateur: { nom: 'UTILISATEUR' },
+      type_utilisateur: { nom: 'UTILISATEUR' },
     } as never);
     repository.findPaiementById.mockResolvedValue({
       id: 'pay-1',
-      utilisateurId: 'user-1',
-      isEscrow: true,
+      utilisateur_id: 'user-1',
+      is_escrow: true,
       statut: 'CONFIRME',
-      referenceTransaction: 'ref-1',
-      montantEscrow: 10000,
-      reservation: { annonceLocation: { proprietaireId: 'owner-1' } },
+      reference_transaction: 'ref-1',
+      montant_escrow: 10000,
+      reservation: { annonce_location: { proprietaire_id: 'owner-1' } },
     } as never);
     repository.hasEscrowReleaseTransaction.mockResolvedValue(true);
 

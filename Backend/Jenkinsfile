@@ -45,7 +45,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh 'cd Backend && npx sonar-scanner \
                         -Dsonar.token=$SONAR_TOKEN \
-                        -Dsonar.host.url=https://sonarcloud.io'
+                        -Dsonar.host.url=https://sonarcloud.io \
+                        -Dsonar.verbose=true'
                 }
             }
         }

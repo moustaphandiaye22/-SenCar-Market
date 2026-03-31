@@ -44,6 +44,8 @@ pipeline {
                 echo 'Starting SonarCloud analysis...'
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh 'cd Backend && npx sonar-scanner \
+                        -Dsonar.projectKey=moustaphandiaye22_-SenCar-Market \
+                        -Dsonar.organization=moustaphandiaye22 \
                         -Dsonar.token=$SONAR_TOKEN \
                         -Dsonar.host.url=https://sonarcloud.io'
                 }

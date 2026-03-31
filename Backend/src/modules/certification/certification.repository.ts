@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
 
@@ -50,14 +51,13 @@ export class CertificationRepository implements CertificationRepositoryPort {
   createDemande(data: CreateDemandeInput): Promise<DemandeRecord> {
     // Transform camelCase to snake_case for Prisma
     const { utilisateur, vehicule, ...rest } = data;
-    const prismaData = {
+    const prismaData: Prisma.demande_certificationUncheckedCreateInput = {
       ...rest,
-      utilisateur_demande_certification_utilisateur_idToutilisateur:
-        utilisateur,
+      utilisateur_id: utilisateur.connect.id,
       vehicule_id: vehicule.connect.id,
     };
     return this.prisma.demande_certification.create({
-      data: prismaData as any,
+      data: prismaData,
       include: {
         utilisateur_demande_certification_utilisateur_idToutilisateur: {
           select: { id: true, nom: true },
@@ -208,13 +208,13 @@ export class CertificationRepository implements CertificationRepositoryPort {
   createInspection(data: CreateInspectionInput): Promise<InspectionRecord> {
     // Transform camelCase to snake_case for Prisma
     const { demande_certification, utilisateur, ...rest } = data;
-    const prismaData = {
+    const prismaData: Prisma.inspectionUncheckedCreateInput = {
       ...rest,
       demande_certification_id: demande_certification.connect.id,
       inspecteur_id: utilisateur.connect.id,
     };
     return this.prisma.inspection.create({
-      data: prismaData as any,
+      data: prismaData,
       include: {
         demande_certification: { select: { id: true } },
         utilisateur: { select: { id: true, nom: true } },
@@ -289,12 +289,12 @@ export class CertificationRepository implements CertificationRepositoryPort {
   createRapport(data: CreateRapportInput): Promise<RapportRecord> {
     // Transform camelCase to snake_case for Prisma
     const { inspection, ...rest } = data;
-    const prismaData = {
+    const prismaData: Prisma.rapport_inspectionUncheckedCreateInput = {
       ...rest,
       inspection_id: inspection.connect.id,
     };
     return this.prisma.rapport_inspection.create({
-      data: prismaData as any,
+      data: prismaData,
       include: { inspection: { select: { id: true } } },
     });
   }

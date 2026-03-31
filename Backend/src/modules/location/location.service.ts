@@ -266,7 +266,7 @@ export class LocationService {
       }
     }
 
-    const reservationData = {
+    const reservationData: CreateReservationInput & { paiement_id?: string } = {
       id: this.repository.newId(),
       annonce_location: { connect: { id: annonce.id } },
       utilisateur: { connect: { id: locataire.id } },
@@ -275,12 +275,8 @@ export class LocationService {
       date_debut: dateDebut,
       date_fin: dateFin,
       date_creation: new Date(),
+      ...(request.paiementId ? { paiement_id: request.paiementId } : {}),
     };
-
-    // Conditionally add paiement_id if provided
-    if (request.paiementId) {
-      (reservationData as any).paiement_id = request.paiementId;
-    }
 
     const reservation = await this.repository.createReservation(
       reservationData as CreateReservationInput,

@@ -203,7 +203,7 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   createRendezVous(data: CreateRendezVousInput): Promise<RendezVousServiceRecord> {
-    return (this.prisma as any).rendez_vous_service.create({
+    return this.prisma.rendez_vous_service.create({
       data,
       include: {
         garage: { select: { id: true, nom: true, utilisateur_id: true } },
@@ -214,7 +214,7 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   findRendezVousById(id: string): Promise<RendezVousServiceRecord | null> {
-    return (this.prisma as any).rendez_vous_service.findUnique({
+    return this.prisma.rendez_vous_service.findUnique({
       where: { id },
       include: {
         garage: { select: { id: true, nom: true, utilisateur_id: true } },
@@ -225,7 +225,7 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   findRendezVousByClient(clientId: string): Promise<RendezVousServiceRecord[]> {
-    return (this.prisma as any).rendez_vous_service.findMany({
+    return this.prisma.rendez_vous_service.findMany({
       where: { client_id: clientId },
       include: {
         garage: { select: { id: true, nom: true, utilisateur_id: true } },
@@ -237,7 +237,7 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   findRendezVousByGarage(garageId: string): Promise<RendezVousServiceRecord[]> {
-    return (this.prisma as any).rendez_vous_service.findMany({
+    return this.prisma.rendez_vous_service.findMany({
       where: { garage_id: garageId },
       include: {
         garage: { select: { id: true, nom: true, utilisateur_id: true } },
@@ -249,9 +249,9 @@ export class GarageRepository implements GarageRepositoryPort {
   }
 
   updateRendezVousStatut(id: string, statut: string): Promise<RendezVousServiceRecord> {
-    return (this.prisma as any).rendez_vous_service.update({
+    return this.prisma.rendez_vous_service.update({
       where: { id },
-      data: { statut: statut as any },
+      data: { statut },
       include: {
         garage: { select: { id: true, nom: true, utilisateur_id: true } },
         client: { select: { id: true, nom: true, prenom: true, email: true } },

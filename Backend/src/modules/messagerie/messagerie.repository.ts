@@ -44,7 +44,7 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
         annonce_id: data.annonce_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
-      } as any,
+      },
     }) as unknown as Promise<ConversationRecord>;
   }
 
@@ -110,7 +110,7 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
         est_admin: data.est_admin,
         est_mute: data.est_mute,
         nombre_non_lus: data.nombre_non_lus,
-      } as any,
+      },
       include: { utilisateur: { select: { id: true, nom: true, prenom: true, photo_profil_url: true } } },
     }) as unknown as Promise<ParticipantRecord>;
   }
@@ -174,7 +174,7 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
         est_supprime: data.est_supprime,
         est_epingle: data.est_epingle,
         type_message: data.type_message,
-      } as any,
+      },
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
     }) as unknown as Promise<MessageRecord>;
   }
@@ -187,7 +187,7 @@ export class MessagerieRepository implements MessagerieRepositoryPort {
         est_epingle: data.est_epingle,
         est_lu: data.est_lu,
         date_lecture: data.date_lecture,
-      } as any,
+      },
       include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
     }) as unknown as Promise<MessageRecord>;
   }

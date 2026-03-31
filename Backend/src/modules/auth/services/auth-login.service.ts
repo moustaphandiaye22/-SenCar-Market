@@ -46,7 +46,7 @@ export class AuthLoginService {
 
     const updated = await this.repository.updateUser(user.id, {
       derniere_connexion: new Date(),
-    } as any);
+    });
     const updatedWithType = await this.mustFindUserWithTypeById(updated.id);
 
     const tokens = this.jwtService.generateTokens({
@@ -103,7 +103,7 @@ export class AuthLoginService {
     const hashedPassword = await bcrypt.hash(newPassword, AUTH_CONFIG.BCRYPT_ROUNDS);
     await this.repository.updateUser(currentUser.id, {
       mot_de_passe_hash: hashedPassword,
-    } as any);
+    });
   }
 
   // Private helpers

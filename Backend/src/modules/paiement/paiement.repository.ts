@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -53,13 +54,13 @@ export class PaiementRepository implements PaiementRepositoryPort {
   async updateReservationStatus(id: string, statut: string): Promise<void> {
     await this.prisma.reservation_location.update({
       where: { id },
-      data: { statut: statut as any },
+      data: { statut } as Prisma.reservation_locationUncheckedUpdateInput,
     });
   }
 
   createPaiement(data: CreatePaiementInput): Promise<PaiementRecord> {
     return this.prisma.paiement.create({
-      data: data as any,
+      data: data as Prisma.paiementUncheckedCreateInput,
       include: {
         utilisateur: { select: { id: true } },
         reservation_location_paiement_reservation_idToreservation_location: {
@@ -72,7 +73,7 @@ export class PaiementRepository implements PaiementRepositoryPort {
   updatePaiement(id: string, data: UpdatePaiementInput): Promise<PaiementRecord> {
     return this.prisma.paiement.update({
       where: { id },
-      data: data as any,
+      data: data as Prisma.paiementUncheckedUpdateInput,
       include: {
         utilisateur: { select: { id: true } },
         reservation_location_paiement_reservation_idToreservation_location: {
@@ -186,20 +187,20 @@ export class PaiementRepository implements PaiementRepositoryPort {
 
   createPortefeuille(data: CreatePortefeuilleInput): Promise<PortefeuilleRecord> {
     return this.prisma.portefeuille.create({
-      data: data as any,
+      data: data as Prisma.portefeuilleUncheckedCreateInput,
     }) as unknown as Promise<PortefeuilleRecord>;
   }
 
   updatePortefeuille(id: string, data: UpdatePortefeuilleInput): Promise<PortefeuilleRecord> {
     return this.prisma.portefeuille.update({
       where: { id },
-      data: data as any,
+      data: data as Prisma.portefeuilleUncheckedUpdateInput,
     }) as unknown as Promise<PortefeuilleRecord>;
   }
 
   createTransaction(data: CreateTransactionInput): Promise<TransactionRecord> {
     return this.prisma.transaction_portefeuille.create({
-      data: data as any,
+      data: data as Prisma.transaction_portefeuilleUncheckedCreateInput,
     }) as unknown as Promise<TransactionRecord>;
   }
 
@@ -249,7 +250,7 @@ export class PaiementRepository implements PaiementRepositoryPort {
 
   createPaiementLog(data: CreatePaiementLogInput): Promise<PaiementLogRecord> {
     return this.prisma.paiement_log.create({
-      data: data as any,
+      data: data as Prisma.paiement_logUncheckedCreateInput,
     }) as unknown as Promise<PaiementLogRecord>;
   }
 

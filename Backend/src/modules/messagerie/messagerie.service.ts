@@ -45,10 +45,8 @@ export class MessagerieService {
     }
 
     if (type === 'DIRECT' && request.autreUtilisateurId) {
-      console.log('DEBUG: Checking for existing direct conversation between', createur.id, 'and', request.autreUtilisateurId);
       const existing = await this.repository.findDirectConversation(createur.id, request.autreUtilisateurId);
       if (existing) {
-        console.log('DEBUG: Found existing conversation:', existing.id);
         return this.assembleConversation(existing, createur.id);
       }
     }
@@ -60,7 +58,7 @@ export class MessagerieService {
       annonce_id: request.annonceId,
       created_at: new Date(),
       updated_at: new Date(),
-    } as any);
+    });
 
     await this.repository.createParticipant({
       id: this.repository.newId(),
@@ -70,7 +68,7 @@ export class MessagerieService {
       est_admin: true,
       est_mute: false,
       nombre_non_lus: 0,
-    } as any);
+    });
 
     if (type === 'DIRECT' && request.autreUtilisateurId) {
       await this.repository.createParticipant({
@@ -81,7 +79,7 @@ export class MessagerieService {
         est_admin: false,
         est_mute: false,
         nombre_non_lus: 0,
-      } as any);
+      });
     }
 
     if (type === 'GROUP' && request.participantIds?.length) {
@@ -100,7 +98,7 @@ export class MessagerieService {
             est_admin: false,
             est_mute: false,
             nombre_non_lus: 0,
-          } as any);
+          });
         }),
       );
     }
@@ -165,9 +163,9 @@ export class MessagerieService {
       est_supprime: false,
       est_epingle: false,
       type_message: request.typeMessage ?? 'TEXTE',
-    } as any);
+    });
 
-    await this.repository.updateConversation(request.conversationId, { updated_at: new Date() } as any);
+    await this.repository.updateConversation(request.conversationId, { updated_at: new Date() });
     return this.mapper.toMessageResponse(message);
   }
 
@@ -205,7 +203,7 @@ export class MessagerieService {
       throw new DomainException('Seul l\'auteur peut supprimer ce message', 403, 'CANNOT_DELETE_MESSAGE');
     }
 
-    await this.repository.updateMessage(messageId, { est_supprime: true } as any);
+    await this.repository.updateMessage(messageId, { est_supprime: true });
   }
 
   async pinMessage(messageId: string, user: AuthenticatedUser): Promise<MessageResponseDto> {
@@ -218,7 +216,7 @@ export class MessagerieService {
     await this.accessService.ensureConversationAdmin(this.repository, message.conversation_id, currentUser.id);
     const pinned = await this.repository.updateMessage(messageId, {
       est_epingle: !(message.est_epingle ?? false),
-    } as any);
+    });
 
     return this.mapper.toMessageResponse(pinned);
   }

@@ -63,7 +63,7 @@ export class AssuranceService {
       est_actif: true,
       created_at: now,
       updated_at: now,
-    } as any);
+    });
 
     return this.mapper.toProduitResponse(created);
   }
@@ -114,7 +114,7 @@ export class AssuranceService {
       type_assurance: request.typeAssurance,
       duree_mois: request.dureeMois,
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toProduitResponse(updated);
   }
@@ -128,7 +128,7 @@ export class AssuranceService {
     await this.repository.updateProduit(id, {
       est_actif: false,
       updated_at: new Date(),
-    } as any);
+    });
   }
 
   async createOptionAssurance(
@@ -148,7 +148,7 @@ export class AssuranceService {
       est_actif: true,
       created_at: now,
       updated_at: now,
-    } as any);
+    });
 
     return this.mapper.toOptionResponse(created);
   }
@@ -187,7 +187,7 @@ export class AssuranceService {
       description: request.description,
       prix_supplementaire: request.prixSupplementaire,
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toOptionResponse(updated);
   }
@@ -201,7 +201,7 @@ export class AssuranceService {
     await this.repository.updateOption(id, {
       est_actif: false,
       updated_at: new Date(),
-    } as any);
+    });
   }
 
   async createSouscription(
@@ -255,7 +255,7 @@ export class AssuranceService {
               create: selectedOptions.map((opt) => ({ option_id: opt.id })),
             }
           : undefined,
-    } as any);
+    });
 
     return this.mapper.toSouscriptionResponse(created);
   }
@@ -352,7 +352,7 @@ export class AssuranceService {
       paiement_id: paiementId,
       statut: "PAYEE",
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toSouscriptionResponse(updated);
   }
@@ -376,7 +376,7 @@ export class AssuranceService {
       ),
       statut: "ACTIVE",
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toSouscriptionResponse(updated);
   }
@@ -409,7 +409,7 @@ export class AssuranceService {
     const updated = await this.repository.updateSouscription(subscription.id, {
       document_url: normalizedDocumentUrl,
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toSouscriptionResponse(updated);
   }

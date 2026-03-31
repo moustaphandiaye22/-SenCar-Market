@@ -16,6 +16,28 @@ import {
 } from './tradein.models';
 import { TradeInRepositoryPort } from './tradein.repository.port';
 
+const demandeInclude = Prisma.validator<Prisma.demande_trade_inInclude>()({
+  utilisateur: { select: { id: true, nom: true } },
+  vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
+    include: {
+      marque: { select: { nom: true } },
+      modele: { select: { nom: true } },
+      photo_vehicule: { select: { url: true } },
+    },
+  },
+  vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
+    include: {
+      marque: { select: { nom: true } },
+      modele: { select: { nom: true } },
+      photo_vehicule: { select: { url: true } },
+    },
+  },
+});
+
+type DemandeWithRelations = Prisma.demande_trade_inGetPayload<{
+  include: typeof demandeInclude;
+}>;
+
 @Injectable()
 export class TradeInRepository implements TradeInRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
@@ -47,31 +69,15 @@ export class TradeInRepository implements TradeInRepositoryPort {
   createDemande(data: CreateDemandeInput): Promise<DemandeRecord> {
     return this.prisma.demande_trade_in.create({
       data: data as unknown as Prisma.demande_trade_inCreateInput,
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-      },
-    }).then(item => this.mapDemandeRecord(item as any));
+      include: demandeInclude,
+    }).then((item) => this.mapDemandeRecord(item));
   }
 
   findDemandeById(id: string): Promise<DemandeRecord | null> {
     return this.prisma.demande_trade_in.findUnique({
       where: { id },
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-      },
-    }).then(item => item ? this.mapDemandeRecord(item as any) : null);
+      include: demandeInclude,
+    }).then((item) => (item ? this.mapDemandeRecord(item) : null));
   }
 
   findDemandesPaged(page: number, size: number): Promise<{ items: DemandeRecord[]; total: number }> {
@@ -80,32 +86,16 @@ export class TradeInRepository implements TradeInRepositoryPort {
         skip: page * size,
         take: size,
         orderBy: { created_at: 'desc' },
-        include: {
-          utilisateur: { select: { id: true, nom: true } },
-          vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-            include: { 
-              marque: { select: { nom: true } }, 
-              modele: { select: { nom: true } },
-              photo_vehicule: { select: { url: true } },
-            },
-          },
-          vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-            include: { 
-              marque: { select: { nom: true } }, 
-              modele: { select: { nom: true } },
-              photo_vehicule: { select: { url: true } },
-            },
-          },
-        },
+        include: demandeInclude,
       }),
       this.prisma.demande_trade_in.count(),
     ]).then(([items, total]) => ({
-      items: items.map((item) => this.mapDemandeRecord(item as any)),
+      items: items.map((item) => this.mapDemandeRecord(item)),
       total,
     }));
   }
 
-  private mapDemandeRecord(item: any): DemandeRecord {
+  private mapDemandeRecord(item: DemandeWithRelations): DemandeRecord {
     return {
       ...item,
       vehicule_actuel: item.vehicule_demande_trade_in_vehicule_actuel_idTovehicule,
@@ -117,79 +107,31 @@ export class TradeInRepository implements TradeInRepositoryPort {
     return this.prisma.demande_trade_in.findMany({
       where: { utilisateur_id: utilisateurId },
       orderBy: { created_at: 'desc' },
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { 
-            marque: { select: { nom: true } }, 
-            modele: { select: { nom: true } },
-            photo_vehicule: { select: { url: true } },
-          },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { 
-            marque: { select: { nom: true } }, 
-            modele: { select: { nom: true } },
-            photo_vehicule: { select: { url: true } },
-          },
-        },
-      },
-    }).then(items => items.map(item => this.mapDemandeRecord(item as any)));
+      include: demandeInclude,
+    }).then((items) => items.map((item) => this.mapDemandeRecord(item)));
   }
 
   findDemandesByNotifie(estNotifie: boolean): Promise<DemandeRecord[]> {
     return this.prisma.demande_trade_in.findMany({
       where: { est_notifie: estNotifie },
       orderBy: { created_at: 'desc' },
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { 
-            marque: { select: { nom: true } }, 
-            modele: { select: { nom: true } },
-            photo_vehicule: { select: { url: true } },
-          },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { 
-            marque: { select: { nom: true } }, 
-            modele: { select: { nom: true } },
-            photo_vehicule: { select: { url: true } },
-          },
-        },
-      },
-    }).then(items => items.map(item => this.mapDemandeRecord(item as any)));
+      include: demandeInclude,
+    }).then((items) => items.map((item) => this.mapDemandeRecord(item)));
   }
 
   updateDemande(id: string, data: UpdateDemandeInput): Promise<DemandeRecord> {
     return this.prisma.demande_trade_in.update({
       where: { id },
       data: data as unknown as Prisma.demande_trade_inUpdateInput,
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-      },
-    }).then(item => this.mapDemandeRecord(item as any));
+      include: demandeInclude,
+    }).then((item) => this.mapDemandeRecord(item));
   }
 
   deleteDemande(id: string): Promise<DemandeRecord> {
     return this.prisma.demande_trade_in.delete({
       where: { id },
-      include: {
-        utilisateur: { select: { id: true, nom: true } },
-        vehicule_demande_trade_in_vehicule_actuel_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-        vehicule_demande_trade_in_vehicule_souhaite_idTovehicule: {
-          include: { marque: { select: { nom: true } }, modele: { select: { nom: true } } },
-        },
-      },
-    }).then(item => this.mapDemandeRecord(item as any));
+      include: demandeInclude,
+    }).then((item) => this.mapDemandeRecord(item));
   }
 
   createHistoriqueEstimation(data: CreateHistoriqueEstimationInput): Promise<{ id: string }> {

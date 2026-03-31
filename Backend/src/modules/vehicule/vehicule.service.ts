@@ -24,6 +24,7 @@ import { VehiculeAccessPolicy } from "./services/vehicule-access.policy";
 import { VehiculeMapper } from "./services/vehicule.mapper";
 import { VehiculeInputValidator } from "./validation/vehicule-input.validator";
 import {
+  UpdateVehiculeInput,
   UserWithRoleRecord,
   VehiculeFavoriRecord,
   VehiculeRecord,
@@ -251,7 +252,7 @@ export class VehiculeService {
       vehicule.proprietaire_id,
     );
 
-    const updateData: any = {};
+    const updateData: UpdateVehiculeInput = {};
     let resolvedMarqueId = vehicule.marque_id;
 
     if (request.marque) {

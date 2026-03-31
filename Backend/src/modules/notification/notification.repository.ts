@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -16,9 +17,26 @@ import {
 import { NotificationRepositoryPort } from './notification.repository.port';
 import { StatutTraitementSignalement, TypeEntiteSignalable, TypeNotification } from './types/notification.types';
 
+const signalementInclude = Prisma.validator<Prisma.signalementInclude>()({
+  utilisateur_signalement_utilisateur_idToutilisateur: {
+    select: { nom: true, prenom: true },
+  },
+});
+
+type SignalementWithUtilisateur = Prisma.signalementGetPayload<{
+  include: typeof signalementInclude;
+}>;
+
 @Injectable()
 export class NotificationRepository implements NotificationRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
+
+  private mapSignalement(record: SignalementWithUtilisateur): SignalementRecord {
+    return {
+      ...record,
+      utilisateur: record.utilisateur_signalement_utilisateur_idToutilisateur,
+    };
+  }
 
   findUserByEmail(email: string): Promise<UserRecord | null> {
     return this.prisma.utilisateur.findUnique({
@@ -29,14 +47,14 @@ export class NotificationRepository implements NotificationRepositoryPort {
 
   createNotification(data: CreateNotificationInput): Promise<NotificationRecord> {
     return this.prisma.notification.create({
-      data: data as any,
+      data: data as Prisma.notificationUncheckedCreateInput,
     }) as unknown as Promise<NotificationRecord>;
   }
 
   updateNotification(id: string, data: UpdateNotificationInput): Promise<NotificationRecord> {
     return this.prisma.notification.update({
       where: { id },
-      data: data as any,
+      data: data as Prisma.notificationUncheckedUpdateInput,
     }) as unknown as Promise<NotificationRecord>;
   }
 
@@ -116,30 +134,24 @@ export class NotificationRepository implements NotificationRepositoryPort {
 
   createSignalement(data: CreateSignalementInput): Promise<SignalementRecord> {
     return this.prisma.signalement.create({
-      data: data as any,
-      include: {
-        utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-      },
-    }) as unknown as Promise<SignalementRecord>;
+      data: data as Prisma.signalementUncheckedCreateInput,
+      include: signalementInclude,
+    }).then((record) => this.mapSignalement(record));
   }
 
   updateSignalement(id: string, data: UpdateSignalementInput): Promise<SignalementRecord> {
     return this.prisma.signalement.update({
       where: { id },
-      data: data as any,
-      include: {
-        utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-      },
-    }) as unknown as Promise<SignalementRecord>;
+      data: data as Prisma.signalementUncheckedUpdateInput,
+      include: signalementInclude,
+    }).then((record) => this.mapSignalement(record));
   }
 
   findSignalementById(id: string): Promise<SignalementRecord | null> {
     return this.prisma.signalement.findUnique({
       where: { id },
-      include: {
-        utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-      },
-    }) as unknown as Promise<SignalementRecord | null>;
+      include: signalementInclude,
+    }).then((record) => (record ? this.mapSignalement(record) : null));
   }
 
   findSignalementsPaged(
@@ -155,13 +167,11 @@ export class NotificationRepository implements NotificationRepositoryPort {
       this.prisma.signalement.findMany({
         skip: page * size,
         take: size,
-        orderBy: orderBy as any,
-        include: {
-          utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-        },
+        orderBy,
+        include: signalementInclude,
       }),
       this.prisma.signalement.count(),
-    ]).then(([items, total]) => ({ items: items as unknown as SignalementRecord[], total }));
+    ]).then(([items, total]) => ({ items: items.map((item) => this.mapSignalement(item)), total }));
   }
 
   findSignalementsByStatutPaged(
@@ -176,12 +186,10 @@ export class NotificationRepository implements NotificationRepositoryPort {
         skip: page * size,
         take: size,
         orderBy: { created_at: 'desc' },
-        include: {
-          utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-        },
+        include: signalementInclude,
       }),
       this.prisma.signalement.count({ where }),
-    ]).then(([items, total]) => ({ items: items as unknown as SignalementRecord[], total }));
+    ]).then(([items, total]) => ({ items: items.map((item) => this.mapSignalement(item)), total }));
   }
 
   findSignalementsByTypePaged(
@@ -196,12 +204,10 @@ export class NotificationRepository implements NotificationRepositoryPort {
         skip: page * size,
         take: size,
         orderBy: { created_at: 'desc' },
-        include: {
-          utilisateur_signalement_utilisateur_idToutilisateur: { select: { nom: true, prenom: true } },
-        },
+        include: signalementInclude,
       }),
       this.prisma.signalement.count({ where }),
-    ]).then(([items, total]) => ({ items: items as unknown as SignalementRecord[], total }));
+    ]).then(([items, total]) => ({ items: items.map((item) => this.mapSignalement(item)), total }));
   }
 
   countPendingSignalements(): Promise<number> {

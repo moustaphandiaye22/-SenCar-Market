@@ -6,6 +6,8 @@ export type VehiculeMini = {
   prix_vente: unknown;
   marque: { nom: string | null } | null;
   modele: { nom: string | null } | null;
+  photo_vehicule?: Array<{ url: string | null }>;
+  photos?: Array<{ url: string | null }>;
 };
 
 export type UserRole = { nom: string | null };
@@ -50,6 +52,8 @@ export type CreateDemandeInput = {
   etat_vehicule: string;
   date_soumission: Date;
   est_notifie: boolean;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateDemandeInput = Partial<{
@@ -89,5 +93,5 @@ export type CreateNotificationInput = {
   message: string;
   type: string;
   est_lu: boolean;
-  date_creation: Date;
+  created_at: Date;
 };

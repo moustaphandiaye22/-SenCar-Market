@@ -2,9 +2,11 @@ import { randomUUID } from "crypto";
 
 import { Injectable } from "@nestjs/common";
 import {
+  StatutTradeIn,
   StatutReservation,
   StatutTransaction,
   TypeNotification,
+  TypeTransaction,
 } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
@@ -20,8 +22,8 @@ import { AdminRepositoryPort } from "./admin.repository.port";
 export class AdminRepository implements AdminRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
-  private toPrismaData(data: Record<string, any>): Record<string, any> {
-    const prismaData: Record<string, any> = {};
+  private toPrismaData(data: Record<string, unknown>): Record<string, unknown> {
+    const prismaData: Record<string, unknown> = {};
     const mappings: Record<string, string> = {
       deletedAt: "deleted_at",
       typeUtilisateurId: "type_utilisateur_id",
@@ -68,6 +70,10 @@ export class AdminRepository implements AdminRepositoryPort {
     return prismaData;
   }
 
+  private mapPhotoRecord(photo: { url: string }): { url: string } {
+    return { url: photo.url };
+  }
+
   private mapUserRecord(
     user: {
       id: string;
@@ -107,7 +113,50 @@ export class AdminRepository implements AdminRepositoryPort {
   }
 
   private mapVehiculeRecord(
-    vehicule: any,
+    vehicule:
+      | {
+          id: string;
+          proprietaire_id: string;
+          marque_id: string | null;
+          modele_id: string | null;
+          carburant_id: string | null;
+          boite_vitesse_id: string | null;
+          statut: string;
+          marque: { nom: string | null } | null;
+          modele: { nom: string | null } | null;
+          carburant: { nom: string | null } | null;
+          boite_vitesse: { nom: string | null } | null;
+          utilisateur: {
+            id: string;
+            nom: string | null;
+            email: string;
+            telephone: string;
+          };
+          photo_vehicule: Array<{ url: string }>;
+          annee_fabrication: number | null;
+          kilometrage: number | null;
+          couleur: string | null;
+          prix_vente: unknown;
+          description: string | null;
+          numero_vin: string | null;
+          immatriculation: string | null;
+          prix_negociable: boolean | null;
+          certifie: boolean | null;
+          est_boost: boolean | null;
+          boost_debut: Date | null;
+          boost_fin: Date | null;
+          vues: number | null;
+          nombre_favoris: number | null;
+          titre: string | null;
+          nombre_portes: number | null;
+          nombre_places: number | null;
+          cylindree: string | null;
+          puissance_fiscale: string | null;
+          est_garantie: boolean | null;
+          garantie_mois: number | null;
+          created_at: Date | null;
+        }
+      | null,
   ): VehiculeRecord | null {
     if (!vehicule) return null;
     return {
@@ -123,7 +172,7 @@ export class AdminRepository implements AdminRepositoryPort {
       carburant: vehicule.carburant,
       boiteVitesse: vehicule.boite_vitesse,
       proprietaire: vehicule.utilisateur,
-      photos: (vehicule.photo_vehicule || []).map((p: any) => ({ url: p.url })),
+      photos: vehicule.photo_vehicule.map((photo) => this.mapPhotoRecord(photo)),
       anneeFabrication: vehicule.annee_fabrication,
       kilometrage: vehicule.kilometrage,
       couleur: vehicule.couleur,
@@ -149,7 +198,22 @@ export class AdminRepository implements AdminRepositoryPort {
     };
   }
 
-  private mapTransactionRecord(transaction: any): TransactionRecord | null {
+  private mapTransactionRecord(
+    transaction:
+      | {
+          id: string;
+          portefeuille_id: string;
+          montant: unknown;
+          type_transaction: string;
+          statut: string;
+          description: string | null;
+          reference_externe: string | null;
+          date_transaction: Date | null;
+          created_at: Date | null;
+          portefeuille: { utilisateur_id: string } | null;
+        }
+      | null,
+  ): TransactionRecord | null {
     if (!transaction) return null;
     return {
       id: transaction.id,
@@ -161,7 +225,9 @@ export class AdminRepository implements AdminRepositoryPort {
       referenceExterne: transaction.reference_externe,
       dateTransaction: transaction.date_transaction,
       createdAt: transaction.created_at,
-      portefeuille: transaction.portefeuille,
+      portefeuille: transaction.portefeuille
+        ? { utilisateurId: transaction.portefeuille.utilisateur_id }
+        : null,
     };
   }
 
@@ -212,7 +278,7 @@ export class AdminRepository implements AdminRepositoryPort {
 
   countTradeInByStatut(statut: string[]): Promise<number> {
     return this.prisma.demande_trade_in.count({
-      where: { statut: { in: statut as any } },
+      where: { statut: { in: statut as StatutTradeIn[] } },
     });
   }
 
@@ -368,13 +434,13 @@ export class AdminRepository implements AdminRepositoryPort {
               modele: { nom: string | null } | null;
               carburant: { nom: string | null } | null;
               boite_vitesse: { nom: string | null } | null;
-              proprietaire: {
+              utilisateur: {
                 id: string;
                 nom: string | null;
                 email: string;
                 telephone: string;
               };
-              photos: Array<{ url: string }>;
+              photo_vehicule: Array<{ url: string }>;
               annee_fabrication: number | null;
               kilometrage: number | null;
               couleur: string | null;
@@ -431,13 +497,13 @@ export class AdminRepository implements AdminRepositoryPort {
             modele: { nom: string | null } | null;
             carburant: { nom: string | null } | null;
             boite_vitesse: { nom: string | null } | null;
-            proprietaire: {
+            utilisateur: {
               id: string;
               nom: string | null;
               email: string;
               telephone: string;
             };
-            photos: Array<{ url: string }>;
+            photo_vehicule: Array<{ url: string }>;
             annee_fabrication: number | null;
             kilometrage: number | null;
             couleur: string | null;
@@ -608,18 +674,17 @@ export class AdminRepository implements AdminRepositoryPort {
     dateTransaction: Date;
     createdAt: Date;
   }): Promise<TransactionRecord> {
-    const prismaData = this.toPrismaData(data);
     return this.prisma.transaction_portefeuille
       .create({
         data: {
-          id: prismaData.id,
+          id: data.id,
           portefeuille_id: data.portefeuille.connect.id,
-          montant: prismaData.montant,
-          type_transaction: prismaData.type_transaction,
-          statut: prismaData.statut,
-          description: prismaData.description,
-          date_transaction: prismaData.date_transaction,
-          created_at: prismaData.created_at,
+          montant: data.montant,
+          type_transaction: data.typeTransaction as TypeTransaction,
+          statut: data.statut as StatutTransaction,
+          description: data.description,
+          date_transaction: data.dateTransaction,
+          created_at: data.createdAt,
         },
         include: { portefeuille: { select: { utilisateur_id: true } } },
       })
@@ -637,19 +702,18 @@ export class AdminRepository implements AdminRepositoryPort {
     referenceType?: string;
     referenceId?: string;
   }): Promise<{ id: string }> {
-    const prismaData = this.toPrismaData(data);
     return this.prisma.notification
       .create({
         data: {
-          id: prismaData.id,
+          id: data.id,
           utilisateur_id: data.utilisateur.connect.id,
-          titre: prismaData.titre,
-          message: prismaData.message,
-          type: prismaData.type as TypeNotification,
-          est_lu: prismaData.est_lu,
-          created_at: prismaData.created_at,
-          reference_type: prismaData.reference_type,
-          reference_id: prismaData.reference_id,
+          titre: data.titre,
+          message: data.message,
+          type: data.type as TypeNotification,
+          est_lu: data.estLu,
+          created_at: data.dateCreation,
+          reference_type: data.referenceType,
+          reference_id: data.referenceId,
         },
       })
       .then((n) => ({ id: n.id }));
@@ -668,7 +732,27 @@ export class AdminRepository implements AdminRepositoryPort {
         where: { email },
         include: { type_utilisateur: true },
       })
-      .then((u) => this.mapUserRecord(u as any));
+      .then((u) =>
+        this.mapUserRecord(
+          u as unknown as {
+            id: string;
+            email: string;
+            telephone: string;
+            mot_de_passe_hash: string;
+            prenom: string | null;
+            nom: string | null;
+            photo_profil_url: string | null;
+            email_verifie: boolean | null;
+            telephone_verifie: boolean | null;
+            double_auth_active: boolean | null;
+            statut_verification: string | null;
+            created_at: Date | null;
+            deleted_at: Date | null;
+            type_utilisateur_id: string | null;
+            type_utilisateur: { id: string; nom: string } | null;
+          },
+        ),
+      );
   }
 
   newId(): string {

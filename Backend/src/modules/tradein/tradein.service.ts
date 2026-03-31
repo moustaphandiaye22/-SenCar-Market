@@ -15,6 +15,7 @@ import { TradeInSecurityService } from './services/tradein-security.service';
 import { TradeInWorkflowService } from './services/tradein-workflow.service';
 import { TradeInMapper } from './services/tradein.mapper';
 import { DemandeRecord, UserRecord } from './tradein.models';
+import type { VehiculeMini } from './tradein.models';
 import { TRADEIN_REPOSITORY_PORT, TradeInRepositoryPort } from './tradein.repository.port';
 import { STATUT_TRADEIN_VALUES, StatutTradeIn } from './types/tradein.types';
 import { TradeInStatusValidator } from './validation/tradein-status.validator';
@@ -70,7 +71,7 @@ export class TradeInService {
       est_notifie: false,
       created_at: now,
       updated_at: now,
-    } as any);
+    });
 
     await this.sendTradeInNotification(current.id, 'Trade-In', 'EN_ATTENTE - Votre demande est en attente d\'évaluation');
 
@@ -127,7 +128,7 @@ export class TradeInService {
       kilometrage_actuel: request.kilometrageActuel,
       etat_vehicule: etatVehicule,
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toDemandeResponse(updated);
   }
@@ -162,7 +163,7 @@ export class TradeInService {
         prix_vente: 10000000, // Consider a default market value or add it to request
         marque: { nom: request.marque ?? 'Inconnu' },
         modele: { nom: request.modele ?? 'Inconnu' },
-      } as any;
+      } as VehiculeMini;
       return this.estimationService.calculateEstimation(mockVehicule, request.kilometrage, etatVehicule);
     }
   }
@@ -174,7 +175,7 @@ export class TradeInService {
     this.workflowService.validateTransition(demande.statut as StatutTradeIn, 'EVALUATION_TERMINEE');
 
     const estimation = this.estimationService.calculateEstimation(
-      demande.vehicule_actuel as any,
+      demande.vehicule_actuel,
       demande.kilometrage_actuel ?? 0,
       this.estimationService.normalizeEtatVehicule(demande.etat_vehicule ?? 'moyen'),
     );
@@ -185,7 +186,7 @@ export class TradeInService {
       statut: 'EVALUATION_TERMINEE',
       date_evaluation: now,
       updated_at: now,
-    } as any);
+    });
 
     await this.repository.createHistoriqueEstimation({
       id: this.repository.newId(),
@@ -203,7 +204,7 @@ export class TradeInService {
       score_condition: estimation.scoreCondition,
       recommandation: estimation.recommandation,
       date_estimation: now,
-    } as any);
+    });
 
     await this.sendTradeInNotification(
       updated.utilisateur_id,
@@ -233,7 +234,7 @@ export class TradeInService {
       ...(request.motifRejet != null ? { motif_rejet: request.motifRejet } : {}),
       date_traitement: now,
       updated_at: now,
-    } as any);
+    });
 
     const message = `${request.nouveauStatut} - ${request.commentaireAdmin ?? ''}`.trim();
     await this.sendTradeInNotification(updated.utilisateur_id, 'Validation', message);
@@ -252,7 +253,7 @@ export class TradeInService {
       statut: nouveauStatut,
       date_traitement: new Date(),
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toDemandeResponse(updated);
   }
@@ -277,7 +278,7 @@ export class TradeInService {
     const updated = await this.repository.updateDemande(id, {
       est_notifie: true,
       updated_at: new Date(),
-    } as any);
+    });
 
     return this.mapper.toDemandeResponse(updated);
   }
@@ -318,7 +319,6 @@ export class TradeInService {
       type: 'TRADE_IN',
       est_lu: false,
       created_at: new Date(),
-    } as any);
+    });
   }
-
 }

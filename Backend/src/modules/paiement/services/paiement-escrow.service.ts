@@ -28,12 +28,12 @@ export class PaiementEscrowService {
       description: `Blocage fonds escrow - ${reference ?? ''}`.trim(),
       reference_externe: reference ?? undefined,
       date_transaction: new Date(),
-    } as any);
+    });
 
     await this.repository.updatePortefeuille(portefeuille.id, {
       solde_bloque: toNumberOrZero(portefeuille.solde_bloque) + montant,
       updated_at: new Date(),
-    } as any);
+    });
   }
 
   async libererFondsEscrow(utilisateurId: string, montant: number, reference: string | null): Promise<void> {
@@ -48,11 +48,11 @@ export class PaiementEscrowService {
       description: `Libération fonds escrow - ${reference ?? ''}`.trim(),
       reference_externe: reference ?? undefined,
       date_transaction: new Date(),
-    } as any);
+    });
 
     await this.repository.updatePortefeuille(portefeuille.id, {
       solde_bloque: Math.max(0, toNumberOrZero(portefeuille.solde_bloque) - montant),
       updated_at: new Date(),
-    } as any);
+    });
   }
 }

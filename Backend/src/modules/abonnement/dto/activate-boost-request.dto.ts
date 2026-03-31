@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsUUID } from "class-validator";
 
 export class ActivateBoostRequestDto {
   @ApiProperty({

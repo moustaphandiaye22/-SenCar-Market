@@ -7,10 +7,14 @@ import type { AuthRepositoryPort } from './auth.repository.port';
 import { AUTH_REPOSITORY_PORT } from './auth.repository.port';
 import { AuthService } from './auth.service';
 import { JwtTokenService } from './jwt.service';
+import { AuthLoginService } from './services/auth-login.service';
+import { AuthOtpService } from './services/auth-otp.service';
+import { AuthProfileService } from './services/auth-profile.service';
+import { AuthRegistrationService } from './services/auth-registration.service';
 import { AuthMapper } from './services/auth.mapper';
 import { AuthInputValidator } from './validation/auth-input.validator';
 
-describe.skip('AuthService', () => {
+describe('AuthService', () => {
   let service: AuthService;
   let repository: jest.Mocked<AuthRepositoryPort>;
   let jwtService: jest.Mocked<JwtTokenService>;
@@ -19,6 +23,10 @@ describe.skip('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        AuthRegistrationService,
+        AuthLoginService,
+        AuthOtpService,
+        AuthProfileService,
         AuthInputValidator,
         AuthMapper,
         {
@@ -85,7 +93,7 @@ describe.skip('AuthService', () => {
     repository.findUserByEmailOrTelephone.mockResolvedValue({
       id: 'u1',
       email: 'user@test.com',
-      motDePasseHash: hash,
+      mot_de_passe_hash: hash,
     } as never);
 
     await expect(
@@ -98,7 +106,7 @@ describe.skip('AuthService', () => {
     repository.findUserByEmailOrTelephone.mockResolvedValue({
       id: 'u1',
       email: 'user@test.com',
-      motDePasseHash: hash,
+      mot_de_passe_hash: hash,
     } as never);
     repository.updateUser.mockResolvedValue({
       id: 'u1',
@@ -110,14 +118,15 @@ describe.skip('AuthService', () => {
       telephone: '770000000',
       prenom: 'Test',
       nom: 'User',
-      photoProfilUrl: null,
-      emailVerifie: true,
-      telephoneVerifie: true,
-      doubleAuthActive: false,
-      statutVerification: null,
-      createdAt: new Date(),
-      typeUtilisateurId: 't1',
-      typeUtilisateur: { id: 't1', nom: 'UTILISATEUR' },
+      photo_profil_url: null,
+      email_verifie: true,
+      telephone_verifie: true,
+      double_auth_active: false,
+      statut_verification: null,
+      created_at: new Date(),
+      type_utilisateur_id: 't1',
+      deleted_at: null,
+      type_utilisateur: { id: 't1', nom: 'UTILISATEUR' },
     } as never);
 
     await service.login({ identifiant: 'user@test.com', motDePasse: 'valid-password' });
@@ -139,14 +148,15 @@ describe.skip('AuthService', () => {
       telephone: '770000000',
       prenom: 'Test',
       nom: 'User',
-      photoProfilUrl: null,
-      emailVerifie: true,
-      telephoneVerifie: true,
-      doubleAuthActive: false,
-      statutVerification: null,
-      createdAt: new Date(),
-      typeUtilisateurId: 't1',
-      typeUtilisateur: { id: 't1', nom: 'PROFESSIONNEL' },
+      photo_profil_url: null,
+      email_verifie: true,
+      telephone_verifie: true,
+      double_auth_active: false,
+      statut_verification: null,
+      created_at: new Date(),
+      type_utilisateur_id: 't1',
+      deleted_at: null,
+      type_utilisateur: { id: 't1', nom: 'PROFESSIONNEL' },
     } as never);
 
     await service.refreshToken({ refreshToken: 'refresh-token' });
@@ -169,7 +179,19 @@ describe.skip('AuthService', () => {
     const hash = await bcrypt.hash('same-password', 10);
     repository.findUserById.mockResolvedValue({
       id: 'u1',
-      motDePasseHash: hash,
+      email: 'user@test.com',
+      telephone: '770000000',
+      mot_de_passe_hash: hash,
+      prenom: 'Test',
+      nom: 'User',
+      photo_profil_url: null,
+      email_verifie: true,
+      telephone_verifie: true,
+      double_auth_active: false,
+      statut_verification: null,
+      created_at: new Date(),
+      type_utilisateur_id: 't1',
+      deleted_at: null,
     } as never);
 
     await expect(

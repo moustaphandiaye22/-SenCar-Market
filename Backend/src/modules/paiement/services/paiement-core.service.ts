@@ -12,7 +12,7 @@ import { hasAnyRole } from '../../../common/utils/role.util';
 import { requireNonBlank } from '../../../common/utils/text.util';
 import { CreatePaiementRequestDto } from '../dto/create-paiement-request.dto';
 import { PaiementResponseDto } from '../dto/paiement-response.dto';
-import { PaiementRecord, UserRecord } from '../paiement.models';
+import { CreatePaiementInput, PaiementRecord, UserRecord } from '../paiement.models';
 import { PAIEMENT_REPOSITORY_PORT, PaiementRepositoryPort } from '../paiement.repository.port';
 import { StatutPaiement, STATUT_PAIEMENT_VALUES } from '../types/paiement.types';
 
@@ -60,7 +60,7 @@ export class PaiementCoreService {
     const commission = is_escrow ? this.calculateCommission(request.montant) : 0;
     const montant_escrow = is_escrow ? request.montant - commission : request.montant;
 
-    const created = await this.repository.createPaiement({
+    const paiementInput: CreatePaiementInput = {
       id: this.repository.newId(),
       utilisateur_id: targetUser.id,
       ...(reservation ? { reservation_id: reservation.id } : {}),
@@ -71,7 +71,8 @@ export class PaiementCoreService {
       statut: 'EN_ATTENTE',
       is_escrow,
       reference_transaction: this.repository.newId(),
-    } as any);
+    };
+    const created = await this.repository.createPaiement(paiementInput);
 
     await this.paiementLogService.createLogAction(created.id, 'CREATION', 'Paiement créé');
     return this.toPaiementResponse(created);

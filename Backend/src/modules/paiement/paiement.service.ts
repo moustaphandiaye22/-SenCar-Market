@@ -126,7 +126,7 @@ export class PaiementService {
     const created = await this.repository.createPaiement({
       id: this.repository.newId(),
       utilisateur_id: targetUser.id,
-      reservation_id: reservationId,
+      ...(reservationId ? { reservation_id: reservationId } : {}),
       montant: request.montant,
       montant_escrow: montantEscrow,
       commission,
@@ -134,7 +134,7 @@ export class PaiementService {
       statut: "EN_ATTENTE",
       is_escrow,
       reference_transaction: this.repository.newId(),
-    } as any);
+    });
 
     await this.paiementLogService.createLogAction(
       created.id,
@@ -152,7 +152,7 @@ export class PaiementService {
     const updated = await this.repository.updatePaiement(paiement.id, {
       url_paiement: this.buildPaymentUrl(this.wavePayUrlBase),
       updated_at: new Date(),
-    } as any);
+    });
     return this.toPaiementResponse(updated);
   }
 
@@ -164,7 +164,7 @@ export class PaiementService {
     const updated = await this.repository.updatePaiement(paiement.id, {
       url_paiement: this.buildPaymentUrl(this.omPayUrlBase),
       updated_at: new Date(),
-    } as any);
+    });
     return this.toPaiementResponse(updated);
   }
 
@@ -263,7 +263,7 @@ export class PaiementService {
       reference_externe: referenceExterneClean,
       date_paiement: new Date(),
       updated_at: new Date(),
-    } as any);
+    });
 
     await this.paiementLogService.createLogAction(
       id,
@@ -325,7 +325,7 @@ export class PaiementService {
     const updated = await this.repository.updatePaiement(paiement.id, {
       statut: "REMBOURSE",
       updated_at: new Date(),
-    } as any);
+    });
     await this.paiementLogService.createLogAction(
       id,
       "REMBOURSEMENT",
@@ -598,7 +598,7 @@ export class PaiementService {
       statut,
       date_paiement: statut === "CONFIRME" ? new Date() : undefined,
       updated_at: new Date(),
-    } as any);
+    });
 
     await this.paiementLogService.createLogAction(
       id,

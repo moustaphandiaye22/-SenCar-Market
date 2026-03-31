@@ -13,6 +13,6 @@ export class PaiementLogService {
       action,
       details,
       date_action: new Date(),
-    } as any);
+    });
   }
 }

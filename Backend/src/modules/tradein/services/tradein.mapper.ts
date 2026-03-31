@@ -30,8 +30,12 @@ export class TradeInMapper {
       estNotifie: demande.est_notifie ?? false,
       createdAt: demande.created_at ?? null,
       updatedAt: demande.updated_at ?? null,
-      photosUrls: (demande.vehicule_actuel as any)?.photo_vehicule?.map((p: any) => p.url) || 
-                  (demande.vehicule_actuel as any)?.photos?.map((p: any) => p.url) || []
+      photosUrls:
+        demande.vehicule_actuel?.photo_vehicule?.flatMap((p) =>
+          p.url ? [p.url] : [],
+        ) ??
+        demande.vehicule_actuel?.photos?.flatMap((p) => (p.url ? [p.url] : [])) ??
+        [],
     };
   }
 

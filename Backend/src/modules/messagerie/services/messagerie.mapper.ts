@@ -4,6 +4,7 @@ import { ConversationResponseDto } from '../dto/conversation-response.dto';
 import { MessageResponseDto } from '../dto/message-response.dto';
 import { ParticipantResponseDto } from '../dto/participant-response.dto';
 import { ConversationRecord, MessageRecord, ParticipantRecord } from '../messagerie.models';
+import type { TypeMessage } from '../types/messagerie.types';
 
 @Injectable()
 export class MessagerieMapper {
@@ -31,7 +32,7 @@ export class MessagerieMapper {
       dateLecture: message.date_lecture ?? null,
       estLu: message.est_lu ?? false,
       estEpingle: message.est_epingle ?? false,
-      typeMessage: (message.type_message as any) ?? 'TEXTE',
+      typeMessage: (message.type_message as TypeMessage | null) ?? 'TEXTE',
     };
   }
 

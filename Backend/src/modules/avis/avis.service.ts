@@ -60,11 +60,11 @@ export class AvisService {
       cible_utilisateur_id: request.cibleUtilisateurId,
       vehicule_id: request.vehiculeId,
       garage_id: request.garageId,
-      type_avis: request.typeAvis as any,
+      type_avis: request.typeAvis,
       transaction_id: request.transactionId,
       note: request.note,
       commentaire: request.commentaire,
-      statut: 'PUBLIE' as any,
+      statut: 'PUBLIE',
       created_at: new Date(),
     });
 

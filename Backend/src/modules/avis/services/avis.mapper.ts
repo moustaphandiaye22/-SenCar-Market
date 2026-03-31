@@ -14,11 +14,11 @@ export class AvisMapper {
       cibleUtilisateurId: avis.cible_utilisateur_id ?? null,
       vehiculeId: avis.vehicule_id ?? null,
       garageId: avis.garage_id ?? null,
-      typeAvis: (avis.type_avis as any) ?? null,
+      typeAvis: avis.type_avis ?? null,
       transactionId: avis.transaction_id,
       note: avis.note,
       commentaire: avis.commentaire ?? null,
-      statut: (avis.statut as any) ?? null,
+      statut: avis.statut ?? null,
       createdAt: avis.created_at ?? null,
     };
   }

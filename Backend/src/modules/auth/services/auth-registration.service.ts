@@ -54,7 +54,7 @@ export class AuthRegistrationService {
       telephone_verifie: false,
       double_auth_active: false,
       type_utilisateur_id: typeUtilisateur.id,
-    } as any);
+    });
 
     await this.generateOtp(user.id, user.email, 'VERIFICATION_EMAIL');
 
@@ -117,7 +117,7 @@ export class AuthRegistrationService {
       expiration: addMinutes(new Date(), AUTH_CONFIG.OTP.EXPIRATION_MINUTES),
       utilise: false,
       tentatives: 0,
-    } as any);
+    });
 
     const emailEnabled = AUTH_CONFIG.OTP.EMAIL_ENABLED;
     if (emailEnabled) {

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -43,7 +44,7 @@ export class AuthRepository implements AuthRepositoryPort {
     return this.prisma.utilisateur.findUnique({
       where: { id },
       include: { type_utilisateur: true },
-    }) as any;
+    }) as unknown as Promise<AuthUserWithTypeRecord | null>;
   }
 
   findTypeUtilisateurByNom(nom: string): Promise<AuthUserTypeRecord | null> {
@@ -51,14 +52,16 @@ export class AuthRepository implements AuthRepositoryPort {
   }
 
   createUser(data: CreateUserInput): Promise<AuthUserRecord> {
-    return this.prisma.utilisateur.create({ data: data as any }) as any;
+    return this.prisma.utilisateur.create({
+      data: data as Prisma.utilisateurUncheckedCreateInput,
+    }) as unknown as Promise<AuthUserRecord>;
   }
 
   updateUser(id: string, data: UpdateUserInput): Promise<AuthUserRecord> {
     return this.prisma.utilisateur.update({
       where: { id },
-      data: data as any,
-    }) as any;
+      data: data as Prisma.utilisateurUncheckedUpdateInput,
+    }) as unknown as Promise<AuthUserRecord>;
   }
 
   findLatestValidOtp(utilisateurId: string, type: OtpType, now: Date): Promise<OtpCodeRecord | null> {
@@ -95,13 +98,15 @@ export class AuthRepository implements AuthRepositoryPort {
   }
 
   createOtp(data: CreateOtpInput): Promise<OtpCodeRecord> {
-    return this.prisma.otp_code.create({ data: data as any });
+    return this.prisma.otp_code.create({
+      data: data as Prisma.otp_codeUncheckedCreateInput,
+    });
   }
 
   updateOtp(id: string, data: UpdateOtpInput): Promise<OtpCodeRecord> {
     return this.prisma.otp_code.update({
       where: { id },
-      data: data as any,
+      data: data as Prisma.otp_codeUncheckedUpdateInput,
     });
   }
 }

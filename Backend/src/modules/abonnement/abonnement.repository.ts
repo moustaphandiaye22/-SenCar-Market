@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
 
@@ -648,7 +649,7 @@ export class AbonnementRepository implements AbonnementRepositoryPort {
     return this.prisma.boost_annonce
       .update({
         where: { id },
-        data: updateData as any,
+        data: updateData as Prisma.boost_annonceUncheckedUpdateInput,
       })
       .then(
         (result) =>

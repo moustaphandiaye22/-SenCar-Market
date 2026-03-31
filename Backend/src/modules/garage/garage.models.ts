@@ -139,7 +139,7 @@ export type CreateRendezVousInput = {
   client: { connect: { id: string } };
   service?: { connect: { id: string } };
   date_rendez_vous: Date;
-  statut: any;
+  statut: string;
   commentaire?: string;
   created_at: Date;
   updated_at: Date;

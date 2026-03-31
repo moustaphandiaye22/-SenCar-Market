@@ -38,7 +38,7 @@ export class NotificationService {
       utilisateur_id: data.utilisateurId,
       titre: data.titre,
       message: data.message,
-      type: data.type as any,
+      type: this.inputValidator.parseNotificationType(data.type),
       reference_id: data.entiteId,
       reference_type: data.entiteType,
       est_lu: false,

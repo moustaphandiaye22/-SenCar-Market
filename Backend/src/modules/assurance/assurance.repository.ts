@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
 
@@ -131,11 +132,22 @@ export class AssuranceRepository implements AssuranceRepositoryPort {
   createSouscription(
     data: CreateSouscriptionInput,
   ): Promise<SouscriptionRecord> {
-    const prismaData: any = {
-      ...data,
+    const prismaData: Prisma.souscription_assuranceUncheckedCreateInput & {
+      souscription_options?: Prisma.souscription_optionsUncheckedCreateNestedManyWithoutSouscription_assuranceInput;
+    } = {
+      id: data.id,
+      utilisateur_id: data.utilisateur_id,
+      produit_assurance_id: data.produit_assurance_id,
+      vehicule_id: data.vehicule_id,
+      statut: data.statut,
+      montant_total: data.montant_total,
+      date_debut: data.date_debut,
+      date_fin: data.date_fin,
+      numero_contrat: data.numero_contrat,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
       souscription_options: data.optionsSelectionnees,
     };
-    delete prismaData.optionsSelectionnees;
     return this.prisma.souscription_assurance.create({
       data: prismaData,
       include: {

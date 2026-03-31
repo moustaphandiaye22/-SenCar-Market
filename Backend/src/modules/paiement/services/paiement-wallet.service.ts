@@ -29,7 +29,7 @@ export class PaiementWalletService {
       solde: 0,
       solde_bloque: 0,
       is_actif: true,
-    } as any);
+    });
   }
 
   async crediterPortefeuille(request: TransactionPortefeuilleRequestDto, utilisateurId: string): Promise<PortefeuilleRecord> {
@@ -44,13 +44,13 @@ export class PaiementWalletService {
       description: request.description,
       reference_externe: request.referencePaiement,
       date_transaction: new Date(),
-    } as any);
+    });
 
     const updated = await this.repository.updatePortefeuille(portefeuille.id, {
       solde: toNumberOrZero(portefeuille.solde) + request.montant,
       date_derniere_recharge: new Date(),
       updated_at: new Date(),
-    } as any);
+    });
 
     await this.paiementLogService.createLogAction(
       null,
@@ -76,12 +76,12 @@ export class PaiementWalletService {
       description: request.description,
       reference_externe: request.referencePaiement,
       date_transaction: new Date(),
-    } as any);
+    });
 
     const updated = await this.repository.updatePortefeuille(portefeuille.id, {
       solde: toNumberOrZero(portefeuille.solde) - request.montant,
       updated_at: new Date(),
-    } as any);
+    });
 
     await this.paiementLogService.createLogAction(
       null,
@@ -106,12 +106,12 @@ export class PaiementWalletService {
       statut: 'EN_ATTENTE',
       description: `Retrait vers ${request.telephone} - ${request.nomBeneficiaire ?? ''}`.trim(),
       date_transaction: new Date(),
-    } as any);
+    });
 
     await this.repository.updatePortefeuille(portefeuille.id, {
       solde_bloque: toNumberOrZero(portefeuille.solde_bloque) + request.montant,
       updated_at: new Date(),
-    } as any);
+    });
 
     return created;
   }
@@ -131,5 +131,4 @@ export class PaiementWalletService {
     }
     return user;
   }
-
 }

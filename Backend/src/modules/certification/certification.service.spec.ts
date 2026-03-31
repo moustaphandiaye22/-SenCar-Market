@@ -1,6 +1,8 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+
 import type {
   CertificationRepositoryPort} from './certification.repository.port';
 import {
@@ -12,7 +14,6 @@ import { CertificationSecurityService } from './services/certification-security.
 import { CertificationWorkflowService } from './services/certification-workflow.service';
 import { CertificationMapper } from './services/certification.mapper';
 import { CertificationStatusValidator } from './validation/certification-status.validator';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('CertificationService', () => {
   let service: CertificationService;

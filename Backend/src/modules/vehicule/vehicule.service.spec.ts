@@ -1,13 +1,14 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+
 import { VehiculeAccessPolicy } from './services/vehicule-access.policy';
 import { VehiculeMapper } from './services/vehicule.mapper';
 import { VehiculeInputValidator } from './validation/vehicule-input.validator';
 import { VEHICULE_REPOSITORY_PORT } from './vehicule.repository.port';
 import type { VehiculeRepositoryPort } from './vehicule.repository.port';
 import { VehiculeService } from './vehicule.service';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('VehiculeService', () => {
   let service: VehiculeService;

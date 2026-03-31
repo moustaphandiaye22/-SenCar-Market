@@ -1,13 +1,14 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+
 import type { GarageRepositoryPort } from './garage.repository.port';
 import { GARAGE_REPOSITORY_PORT } from './garage.repository.port';
 import { GarageService } from './garage.service';
 import { GarageAccessPolicy } from './services/garage-access.policy';
 import { GarageMapper } from './services/garage.mapper';
 import { GarageInputValidator } from './validation/garage-input.validator';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 describe('GarageService', () => {
   let service: GarageService;
